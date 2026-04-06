@@ -129,7 +129,7 @@
 
                 // Show success feedback
                 const toast = document.createElement('div')
-                toast.className = 'fixed bottom-6 right-6 bg-teal-700 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-2'
+                toast.className = 'fixed bottom-6 right-6 bg-teal-700 text-white px-6 py-3 rounded shadow-xl flex items-center gap-2'
                 toast.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7" />
@@ -186,7 +186,7 @@
                 // Header removed - no auth/branding at this stage
 
                 React.createElement('div', { className: "px-8 py-8" },
-                    React.createElement('div', { className: "flex justify-between items-end mb-8" },
+                    React.createElement('div', { className: "flex justify-between items-start mb-8" },
                         React.createElement('div', null,
                             React.createElement('h2', {
                                 className: "text-4xl font-semibold text-slate-800 tracking-tight"
@@ -198,14 +198,14 @@
                         React.createElement('div', { className: "flex gap-3" },
                             items.length > 0 && React.createElement('button', {
                                 onClick: exportRFQ,
-                                className: "px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded-2xl font-medium flex items-center gap-2 shadow-sm"
+                                className: "px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded font-medium flex items-center gap-2 shadow-sm"
                             },
                                 React.createElement('span', null, "\uD83D\uDCBE"),
                                 React.createElement('span', null, "Export RFQ JSON")
                             ),
                             React.createElement('button', {
                                 onClick: clearAllItems,
-                                className: "px-6 py-3 bg-red-600 hover:bg-red-700 text-red-50 rounded-2xl font-medium"
+                                className: "px-6 py-3 bg-red-600 hover:bg-red-700 text-red-50 rounded font-medium"
                             },
                                 "Delete"
                             )
@@ -216,7 +216,7 @@
                     React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-12 gap-8" },
 
                         // Form
-                        React.createElement('div', { className: "lg:col-span-7 bg-white rounded-3xl shadow-xl p-8 border border-slate-100" },
+                        React.createElement('div', { className: "lg:col-span-7 bg-white rounded-md shadow-xl p-8 border border-slate-100" },
                             React.createElement('form', { onSubmit: handleAddItem, className: "space-y-8" },
 
                                 // Row 1
@@ -229,7 +229,7 @@
                                             value: formData.item_category,
                                             onChange: handleChange,
                                             required: true,
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         },
                                             React.createElement('option', { value: "" }, "Select category..."),
                                             categories.map(cat =>
@@ -248,7 +248,7 @@
                                             value: formData.department,
                                             onChange: handleChange,
                                             required: true,
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         },
                                             React.createElement('option', { value: "" }, "Select department..."),
                                             departments.map(dep =>
@@ -269,7 +269,7 @@
                                             onChange: handleChange,
                                             required: true,
                                             min: "1",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
                                     )
                                 ),
@@ -285,7 +285,7 @@
                                             onChange: handleChange,
                                             required: true,
                                             placeholder: "e.g. Sterile Surgical Gloves",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
                                     ),
                                     React.createElement('div', null,
@@ -296,7 +296,7 @@
                                             value: formData.brand,
                                             onChange: handleChange,
                                             placeholder: "e.g. Medline, 3M, BD",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
                                     )
                                 ),
@@ -311,7 +311,7 @@
                                             value: formData.model,
                                             onChange: handleChange,
                                             placeholder: "e.g. GL-500X",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
                                     ),
                                     React.createElement('div', null,
@@ -322,7 +322,7 @@
                                             value: formData.size,
                                             onChange: handleChange,
                                             placeholder: "e.g. Medium, 10ml, 5 French",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
                                     ),
                                     React.createElement('div', null,
@@ -333,7 +333,7 @@
                                             value: formData.specification,
                                             onChange: handleChange,
                                             placeholder: "e.g. Powder-free, latex-free",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
                                     )
                                 ),
@@ -347,7 +347,7 @@
                                         onChange: handleChange,
                                         rows: 3,
                                         placeholder: "Detailed description of the item as it appears in the client RFQ...",
-                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded-3xl focus:outline-none text-slate-800 resize-none"
+                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded-md focus:outline-none text-slate-800 resize-none"
                                     })
                                 ),
 
@@ -360,7 +360,7 @@
                                         onChange: handleChange,
                                         rows: 2,
                                         placeholder: "Any special requirements, urgency, preferred supplier, etc.",
-                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded-3xl focus:outline-none text-slate-800 resize-none"
+                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded-md focus:outline-none text-slate-800 resize-none"
                                     })
                                 ),
 
@@ -368,7 +368,7 @@
                                 React.createElement('div', { className: "flex gap-4 pt-4" },
                                     React.createElement('button', {
                                         type: "submit",
-                                        className: "flex-1 bg-teal-700 hover:bg-teal-800 text-white font-semibold py-5 rounded-3xl text-lg flex items-center justify-center gap-3 shadow-lg shadow-teal-500/30"
+                                        className: "flex-1 bg-teal-700 hover:bg-teal-800 text-white font-semibold py-5 rounded-md text-lg flex items-center justify-center gap-3 shadow-lg shadow-teal-500/30"
                                     },
                                         React.createElement('span', { className: "text-2xl" }, "\u2795"),
                                         "Add Item to RFQ"
@@ -382,7 +382,7 @@
                                                 model: '', additional_notes: ''
                                             })
                                         },
-                                        className: "px-10 border-2 border-slate-300 hover:bg-slate-100 font-medium rounded-3xl"
+                                        className: "px-10 border-2 border-slate-300 hover:bg-slate-100 font-medium rounded-md"
                                     }, "Clear Form")
                                 )
                             )
@@ -390,13 +390,13 @@
 
                         // Live Preview / Added Items
                         React.createElement('div', { className: "lg:col-span-5" },
-                            React.createElement('div', { className: "bg-white rounded-3xl shadow-xl border border-slate-100 h-full flex flex-col" },
+                            React.createElement('div', { className: "bg-white rounded-md shadow-xl border border-slate-100 h-full flex flex-col" },
                                 React.createElement('div', { className: "px-8 pt-8 pb-4 border-b flex items-center justify-between" },
                                     React.createElement('h3', { className: "font-semibold text-xl text-slate-800" },
                                         `Added Items (${items.length})`
                                     ),
                                     items.length > 0 && React.createElement('span', {
-                                        className: "px-4 py-1.5 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-2xl"
+                                        className: "px-4 py-1.5 bg-emerald-100 text-emerald-700 text-sm font-medium rounded"
                                     }, "Ready for quote processing")
                                 ),
 
@@ -414,14 +414,14 @@
                                         items.map(item =>
                                             React.createElement('div', {
                                                 key: item.id,
-                                                className: "bg-slate-50 border border-slate-200 rounded-2xl p-5 table-row hover:shadow-md"
+                                                className: "bg-slate-50 border border-slate-200 rounded p-5 table-row hover:shadow-md"
                                             },
                                                 React.createElement('div', { className: "flex justify-between items-start" },
                                                     React.createElement('div', null,
                                                         React.createElement('div', { className: "flex items-center gap-3" },
                                                             React.createElement('div', { className: "font-semibold text-lg" }, item.item_name),
                                                             React.createElement('span', {
-                                                                className: "px-3 py-px text-xs font-medium bg-teal-100 text-teal-700 rounded-xl"
+                                                                className: "px-3 py-px text-xs font-medium bg-teal-100 text-teal-700 rounded"
                                                             }, item.item_category.replace('-', ' ').toUpperCase())
                                                         ),
                                                         React.createElement('p', { className: "text-slate-500 text-sm mt-1" },
@@ -440,7 +440,7 @@
                                                     className: "text-slate-600 text-sm mt-3 line-clamp-2"
                                                 }, item.item_description),
                                                 item.additional_notes && React.createElement('div', {
-                                                    className: "mt-4 text-xs bg-white px-3 py-2 rounded-xl border border-slate-100 text-slate-500 italic"
+                                                    className: "mt-4 text-xs bg-white px-3 py-2 rounded border border-slate-100 text-slate-500 italic"
                                                 }, item.additional_notes)
                                             )
                                         )
@@ -448,7 +448,7 @@
                                 ),
 
                                 // Footer hint
-                                React.createElement('div', { className: "px-8 py-6 border-t text-xs text-slate-400 flex items-center justify-between bg-slate-50 rounded-b-3xl" },
+                                React.createElement('div', { className: "px-8 py-6 border-t text-xs text-slate-400 flex items-center justify-between bg-slate-50 rounded-b-md" },
                                     React.createElement('div', null, "\uD83D\uDCCC This data will be parsed automatically in the next phase"),
                                     React.createElement('div', { className: "flex items-center gap-1" },
                                         "Next \u2192 ",
