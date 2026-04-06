@@ -183,41 +183,17 @@
             }
 
             return React.createElement('div', { className: "max-w-7xl mx-auto" },
-                // Header
-                React.createElement('div', {
-                    className: "header-gradient text-white shadow-lg"
-                },
-                    React.createElement('div', { className: "px-8 py-6 flex items-center justify-between" },
-                        React.createElement('div', { className: "flex items-center gap-3" },
-                            React.createElement('div', {
-                                className: "w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center text-2xl font-bold"
-                            }, "\uD83E\uDE7A"),
-                            React.createElement('div', null,
-                                React.createElement('h1', { className: "text-3xl font-semibold tracking-tight" }, "MediProcure"),
-                                React.createElement('p', { className: "text-teal-100 text-sm -mt-1" }, "RFQ Entry Portal")
-                            )
-                        ),
-                        React.createElement('div', { className: "flex items-center gap-4" },
-                            React.createElement('div', { className: "text-right" },
-                                React.createElement('p', { className: "text-sm opacity-75" }, "Procurement Staff"),
-                                React.createElement('p', { className: "font-medium" }, "Sarah Chen")
-                            ),
-                            React.createElement('div', {
-                                className: "w-9 h-9 bg-white/30 rounded-2xl flex items-center justify-center text-xl"
-                            }, "\uD83D\uDC69\u200D\u2695\uFE0F")
-                        )
-                    )
-                ),
+                // Header removed - no auth/branding at this stage
 
                 React.createElement('div', { className: "px-8 py-8" },
                     React.createElement('div', { className: "flex justify-between items-end mb-8" },
                         React.createElement('div', null,
                             React.createElement('h2', {
                                 className: "text-4xl font-semibold text-slate-800 tracking-tight"
-                            }, "Add RFQ Item"),
+                            }, "New Request for Quote"),
                             React.createElement('p', {
                                 className: "text-slate-600 mt-1"
-                            }, "Manually enter item details from client Excel spreadsheets")
+                            }, "#RF000384721")
                         ),
                         React.createElement('div', { className: "flex gap-3" },
                             items.length > 0 && React.createElement('button', {
@@ -229,9 +205,9 @@
                             ),
                             React.createElement('button', {
                                 onClick: clearAllItems,
-                                className: "px-6 py-3 border border-red-300 hover:bg-red-50 text-red-700 rounded-2xl font-medium flex items-center gap-2"
+                                className: "px-6 py-3 bg-red-600 hover:bg-red-700 text-red-50 rounded-2xl font-medium"
                             },
-                                "\uD83D\uDDD1\uFE0F Clear All"
+                                "Delete"
                             )
                         )
                     ),
