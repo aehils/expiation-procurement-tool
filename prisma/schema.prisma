@@ -1,0 +1,65 @@
+// Prisma schema for the Expiation procurement tool.
+//
+// Notes on id vs rfqNumber on Rfq:
+//   `id` is an opaque cuid used internally (URLs, FK joins).
+//   `rfqNumber` is the human-facing reference staff quote in emails/printouts.
+//   Keeping both is the standard business-document pattern.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // Change to "postgresql" when migrating off SQLite. The schema is otherwise portable.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Rfq {
+  id        String   @id @default(cuid())
+  rfqNumber String   @unique
+  requester String
+  status    String   @default("draft") // draft | details | submitted
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items RfqItem[]
+}
+
+model RfqItem {
+  id    String @id @default(cuid())
+  rfqId String
+  rfq   Rfq    @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+
+  // First-stage fields (captured on the entry view)
+  itemCategory    String
+  department      String
+  itemName        String
+  itemDescription String?
+  requestQuantity Float
+  size            String?
+  specification   String?
+  brand           String?
+  model           String?
+  additionalNotes String?
+
+  // Second-stage fields (filled on the details view)
+  mProductCode           String?
+  unitQuantity           Float?
+  uom                    String?
+  manufacturerName       String?
+  vendor                 String?
+  vendorLocation         String?
+  productLink            String?
+  countryOfOrigin        String?
+  vendorDeliveryTimeline String?
+  originalCurrency       String?
+  ogUnitPrice            Float?
+  ogBoxPrice             Float?
+  nairaUnitPrice         Float?
+  boxPrice               Float?
+  nairaOverridden        Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
