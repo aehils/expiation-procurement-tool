@@ -8,10 +8,11 @@ export const dynamic = "force-dynamic";
 export default async function RfqDetailsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const rfq = await prisma.rfq.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { items: { orderBy: { createdAt: "asc" } } },
   });
 

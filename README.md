@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Expiation Procurement Tool
 
-## Getting Started
+Internal RFQ workflow tool for capturing quote requests, sourcing vendors, and
+finalizing pricing (with live FX conversion to NGN).
 
-First, run the development server:
+Stack: **Next.js 15** (App Router, TypeScript) · **Prisma** (SQLite locally,
+Postgres-ready) · **Tailwind v3** · shadcn-style UI primitives on top of Radix.
+
+## Getting started
 
 ```bash
+# 1. install dependencies
+npm install
+
+# 2. bootstrap your local env file (SQLite path for Prisma)
+cp .env.example .env
+
+# 3. apply migrations and generate the Prisma client
+npx prisma migrate dev
+
+# 4. run the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000> to use the tool. Entry point for a new RFQ is
+`/rfq/new`; the details view lives at `/rfq/{id}/details`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+prisma/            # schema + migrations
+src/
+  app/             # App Router pages and the /api/rate route
+  components/
+    rfq/           # entry-view, details-view, item-detail-form
+    ui/            # button, input, select, accordion, etc.
+  lib/             # db client, server actions, zod schemas, constants, rates
+legacy/
+  index.html       # original single-file React-via-CDN prototype (kept for reference)
+```
 
-## Learn More
+## Environment
 
-To learn more about Next.js, take a look at the following resources:
+The only required variable is `DATABASE_URL`. For local SQLite the value is
+`"file:./dev.db"` (resolved relative to `prisma/`). `.env` and `prisma/dev.db`
+are intentionally gitignored.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+When moving to Postgres later, change `provider` in `prisma/schema.prisma` and
+point `DATABASE_URL` at the new server — nothing else in the schema has to
+change.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` — Next.js dev server
+- `npm run build` — production build
+- `npm run start` — serve a built app
+- `npm run lint` — Next.js / ESLint check
+- `npx prisma studio` — browse the local database in the browser
