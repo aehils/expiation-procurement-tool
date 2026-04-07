@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CATEGORIES, DEPARTMENTS, categoryLabel, departmentLabel } from "@/lib/constants";
-import { createRfq } from "@/lib/actions";
+import { finalizeDraftRfq } from "@/lib/actions";
 import type { EntryItem } from "@/lib/schemas";
 
 type DraftItem = EntryItem & { tempId: string };
@@ -34,7 +34,12 @@ const emptyForm: EntryItem = {
   additionalNotes: "",
 };
 
-export function EntryView() {
+type EntryViewProps = {
+  draftId: string;
+  rfqNumber: string;
+};
+
+export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
   const router = useRouter();
   const [requester, setRequester] = React.useState("");
   const [items, setItems] = React.useState<DraftItem[]>([]);
@@ -108,7 +113,7 @@ export function EntryView() {
     }
     setSubmitting(true);
     try {
-      const { id } = await createRfq({
+      const { id } = await finalizeDraftRfq(draftId, {
         requester: requester.trim(),
         items: items.map((it) => {
           const { tempId, ...rest } = it;
@@ -128,10 +133,15 @@ export function EntryView() {
     <div className="max-w-7xl mx-auto px-8 py-8">
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h2 className="text-4xl font-semibold text-slate-800 tracking-tight">
-            New Request for Quote
-          </h2>
-          <p className="text-slate-600 mt-1">Draft</p>
+          <div className="flex items-center gap-3">
+            <h2 className="text-4xl font-semibold text-slate-800 tracking-tight">
+              New Request for Quote
+            </h2>
+            <span className="px-2.5 py-1 text-xs font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+              Draft
+            </span>
+          </div>
+          <p className="text-slate-600 mt-1">#{rfqNumber}</p>
         </div>
         <div className="relative" ref={menuRef}>
           <button
