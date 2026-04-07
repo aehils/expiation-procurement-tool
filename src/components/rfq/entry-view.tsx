@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,8 +91,23 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
   }
 
   function handleDelete(tempId: string) {
-    if (!confirm("Delete this item from the RFQ?")) return;
+    if (!confirm("Remove this item from the RFQ?")) return;
     setItems((prev) => prev.filter((it) => it.tempId !== tempId));
+  }
+
+  function handleEdit(tempId: string) {
+    const target = items.find((it) => it.tempId === tempId);
+    if (!target) return;
+    const { tempId: _omit, ...rest } = target;
+    void _omit;
+    setForm(rest);
+    setQuantityRaw(
+      target.requestQuantity ? String(target.requestQuantity) : "",
+    );
+    setItems((prev) => prev.filter((it) => it.tempId !== tempId));
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   function clearAllItems() {
@@ -334,47 +348,72 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
                   {items.map((item) => (
                     <div
                       key={item.tempId}
-                      className="bg-slate-50 border border-slate-200 rounded p-5 hover:shadow-md transition-shadow"
+                      className="bg-slate-50 border border-slate-200 rounded p-4 hover:shadow-md transition-shadow"
                     >
-                      <div className="flex justify-between items-start">
+                      <div className="font-semibold text-sm text-slate-800 break-words">
+                        {item.itemName}
+                      </div>
+                      <div className="mt-1.5">
+                        <span className="inline-block px-2 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
+                          {categoryLabel(item.itemCategory)}
+                        </span>
+                      </div>
+                      <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                         <div>
-                          <div className="flex items-center gap-3">
-                            <div className="font-semibold text-lg">{item.itemName}</div>
-                            <span className="px-3 py-px text-xs font-medium bg-teal-100 text-teal-700 rounded uppercase">
-                              {categoryLabel(item.itemCategory)}
-                            </span>
-                          </div>
-                          <p className="text-slate-500 text-sm mt-1">
-                            {departmentLabel(item.department)} • Qty:{" "}
-                            {item.requestQuantity}
-                            {item.size ? ` • ${item.size}` : ""}
-                          </p>
-                          {item.brand && (
-                            <p className="text-sm text-slate-600 mt-2">
-                              {item.brand}
-                              {item.model ? ` • Model ${item.model}` : ""}
-                            </p>
-                          )}
+                          <dt className="text-slate-400">Department</dt>
+                          <dd className="text-slate-700">
+                            {departmentLabel(item.department)}
+                          </dd>
                         </div>
+                        <div>
+                          <dt className="text-slate-400">Quantity</dt>
+                          <dd className="text-slate-700">
+                            {item.requestQuantity}
+                          </dd>
+                        </div>
+                        {item.size && (
+                          <div>
+                            <dt className="text-slate-400">Size</dt>
+                            <dd className="text-slate-700">{item.size}</dd>
+                          </div>
+                        )}
+                        {item.brand && (
+                          <div>
+                            <dt className="text-slate-400">Brand</dt>
+                            <dd className="text-slate-700">{item.brand}</dd>
+                          </div>
+                        )}
+                        {item.model && (
+                          <div>
+                            <dt className="text-slate-400">Model</dt>
+                            <dd className="text-slate-700">{item.model}</dd>
+                          </div>
+                        )}
+                        {item.specification && (
+                          <div className="col-span-2">
+                            <dt className="text-slate-400">Spec</dt>
+                            <dd className="text-slate-700 line-clamp-1">
+                              {item.specification}
+                            </dd>
+                          </div>
+                        )}
+                      </dl>
+                      <div className="mt-3 pt-2 border-t border-slate-200 flex justify-end gap-4">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(item.tempId)}
+                          className="text-xs text-slate-500 hover:text-slate-800"
+                        >
+                          Edit
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(item.tempId)}
-                          className="text-red-400 hover:text-red-600"
-                          aria-label="Delete item"
+                          className="text-xs text-slate-500 hover:text-red-600"
                         >
-                          <X className="h-5 w-5" />
+                          Remove
                         </button>
                       </div>
-                      {item.itemDescription && (
-                        <p className="text-slate-600 text-sm mt-3 line-clamp-2">
-                          {item.itemDescription}
-                        </p>
-                      )}
-                      {item.additionalNotes && (
-                        <div className="mt-4 text-xs bg-white px-3 py-2 rounded border border-slate-100 text-slate-500 italic">
-                          {item.additionalNotes}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
