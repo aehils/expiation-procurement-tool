@@ -67,6 +67,20 @@
             // List of added items
             const [items, setItems] = React.useState([])
 
+            // RFQ actions menu
+            const [menuOpen, setMenuOpen] = React.useState(false)
+            const menuRef = React.useRef(null)
+
+            React.useEffect(() => {
+                const handleClickOutside = (e) => {
+                    if (menuRef.current && !menuRef.current.contains(e.target)) {
+                        setMenuOpen(false)
+                    }
+                }
+                document.addEventListener('mousedown', handleClickOutside)
+                return () => document.removeEventListener('mousedown', handleClickOutside)
+            }, [])
+
             // Categories and Departments (realistic for medical procurement)
             const categories = [
                 { value: 'surgical-instruments', label: 'Surgical Instruments' },
@@ -205,19 +219,23 @@
                                 className: "text-slate-600 mt-1"
                             }, "#RF000384721")
                         ),
-                        React.createElement('div', { className: "flex gap-3" },
-                            items.length > 0 && React.createElement('button', {
-                                onClick: exportRFQ,
-                                className: "px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded font-medium flex items-center gap-2 shadow-sm"
-                            },
-                                React.createElement('span', null, "\uD83D\uDCBE"),
-                                React.createElement('span', null, "Export RFQ JSON")
-                            ),
+                        React.createElement('div', { className: "relative", ref: menuRef },
                             React.createElement('button', {
-                                onClick: clearAllItems,
-                                className: "px-6 py-3 bg-red-600 hover:bg-red-700 text-red-50 rounded font-medium"
+                                onClick: () => setMenuOpen(o => !o),
+                                'aria-label': "RFQ options",
+                                className: "w-10 h-10 flex items-center justify-center rounded hover:bg-slate-200 text-slate-700 text-2xl leading-none"
+                            }, "\u22EE"),
+                            menuOpen && React.createElement('div', {
+                                className: "absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg z-10 py-1"
                             },
-                                "Delete"
+                                React.createElement('button', {
+                                    onClick: () => { setMenuOpen(false); exportRFQ() },
+                                    className: "w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                                }, "Save RFQ"),
+                                React.createElement('button', {
+                                    onClick: () => { setMenuOpen(false); clearAllItems() },
+                                    className: "w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                }, "Delete RFQ")
                             )
                         )
                     ),
