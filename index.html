@@ -31,9 +31,19 @@
         .header-gradient {
             background: linear-gradient(90deg, #0f766e, #134e4a);
         }
+
+        /* Hide number input steppers */
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
     </style>
 </head>
-<body class="bg-slate-50 font-sans">
+<body class="bg-slate-200 font-sans">
     <div id="root" class="min-h-screen"></div>
 
     <script type="text/babel">
@@ -56,6 +66,20 @@
 
             // List of added items
             const [items, setItems] = React.useState([])
+
+            // RFQ actions menu
+            const [menuOpen, setMenuOpen] = React.useState(false)
+            const menuRef = React.useRef(null)
+
+            React.useEffect(() => {
+                const handleClickOutside = (e) => {
+                    if (menuRef.current && !menuRef.current.contains(e.target)) {
+                        setMenuOpen(false)
+                    }
+                }
+                document.addEventListener('mousedown', handleClickOutside)
+                return () => document.removeEventListener('mousedown', handleClickOutside)
+            }, [])
 
             // Categories and Departments (realistic for medical procurement)
             const categories = [
@@ -129,7 +153,7 @@
 
                 // Show success feedback
                 const toast = document.createElement('div')
-                toast.className = 'fixed bottom-6 right-6 bg-teal-700 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-2'
+                toast.className = 'fixed bottom-6 right-6 bg-teal-700 text-white px-6 py-3 rounded shadow-xl flex items-center gap-2'
                 toast.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7" />
@@ -183,55 +207,35 @@
             }
 
             return React.createElement('div', { className: "max-w-7xl mx-auto" },
-                // Header
-                React.createElement('div', {
-                    className: "header-gradient text-white shadow-lg"
-                },
-                    React.createElement('div', { className: "px-8 py-6 flex items-center justify-between" },
-                        React.createElement('div', { className: "flex items-center gap-3" },
-                            React.createElement('div', {
-                                className: "w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center text-2xl font-bold"
-                            }, "\uD83E\uDE7A"),
-                            React.createElement('div', null,
-                                React.createElement('h1', { className: "text-3xl font-semibold tracking-tight" }, "MediProcure"),
-                                React.createElement('p', { className: "text-teal-100 text-sm -mt-1" }, "RFQ Entry Portal")
-                            )
-                        ),
-                        React.createElement('div', { className: "flex items-center gap-4" },
-                            React.createElement('div', { className: "text-right" },
-                                React.createElement('p', { className: "text-sm opacity-75" }, "Procurement Staff"),
-                                React.createElement('p', { className: "font-medium" }, "Sarah Chen")
-                            ),
-                            React.createElement('div', {
-                                className: "w-9 h-9 bg-white/30 rounded-2xl flex items-center justify-center text-xl"
-                            }, "\uD83D\uDC69\u200D\u2695\uFE0F")
-                        )
-                    )
-                ),
+                // Header removed - no auth/branding at this stage
 
                 React.createElement('div', { className: "px-8 py-8" },
-                    React.createElement('div', { className: "flex justify-between items-end mb-8" },
+                    React.createElement('div', { className: "flex justify-between items-start mb-8" },
                         React.createElement('div', null,
                             React.createElement('h2', {
                                 className: "text-4xl font-semibold text-slate-800 tracking-tight"
-                            }, "Add RFQ Item"),
+                            }, "New Request for Quote"),
                             React.createElement('p', {
                                 className: "text-slate-600 mt-1"
-                            }, "Manually enter item details from client Excel spreadsheets")
+                            }, "#RF000384721")
                         ),
-                        React.createElement('div', { className: "flex gap-3" },
-                            items.length > 0 && React.createElement('button', {
-                                onClick: exportRFQ,
-                                className: "px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded-2xl font-medium flex items-center gap-2 shadow-sm"
-                            },
-                                React.createElement('span', null, "\uD83D\uDCBE"),
-                                React.createElement('span', null, "Export RFQ JSON")
-                            ),
+                        React.createElement('div', { className: "relative", ref: menuRef },
                             React.createElement('button', {
-                                onClick: clearAllItems,
-                                className: "px-6 py-3 border border-red-300 hover:bg-red-50 text-red-700 rounded-2xl font-medium flex items-center gap-2"
+                                onClick: () => setMenuOpen(o => !o),
+                                'aria-label': "RFQ options",
+                                className: "w-11 h-11 flex items-center justify-center rounded hover:bg-slate-200 text-slate-900 text-4xl leading-none font-black"
+                            }, "\u22EE"),
+                            menuOpen && React.createElement('div', {
+                                className: "absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg z-10 py-1"
                             },
-                                "\uD83D\uDDD1\uFE0F Clear All"
+                                React.createElement('button', {
+                                    onClick: () => { setMenuOpen(false); exportRFQ() },
+                                    className: "w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                                }, "Save RFQ"),
+                                React.createElement('button', {
+                                    onClick: () => { setMenuOpen(false); clearAllItems() },
+                                    className: "w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                }, "Delete RFQ")
                             )
                         )
                     ),
@@ -240,12 +244,11 @@
                     React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-12 gap-8" },
 
                         // Form
-                        React.createElement('div', { className: "lg:col-span-7 bg-white rounded-3xl shadow-xl p-8 border border-slate-100" },
+                        React.createElement('div', { className: "lg:col-span-7 bg-white rounded-md shadow-xl p-8 border border-slate-100" },
                             React.createElement('form', { onSubmit: handleAddItem, className: "space-y-8" },
 
-                                // Row 1
+                                // Row 1: Category, Department, Quantity
                                 React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
-                                    // Category
                                     React.createElement('div', null,
                                         React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Item Category *"),
                                         React.createElement('select', {
@@ -253,9 +256,9 @@
                                             value: formData.item_category,
                                             onChange: handleChange,
                                             required: true,
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         },
-                                            React.createElement('option', { value: "" }, "Select category..."),
+                                            React.createElement('option', { value: "" }, "Select"),
                                             categories.map(cat =>
                                                 React.createElement('option', {
                                                     key: cat.value,
@@ -264,7 +267,6 @@
                                             )
                                         )
                                     ),
-                                    // Department
                                     React.createElement('div', null,
                                         React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Department *"),
                                         React.createElement('select', {
@@ -272,9 +274,9 @@
                                             value: formData.department,
                                             onChange: handleChange,
                                             required: true,
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         },
-                                            React.createElement('option', { value: "" }, "Select department..."),
+                                            React.createElement('option', { value: "" }, "Select"),
                                             departments.map(dep =>
                                                 React.createElement('option', {
                                                     key: dep.value,
@@ -283,7 +285,6 @@
                                             )
                                         )
                                     ),
-                                    // Quantity
                                     React.createElement('div', null,
                                         React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Request Quantity *"),
                                         React.createElement('input', {
@@ -293,25 +294,27 @@
                                             onChange: handleChange,
                                             required: true,
                                             min: "1",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
                                     )
                                 ),
 
-                                // Row 2
-                                React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
-                                    React.createElement('div', null,
-                                        React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Item Name *"),
-                                        React.createElement('input', {
-                                            type: "text",
-                                            name: "item_name",
-                                            value: formData.item_name,
-                                            onChange: handleChange,
-                                            required: true,
-                                            placeholder: "e.g. Sterile Surgical Gloves",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
-                                        })
-                                    ),
+                                // Row 2: Item Name (full width)
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Item Name *"),
+                                    React.createElement('input', {
+                                        type: "text",
+                                        name: "item_name",
+                                        value: formData.item_name,
+                                        onChange: handleChange,
+                                        required: true,
+                                        placeholder: "",
+                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
+                                    })
+                                ),
+
+                                // Row 3: Brand, Model, Size
+                                React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
                                     React.createElement('div', null,
                                         React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Brand"),
                                         React.createElement('input', {
@@ -319,14 +322,10 @@
                                             name: "brand",
                                             value: formData.brand,
                                             onChange: handleChange,
-                                            placeholder: "e.g. Medline, 3M, BD",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            placeholder: "",
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
-                                    )
-                                ),
-
-                                // Row 3
-                                React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
+                                    ),
                                     React.createElement('div', null,
                                         React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Model"),
                                         React.createElement('input', {
@@ -334,8 +333,8 @@
                                             name: "model",
                                             value: formData.model,
                                             onChange: handleChange,
-                                            placeholder: "e.g. GL-500X",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            placeholder: "",
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
                                     ),
                                     React.createElement('div', null,
@@ -345,24 +344,26 @@
                                             name: "size",
                                             value: formData.size,
                                             onChange: handleChange,
-                                            placeholder: "e.g. Medium, 10ml, 5 French",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
-                                        })
-                                    ),
-                                    React.createElement('div', null,
-                                        React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Specification"),
-                                        React.createElement('input', {
-                                            type: "text",
-                                            name: "specification",
-                                            value: formData.specification,
-                                            onChange: handleChange,
-                                            placeholder: "e.g. Powder-free, latex-free",
-                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded-2xl focus:outline-none text-slate-800"
+                                            placeholder: "",
+                                            className: "form-input w-full px-4 py-4 border border-slate-300 rounded focus:outline-none text-slate-800"
                                         })
                                     )
                                 ),
 
-                                // Description
+                                // Specification (larger textarea)
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Specification"),
+                                    React.createElement('textarea', {
+                                        name: "specification",
+                                        value: formData.specification,
+                                        onChange: handleChange,
+                                        rows: 3,
+                                        placeholder: "",
+                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded-md focus:outline-none text-slate-800 resize-none"
+                                    })
+                                ),
+
+                                // Item Description
                                 React.createElement('div', null,
                                     React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Item Description"),
                                     React.createElement('textarea', {
@@ -370,12 +371,12 @@
                                         value: formData.item_description,
                                         onChange: handleChange,
                                         rows: 3,
-                                        placeholder: "Detailed description of the item as it appears in the client RFQ...",
-                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded-3xl focus:outline-none text-slate-800 resize-none"
+                                        placeholder: "",
+                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded-md focus:outline-none text-slate-800 resize-none"
                                     })
                                 ),
 
-                                // Notes
+                                // Additional Notes
                                 React.createElement('div', null,
                                     React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-2" }, "Additional Notes"),
                                     React.createElement('textarea', {
@@ -383,8 +384,8 @@
                                         value: formData.additional_notes,
                                         onChange: handleChange,
                                         rows: 2,
-                                        placeholder: "Any special requirements, urgency, preferred supplier, etc.",
-                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded-3xl focus:outline-none text-slate-800 resize-none"
+                                        placeholder: "",
+                                        className: "form-input w-full px-4 py-4 border border-slate-300 rounded-md focus:outline-none text-slate-800 resize-none"
                                     })
                                 ),
 
@@ -392,10 +393,10 @@
                                 React.createElement('div', { className: "flex gap-4 pt-4" },
                                     React.createElement('button', {
                                         type: "submit",
-                                        className: "flex-1 bg-teal-700 hover:bg-teal-800 text-white font-semibold py-5 rounded-3xl text-lg flex items-center justify-center gap-3 shadow-lg shadow-teal-500/30"
+                                        style: { backgroundColor: "#276e79" },
+                                        className: "flex-1 hover:opacity-90 text-white font-semibold py-5 rounded-md text-lg flex items-center justify-center shadow-sm"
                                     },
-                                        React.createElement('span', { className: "text-2xl" }, "\u2795"),
-                                        "Add Item to RFQ"
+                                        "Submit"
                                     ),
                                     React.createElement('button', {
                                         type: "button",
@@ -406,7 +407,7 @@
                                                 model: '', additional_notes: ''
                                             })
                                         },
-                                        className: "px-10 border-2 border-slate-300 hover:bg-slate-100 font-medium rounded-3xl"
+                                        className: "px-10 border-2 border-slate-300 hover:bg-slate-100 font-medium rounded-md"
                                     }, "Clear Form")
                                 )
                             )
@@ -414,14 +415,10 @@
 
                         // Live Preview / Added Items
                         React.createElement('div', { className: "lg:col-span-5" },
-                            React.createElement('div', { className: "bg-white rounded-3xl shadow-xl border border-slate-100 h-full flex flex-col" },
-                                React.createElement('div', { className: "px-8 pt-8 pb-4 border-b flex items-center justify-between" },
-                                    React.createElement('h3', { className: "font-semibold text-xl text-slate-800" },
-                                        `Added Items (${items.length})`
-                                    ),
-                                    items.length > 0 && React.createElement('span', {
-                                        className: "px-4 py-1.5 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-2xl"
-                                    }, "Ready for quote processing")
+                            React.createElement('div', { className: "bg-white rounded-md shadow-xl border border-slate-100 h-full flex flex-col" },
+                                React.createElement('div', { className: "px-8 pt-8 pb-4 flex items-center justify-between" },
+                                    React.createElement('h3', { className: "font-semibold text-xl text-slate-800" }, "Added"),
+                                    React.createElement('span', { className: "text-sm text-slate-400" }, `${items.length} Items`)
                                 ),
 
                                 // Items list
@@ -430,22 +427,21 @@
                                     ? React.createElement('div', {
                                         className: "h-full flex flex-col items-center justify-center text-center text-slate-400"
                                       },
-                                        React.createElement('div', { className: "text-6xl mb-6 opacity-30" }, "\uD83D\uDCCB"),
                                         React.createElement('p', { className: "text-xl font-medium" }, "No items added yet"),
-                                        React.createElement('p', { className: "mt-2 max-w-xs" }, "Fill the form on the left and click \u201CAdd Item to RFQ\u201D to get started.")
+                                        React.createElement('p', { className: "mt-2" }, "Add Item to RFQ")
                                       )
                                     : React.createElement('div', { className: "space-y-4" },
                                         items.map(item =>
                                             React.createElement('div', {
                                                 key: item.id,
-                                                className: "bg-slate-50 border border-slate-200 rounded-2xl p-5 table-row hover:shadow-md"
+                                                className: "bg-slate-50 border border-slate-200 rounded p-5 table-row hover:shadow-md"
                                             },
                                                 React.createElement('div', { className: "flex justify-between items-start" },
                                                     React.createElement('div', null,
                                                         React.createElement('div', { className: "flex items-center gap-3" },
                                                             React.createElement('div', { className: "font-semibold text-lg" }, item.item_name),
                                                             React.createElement('span', {
-                                                                className: "px-3 py-px text-xs font-medium bg-teal-100 text-teal-700 rounded-xl"
+                                                                className: "px-3 py-px text-xs font-medium bg-teal-100 text-teal-700 rounded"
                                                             }, item.item_category.replace('-', ' ').toUpperCase())
                                                         ),
                                                         React.createElement('p', { className: "text-slate-500 text-sm mt-1" },
@@ -464,20 +460,19 @@
                                                     className: "text-slate-600 text-sm mt-3 line-clamp-2"
                                                 }, item.item_description),
                                                 item.additional_notes && React.createElement('div', {
-                                                    className: "mt-4 text-xs bg-white px-3 py-2 rounded-xl border border-slate-100 text-slate-500 italic"
+                                                    className: "mt-4 text-xs bg-white px-3 py-2 rounded border border-slate-100 text-slate-500 italic"
                                                 }, item.additional_notes)
                                             )
                                         )
                                     )
                                 ),
 
-                                // Footer hint
-                                React.createElement('div', { className: "px-8 py-6 border-t text-xs text-slate-400 flex items-center justify-between bg-slate-50 rounded-b-3xl" },
-                                    React.createElement('div', null, "\uD83D\uDCCC This data will be parsed automatically in the next phase"),
-                                    React.createElement('div', { className: "flex items-center gap-1" },
-                                        "Next \u2192 ",
-                                        React.createElement('span', { className: "font-medium text-teal-700" }, "Auto-extract from Excel")
-                                    )
+                                // Proceed button
+                                items.length > 0 && React.createElement('div', { className: "px-8 pb-8 pt-4" },
+                                    React.createElement('button', {
+                                        style: { backgroundColor: "#274579" },
+                                        className: "w-full hover:opacity-90 text-white font-semibold py-5 rounded-md text-lg shadow-sm"
+                                    }, "Proceed with RFQ")
                                 )
                             )
                         )
