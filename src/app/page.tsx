@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const recentRfqs = await prisma.rfq.findMany({
+    where: { status: { not: "draft" } },
     orderBy: { createdAt: "desc" },
     take: 5,
     include: { _count: { select: { items: true } } },

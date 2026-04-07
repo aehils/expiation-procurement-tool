@@ -21,50 +21,73 @@ function generateRfqNumber(): string {
   return `RFQ-${yyyy}${mm}${dd}-${rfqSuffix()}`;
 }
 
-export async function createRfq(input: CreateRfqInput): Promise<{ id: string; rfqNumber: string }> {
-  const parsed = createRfqSchema.parse(input);
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: string }).code === "P2002"
+  );
+}
 
-  // Retry the unique rfqNumber a couple of times in the unlikely case of a collision.
+// Creates an empty draft RFQ so we can show the user the allocated rfqNumber
+// the moment they open the entry view. finalizeDraftRfq later fills in the
+// requester + items and flips the status to "details".
+export async function createDraftRfq(): Promise<{ id: string; rfqNumber: string }> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const rfqNumber = generateRfqNumber();
     try {
       const created = await prisma.rfq.create({
         data: {
           rfqNumber,
-          requester: parsed.requester,
-          status: "details",
-          items: {
-            create: parsed.items.map((item) => ({
-              itemCategory: item.itemCategory,
-              department: item.department,
-              itemName: item.itemName,
-              itemDescription: item.itemDescription || null,
-              requestQuantity: item.requestQuantity,
-              size: item.size || null,
-              specification: item.specification || null,
-              brand: item.brand || null,
-              model: item.model || null,
-              additionalNotes: item.additionalNotes || null,
-            })),
-          },
+          requester: "",
+          status: "draft",
         },
       });
-      revalidatePath("/");
       return { id: created.id, rfqNumber: created.rfqNumber };
     } catch (err) {
-      // P2002 = unique constraint violation; retry with a fresh suffix.
-      if (
-        typeof err === "object" &&
-        err !== null &&
-        "code" in err &&
-        (err as { code: string }).code === "P2002"
-      ) {
-        continue;
-      }
+      if (isUniqueViolation(err)) continue;
       throw err;
     }
   }
   throw new Error("Failed to allocate a unique RFQ number after 5 attempts");
+}
+
+export async function finalizeDraftRfq(
+  rfqId: string,
+  input: CreateRfqInput,
+): Promise<{ id: string; rfqNumber: string }> {
+  const parsed = createRfqSchema.parse(input);
+
+  const existing = await prisma.rfq.findUnique({ where: { id: rfqId } });
+  if (!existing) throw new Error("Draft RFQ not found");
+  if (existing.status !== "draft") {
+    throw new Error("RFQ has already been finalized");
+  }
+
+  const updated = await prisma.rfq.update({
+    where: { id: rfqId },
+    data: {
+      requester: parsed.requester,
+      status: "details",
+      items: {
+        create: parsed.items.map((item) => ({
+          itemCategory: item.itemCategory,
+          department: item.department,
+          itemName: item.itemName,
+          itemDescription: item.itemDescription || null,
+          requestQuantity: item.requestQuantity,
+          size: item.size || null,
+          specification: item.specification || null,
+          brand: item.brand || null,
+          model: item.model || null,
+          additionalNotes: item.additionalNotes || null,
+        })),
+      },
+    },
+  });
+  revalidatePath("/");
+  return { id: updated.id, rfqNumber: updated.rfqNumber };
 }
 
 export async function updateRfqItem(
