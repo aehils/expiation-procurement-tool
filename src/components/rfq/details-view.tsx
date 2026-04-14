@@ -264,32 +264,34 @@ export function DetailsView({
         </div>
       </nav>
 
-      <CurrencyBanner
-        rates={rates}
-        freshness={bannerFreshness}
-        onRefresh={refreshBannerRates}
-      />
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 mb-8 px-1">
+        <dl className="flex flex-wrap gap-x-10 gap-y-3">
+          <div>
+            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              Date Created
+            </dt>
+            <dd className="mt-0.5 text-sm font-medium text-slate-700 tabular-nums">
+              {formatCreatedAt(rfq.createdAt)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              Requester
+            </dt>
+            <dd className="mt-0.5 text-sm font-medium text-slate-700">
+              {rfq.requester}
+            </dd>
+          </div>
+        </dl>
 
-      <dl className="flex flex-wrap gap-x-10 gap-y-3 mb-6 px-1">
-        <div>
-          <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-            Date Created
-          </dt>
-          <dd className="mt-0.5 text-sm font-medium text-slate-700 tabular-nums">
-            {formatCreatedAt(rfq.createdAt)}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-            Requester
-          </dt>
-          <dd className="mt-0.5 text-sm font-medium text-slate-700">
-            {rfq.requester}
-          </dd>
-        </div>
-      </dl>
+        <CurrencyBanner
+          rates={rates}
+          freshness={bannerFreshness}
+          onRefresh={refreshBannerRates}
+        />
+      </div>
 
-      <h3 className="mb-3 pl-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      <h3 className="mb-4 pl-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
         Items
       </h3>
 
@@ -365,7 +367,7 @@ function CurrencyBanner({
   onRefresh: () => void;
 }) {
   return (
-    <div className="mb-6 flex w-fit flex-wrap items-center gap-x-4 gap-y-1.5 rounded-md bg-slate-50/50 px-2.5 py-1.5">
+    <div className="flex w-fit flex-wrap items-center gap-x-4 gap-y-1.5 rounded-md bg-slate-50/50 px-2.5 py-1.5">
       <button
         type="button"
         onClick={onRefresh}
