@@ -12,6 +12,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { categoryLabel, departmentLabel, TOTAL_DETAIL_FIELDS } from "@/lib/constants";
 import { submitRfq } from "@/lib/actions";
 import { ItemDetailForm, type DetailsItemPayload } from "./item-detail-form";
@@ -51,15 +53,6 @@ function countFilled(item: DetailsItemPayload): number {
     if (typeof v === "number" && Number.isNaN(v)) return acc;
     return acc + 1;
   }, 0);
-}
-
-function formatCreatedAt(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function relativeTime(iso: string): string {
@@ -202,8 +195,8 @@ export function DetailsView({
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-6">
-      {/* Top area — mirrors step 1 (entry view) */}
+    <div className="max-w-7xl mx-auto px-4 py-4">
+      {/* Top area — matches step 1 (entry view) so moving between pages feels static */}
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
           Request for Quote
@@ -231,7 +224,6 @@ export function DetailsView({
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
           </svg>
         </button>
-
         {rfq.status === "submitted" ? (
           <span className="px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
             Submitted
@@ -241,6 +233,17 @@ export function DetailsView({
             Draft
           </span>
         )}
+        {/* Visual-only placeholder to keep the dot-menu slot aligned with step 1;
+            actions will be wired up later. */}
+        <div className="relative">
+          <button
+            type="button"
+            aria-label="RFQ options"
+            className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-200 text-slate-900 text-xl leading-none font-black"
+          >
+            ⋮
+          </button>
+        </div>
 
         <Link href={`/rfq/${rfq.id}/edit`} className="ml-auto">
           <Button
@@ -254,31 +257,32 @@ export function DetailsView({
         </Link>
       </div>
 
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 mb-8 px-1">
-        <dl className="flex flex-wrap gap-x-10 gap-y-3">
-          <div>
-            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-              Date Created
-            </dt>
-            <dd className="mt-0.5 text-sm font-medium text-slate-700 tabular-nums">
-              {formatCreatedAt(rfq.createdAt)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+      {/* Requester row (mirrors step 1 exactly) with the currency banner inline beside it */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+        <div className="lg:col-span-7">
+          <div className="flex items-center gap-3 px-1 max-w-[70%]">
+            <Label
+              htmlFor="requester"
+              className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+              style={{ color: "#274579" }}
+            >
               Requester
-            </dt>
-            <dd className="mt-0.5 text-sm font-medium text-slate-700">
-              {rfq.requester}
-            </dd>
+            </Label>
+            <Input
+              id="requester"
+              value={rfq.requester}
+              readOnly
+              className="h-8 text-xs flex-1 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+            />
           </div>
-        </dl>
-
-        <CurrencyBanner
-          rates={rates}
-          freshness={bannerFreshness}
-          onRefresh={refreshBannerRates}
-        />
+        </div>
+        <div className="lg:col-span-5 flex items-center">
+          <CurrencyBanner
+            rates={rates}
+            freshness={bannerFreshness}
+            onRefresh={refreshBannerRates}
+          />
+        </div>
       </div>
 
       <h3 className="mb-4 pl-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
