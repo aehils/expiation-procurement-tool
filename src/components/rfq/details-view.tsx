@@ -254,16 +254,6 @@ export function DetailsView({
         </div>
       </nav>
 
-      <div className="mb-4">
-        <h1 className="text-3xl font-semibold text-slate-800 tracking-tight">
-          RFQ Details
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Requester: {rfq.requester} · Fill in vendor, pricing, and sourcing
-          info for each item. Progress auto-saves on blur.
-        </p>
-      </div>
-
       <CurrencyBanner
         rates={rates}
         freshness={bannerFreshness}
