@@ -300,7 +300,7 @@ export function DetailsView({
         collapsible
         value={expanded}
         onValueChange={(v) => setExpanded(v || undefined)}
-        className="space-y-3"
+        className="space-y-2"
       >
         {items.map((item, index) => {
           const filled = countFilled(item);
@@ -308,26 +308,26 @@ export function DetailsView({
           return (
             <AccordionItem key={item.id} value={item.id}>
               <AccordionTrigger>
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="text-sm font-medium text-muted-foreground tabular-nums shrink-0 w-6 text-center">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 w-5 text-center">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-base text-slate-800 truncate">
+                    <div className="font-semibold text-sm text-slate-800 truncate">
                       {item.itemName}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
                       {categoryLabel(item.itemCategory)} •{" "}
                       {departmentLabel(item.department)} • Qty:{" "}
                       {item.requestQuantity}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-xs text-muted-foreground tabular-nums">
+                    <div className="text-[11px] text-muted-foreground tabular-nums">
                       {filled} / {TOTAL_DETAIL_FIELDS}
                     </div>
                     <div
-                      className={`w-2.5 h-2.5 rounded-full ${
+                      className={`w-2 h-2 rounded-full ${
                         complete ? "bg-teal-600" : "bg-slate-300"
                       }`}
                     />
