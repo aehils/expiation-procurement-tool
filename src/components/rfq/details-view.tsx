@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, RefreshCw, AlertTriangle, Coins } from "lucide-react";
+import { ArrowLeft, RefreshCw, Coins } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -301,8 +301,8 @@ export function DetailsView({
   );
 }
 
-// Compact pill in the sticky header: a coins glyph bound to a refresh button,
-// with a quiet "updated X ago" beside it. Heavy rate data moved to CurrencyBanner.
+// Compact pill in the sticky header: a coins glyph, a refresh button, and the
+// "updated X ago" label all bound into a single non-obtrusive container.
 function RateRefresh({
   info,
   onRefresh,
@@ -311,85 +311,50 @@ function RateRefresh({
   onRefresh: () => void;
 }) {
   return (
-    <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
-      <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 overflow-hidden">
-        <span
-          className="flex items-center justify-center pl-2 pr-1 text-slate-500"
-          aria-hidden="true"
-        >
-          <Coins className="h-3.5 w-3.5" />
-        </span>
-        <button
-          type="button"
-          onClick={onRefresh}
-          className="flex items-center justify-center pl-1 pr-2 py-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-          aria-label="Refresh currency rates"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </button>
-      </div>
-      <span className="tabular-nums">
+    <div className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 pl-2 pr-1 py-1 text-xs text-slate-600">
+      <Coins className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
+      <span className="tabular-nums text-slate-500">
         {info ? `updated ${relativeTime(info)}` : "updating…"}
       </span>
+      <button
+        type="button"
+        onClick={onRefresh}
+        className="flex items-center justify-center h-5 w-5 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-200"
+        aria-label="Refresh currency rates"
+      >
+        <RefreshCw className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }
 
-// Financial-style banner: a row of currency tiles showing the live NGN
-// conversion for each of the currencies our buyers transact in.
+// Subtle strip of currency → Naira conversions. Intentionally minimal: just
+// the symbol and the price — no headings, no descriptions.
 function CurrencyBanner({ rates }: { rates: Record<string, RateInfo> }) {
-  const anyError = BANNER_CURRENCIES.some((c) => rates[c.code]?.error);
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2 px-0.5">
-        <div className="text-xs font-medium uppercase tracking-wider text-slate-500">
-          Live FX · per ₦aira
-        </div>
-        {anyError && (
-          <div className="flex items-center gap-1 text-xs text-amber-700">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            Some rates couldn&apos;t be fetched
+    <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-slate-200 bg-slate-50/60 px-4 py-2.5">
+      {BANNER_CURRENCIES.map((c) => {
+        const info = rates[c.code];
+        return (
+          <div key={c.code} className="flex items-baseline gap-1.5 tabular-nums">
+            <span className="text-sm font-semibold text-slate-500">
+              {c.symbol}
+            </span>
+            {info?.error ? (
+              <span className="text-xs text-amber-700">unavailable</span>
+            ) : info ? (
+              <span className="text-sm font-medium text-slate-800">
+                ₦
+                {info.rate.toLocaleString(undefined, {
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            ) : (
+              <span className="inline-block w-14 h-3.5 rounded bg-slate-200/70 animate-pulse" />
+            )}
           </div>
-        )}
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-2">
-        {BANNER_CURRENCIES.map((c) => {
-          const info = rates[c.code];
-          return (
-            <div
-              key={c.code}
-              className="relative rounded-lg bg-white border border-slate-200/80 px-3 py-2.5 shadow-sm"
-            >
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-sm font-semibold tabular-nums">
-                    {c.symbol}
-                  </span>
-                  <span className="text-[11px] font-mono font-semibold tracking-wider text-slate-700">
-                    {c.code}
-                  </span>
-                </span>
-                <span className="text-[10px] text-slate-400">{c.name}</span>
-              </div>
-              <div className="mt-1.5 flex items-baseline gap-1 tabular-nums">
-                <span className="text-[11px] text-slate-500">1 {c.code} =</span>
-                {info?.error ? (
-                  <span className="text-xs text-amber-700">unavailable</span>
-                ) : info ? (
-                  <span className="text-base font-semibold text-slate-800">
-                    ₦
-                    {info.rate.toLocaleString(undefined, {
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                ) : (
-                  <span className="inline-block w-16 h-4 rounded bg-slate-100 animate-pulse" />
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+        );
+      })}
     </div>
   );
 }
