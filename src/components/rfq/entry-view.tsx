@@ -116,6 +116,15 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
     setItems([]);
   }
 
+  async function copyRfqId() {
+    try {
+      await navigator.clipboard.writeText(rfqNumber);
+      toast.success("RFQ ID copied");
+    } catch {
+      toast.error("Could not copy RFQ ID");
+    }
+  }
+
   async function handleProceed() {
     if (!requester.trim()) {
       toast.error("Please enter a requester name before proceeding.");
@@ -145,18 +154,36 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
-              New Request for Quote
-            </h2>
-            <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
-              Draft
-            </span>
-          </div>
-          <p className="text-slate-500 text-xs mt-0.5">#{rfqNumber}</p>
-        </div>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
+          New Request for Quote
+        </h2>
+        <button
+          type="button"
+          onClick={copyRfqId}
+          title="Copy RFQ ID"
+          className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
+        >
+          <span>#{rfqNumber}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-slate-400 group-hover:text-slate-600"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        </button>
+        <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+          Draft
+        </span>
         <div className="relative" ref={menuRef}>
           <button
             type="button"
@@ -167,7 +194,7 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
             ⋮
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-40 bg-white border border-slate-200 rounded-md shadow-lg z-10 py-1">
+            <div className="absolute left-0 mt-1 w-40 bg-white border border-slate-200 rounded-md shadow-lg z-10 py-1">
               <button
                 type="button"
                 onClick={() => {
@@ -183,27 +210,36 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
         </div>
       </div>
 
-      {/* Requester input — belongs to the RFQ as a whole, not per-item */}
-      <div className="bg-white rounded-md shadow-xl px-4 py-3 border border-slate-100 mb-4">
-        <Label htmlFor="requester" className="mb-1 block text-xs">
-          Requester *
-        </Label>
-        <Input
-          id="requester"
-          value={requester}
-          onChange={(e) => setRequester(e.target.value)}
-          placeholder="Name of the client who sent this request"
-          className="h-8 text-xs"
-        />
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Form */}
-        <div className="lg:col-span-7 bg-white rounded-md shadow-xl p-4 border border-slate-100">
-          <form onSubmit={handleAdd} className="space-y-4">
+        {/* Left column: Requester + Form */}
+        <div className="lg:col-span-7 space-y-4">
+          {/* Requester input — belongs to the RFQ as a whole, not per-item */}
+          <div className="flex items-center gap-3 px-1">
+            <Label
+              htmlFor="requester"
+              className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+              style={{ color: "#274579" }}
+            >
+              Requester
+            </Label>
+            <Input
+              id="requester"
+              value={requester}
+              onChange={(e) => setRequester(e.target.value)}
+              placeholder="Required Field"
+              className="h-8 text-xs flex-1 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+            />
+          </div>
+
+          {/* Form */}
+          <div className="bg-white rounded-md shadow-xl p-4 border border-slate-100">
+            <form onSubmit={handleAdd} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <Label className="mb-1 block text-xs">Item Category *</Label>
+                <Label className="mb-1 block text-xs">
+                  Item Category{" "}
+                  <span className="text-slate-400 font-normal">(Required)</span>
+                </Label>
                 <Select
                   value={form.itemCategory}
                   onValueChange={(v) => patchForm("itemCategory", v)}
@@ -221,7 +257,10 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
                 </Select>
               </div>
               <div>
-                <Label className="mb-1 block text-xs">Department *</Label>
+                <Label className="mb-1 block text-xs">
+                  Department{" "}
+                  <span className="text-slate-400 font-normal">(Required)</span>
+                </Label>
                 <Select
                   value={form.department}
                   onValueChange={(v) => patchForm("department", v)}
@@ -239,7 +278,10 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
                 </Select>
               </div>
               <div>
-                <Label className="mb-1 block text-xs">Request Quantity *</Label>
+                <Label className="mb-1 block text-xs">
+                  Request Quantity{" "}
+                  <span className="text-slate-400 font-normal">(Required)</span>
+                </Label>
                 <Input
                   type="number"
                   min="1"
@@ -251,7 +293,10 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
             </div>
 
             <div>
-              <Label className="mb-1 block text-xs">Item Name *</Label>
+              <Label className="mb-1 block text-xs">
+                Item Name{" "}
+                <span className="text-slate-400 font-normal">(Required)</span>
+              </Label>
               <Input
                 value={form.itemName}
                 onChange={(e) => patchForm("itemName", e.target.value)}
@@ -320,7 +365,7 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
               <Button
                 type="submit"
                 size="sm"
-                style={{ backgroundColor: "#276e79" }}
+                style={{ backgroundColor: "#4a6aa5" }}
                 className="flex-1 hover:opacity-90 text-white"
               >
                 Add Item
@@ -336,6 +381,7 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
               </Button>
             </div>
           </form>
+          </div>
         </div>
 
         {/* Added items panel */}
