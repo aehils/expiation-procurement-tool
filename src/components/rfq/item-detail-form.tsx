@@ -202,7 +202,7 @@ export function ItemDetailForm({
     <div className="space-y-8">
       {/* Section: product identification */}
       <Section title="Product identification">
-        <Field label="Manufacturer Product Code *">
+        <Field label="Manufacturer Product Code" required>
           <Input
             value={draft.mProductCode}
             onChange={(e) => setField("mProductCode", e.target.value)}
@@ -236,7 +236,7 @@ export function ItemDetailForm({
 
       {/* Section: quantity / UoM */}
       <Section title="Quantity">
-        <Field label="Unit Quantity *">
+        <Field label="Unit Quantity" required>
           <Input
             type="number"
             min="0"
@@ -245,7 +245,7 @@ export function ItemDetailForm({
             onBlur={(e) => blurNumber("unitQuantity", e.target.value)}
           />
         </Field>
-        <Field label="Unit of Measure *">
+        <Field label="Unit of Measure" required>
           <Select
             value={draft.uom}
             onValueChange={(v) => {
@@ -269,7 +269,7 @@ export function ItemDetailForm({
 
       {/* Section: vendor */}
       <Section title="Vendor">
-        <Field label="Vendor *">
+        <Field label="Vendor" required>
           <Input
             value={draft.vendor}
             onChange={(e) => setField("vendor", e.target.value)}
@@ -295,7 +295,7 @@ export function ItemDetailForm({
 
       {/* Section: pricing */}
       <Section title="Pricing">
-        <Field label="Original Currency *">
+        <Field label="Original Currency" required>
           <Select
             value={draft.originalCurrency}
             onValueChange={handleCurrencyChange}
@@ -312,7 +312,7 @@ export function ItemDetailForm({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Original Unit Price *">
+        <Field label="Original Unit Price" required>
           <Input
             type="number"
             min="0"
@@ -332,7 +332,7 @@ export function ItemDetailForm({
             onBlur={() => handleOgPriceBlur("ogBoxPrice")}
           />
         </Field>
-        <Field label="Naira Unit Price * (₦)">
+        <Field label="Naira Unit Price (₦)" required>
           <Input
             type="number"
             min="0"
@@ -392,15 +392,22 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({
   label,
   full,
+  required,
   children,
 }: {
   label: string;
   full?: boolean;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className={full ? "md:col-span-3" : undefined}>
-      <Label className="mb-1.5 block text-xs">{label}</Label>
+      <Label className="mb-1.5 block text-xs">
+        {label}
+        {required && (
+          <span className="text-slate-400 font-normal"> (Required)</span>
+        )}
+      </Label>
       {children}
     </div>
   );
