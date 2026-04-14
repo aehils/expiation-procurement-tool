@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, RefreshCw, AlertTriangle } from "lucide-react";
+import { ArrowLeft, RefreshCw, AlertTriangle, Coins } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -61,6 +61,16 @@ function relativeTime(iso: string): string {
   if (diffSec < 86400) return `${Math.round(diffSec / 3600)}h ago`;
   return `${Math.round(diffSec / 86400)}d ago`;
 }
+
+// Currencies surfaced in the conversion banner below the header. Kept narrow and
+// ordered by how often our buyers actually transact in them.
+const BANNER_CURRENCIES: { code: string; name: string; symbol: string }[] = [
+  { code: "USD", name: "US Dollar", symbol: "$" },
+  { code: "GBP", name: "British Pound", symbol: "£" },
+  { code: "EUR", name: "Euro", symbol: "€" },
+  { code: "CNY", name: "Chinese Yuan", symbol: "¥" },
+  { code: "INR", name: "Indian Rupee", symbol: "₹" },
+];
 
 export function DetailsView({
   rfq,
@@ -119,7 +129,8 @@ export function DetailsView({
     }
   }, []);
 
-  // Pre-load rates for any currency already saved on the items.
+  // Pre-load rates for any currency already saved on the items, plus every
+  // currency shown in the banner below the header.
   React.useEffect(() => {
     const seen = new Set<string>();
     initialItems.forEach((it) => {
@@ -128,13 +139,31 @@ export function DetailsView({
         void loadRate(it.originalCurrency);
       }
     });
-    // Always have USD ready as the default for the rate strip.
-    if (!seen.has("USD")) void loadRate("USD");
+    BANNER_CURRENCIES.forEach((c) => {
+      if (!seen.has(c.code)) {
+        seen.add(c.code);
+        void loadRate(c.code);
+      }
+    });
   }, [initialItems, loadRate]);
 
-  const currentItem = items.find((it) => it.id === expanded);
-  const currentCurrency = currentItem?.originalCurrency || "USD";
-  const currentRate = rates[currentCurrency];
+  const refreshBannerRates = React.useCallback(() => {
+    BANNER_CURRENCIES.forEach((c) => {
+      void loadRate(c.code, true);
+    });
+  }, [loadRate]);
+
+  // The banner's "updated X ago" reflects the oldest rate we have, so the
+  // label never overstates freshness.
+  const bannerFreshness = React.useMemo(() => {
+    let oldest = "";
+    for (const c of BANNER_CURRENCIES) {
+      const info = rates[c.code];
+      if (!info || !info.fetchedAt) return undefined;
+      if (!oldest || info.fetchedAt < oldest) oldest = info.fetchedAt;
+    }
+    return oldest || undefined;
+  }, [rates]);
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -166,23 +195,28 @@ export function DetailsView({
           </Link>
 
           <div className="flex-1 min-w-0">
-            <div className="text-xl font-semibold text-slate-800 truncate">
-              {rfq.rfqNumber}
-            </div>
-            <div className="text-sm text-muted-foreground truncate">
-              Requester: {rfq.requester}
-              {rfq.status === "submitted" && (
-                <span className="ml-3 inline-block px-2 py-px text-xs font-medium bg-teal-100 text-teal-700 rounded uppercase">
+            <div className="flex items-center gap-2">
+              <div className="text-xl font-semibold text-slate-800 truncate">
+                Request for Quote
+              </div>
+              {rfq.status === "submitted" ? (
+                <span className="px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
                   Submitted
+                </span>
+              ) : (
+                <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+                  Draft
                 </span>
               )}
             </div>
+            <div className="text-sm text-muted-foreground truncate">
+              {rfq.rfqNumber} · Requester: {rfq.requester}
+            </div>
           </div>
 
-          <RateStrip
-            currency={currentCurrency}
-            info={currentRate}
-            onRefresh={() => loadRate(currentCurrency, true)}
+          <RateRefresh
+            info={bannerFreshness}
+            onRefresh={refreshBannerRates}
           />
 
           <Button
@@ -191,10 +225,12 @@ export function DetailsView({
             style={{ backgroundColor: "#274579" }}
             className="text-white hover:opacity-90"
           >
-            {submitting ? "Submitting…" : "Submit RFQ"}
+            {submitting ? "Submitting…" : "Create Quote"}
           </Button>
         </div>
       </div>
+
+      <CurrencyBanner rates={rates} />
 
       <div className="mb-4">
         <h1 className="text-3xl font-semibold text-slate-800 tracking-tight">
@@ -265,59 +301,95 @@ export function DetailsView({
   );
 }
 
-function RateStrip({
-  currency,
+// Compact pill in the sticky header: a coins glyph bound to a refresh button,
+// with a quiet "updated X ago" beside it. Heavy rate data moved to CurrencyBanner.
+function RateRefresh({
   info,
   onRefresh,
 }: {
-  currency: string;
-  info: RateInfo | undefined;
+  info: string | undefined;
   onRefresh: () => void;
 }) {
-  if (currency === "NGN") {
-    return (
-      <div className="text-xs text-muted-foreground hidden md:block">
-        Naira priced — no conversion
-      </div>
-    );
-  }
-  if (info?.error) {
-    return (
-      <div className="flex items-center gap-2 text-xs text-amber-700 hidden md:flex">
-        <AlertTriangle className="h-4 w-4" />
-        Couldn&apos;t fetch rate
+  return (
+    <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 overflow-hidden">
+        <span
+          className="flex items-center justify-center pl-2 pr-1 text-slate-500"
+          aria-hidden="true"
+        >
+          <Coins className="h-3.5 w-3.5" />
+        </span>
         <button
           type="button"
           onClick={onRefresh}
-          className="underline hover:no-underline"
+          className="flex items-center justify-center pl-1 pr-2 py-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          aria-label="Refresh currency rates"
         >
-          Retry
+          <RefreshCw className="h-3.5 w-3.5" />
         </button>
       </div>
-    );
-  }
-  if (!info) {
-    return (
-      <div className="text-xs text-muted-foreground hidden md:block">
-        Loading rate…
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center gap-2 text-xs text-muted-foreground hidden md:flex">
       <span className="tabular-nums">
-        1 {currency} = ₦
-        {info.rate.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+        {info ? `updated ${relativeTime(info)}` : "updating…"}
       </span>
-      <span>· updated {relativeTime(info.fetchedAt)}</span>
-      <button
-        type="button"
-        onClick={onRefresh}
-        className="p-1 rounded hover:bg-slate-100"
-        aria-label="Refresh rate"
-      >
-        <RefreshCw className="h-3.5 w-3.5" />
-      </button>
+    </div>
+  );
+}
+
+// Financial-style banner: a row of currency tiles showing the live NGN
+// conversion for each of the currencies our buyers transact in.
+function CurrencyBanner({ rates }: { rates: Record<string, RateInfo> }) {
+  const anyError = BANNER_CURRENCIES.some((c) => rates[c.code]?.error);
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-2 px-0.5">
+        <div className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          Live FX · per ₦aira
+        </div>
+        {anyError && (
+          <div className="flex items-center gap-1 text-xs text-amber-700">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Some rates couldn&apos;t be fetched
+          </div>
+        )}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-2">
+        {BANNER_CURRENCIES.map((c) => {
+          const info = rates[c.code];
+          return (
+            <div
+              key={c.code}
+              className="relative rounded-lg bg-white border border-slate-200/80 px-3 py-2.5 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-sm font-semibold tabular-nums">
+                    {c.symbol}
+                  </span>
+                  <span className="text-[11px] font-mono font-semibold tracking-wider text-slate-700">
+                    {c.code}
+                  </span>
+                </span>
+                <span className="text-[10px] text-slate-400">{c.name}</span>
+              </div>
+              <div className="mt-1.5 flex items-baseline gap-1 tabular-nums">
+                <span className="text-[11px] text-slate-500">1 {c.code} =</span>
+                {info?.error ? (
+                  <span className="text-xs text-amber-700">unavailable</span>
+                ) : info ? (
+                  <span className="text-base font-semibold text-slate-800">
+                    ₦
+                    {info.rate.toLocaleString(undefined, {
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                ) : (
+                  <span className="inline-block w-16 h-4 rounded bg-slate-100 animate-pulse" />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
