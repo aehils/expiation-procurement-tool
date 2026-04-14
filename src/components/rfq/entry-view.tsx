@@ -202,7 +202,7 @@ export function EntryView({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="max-w-screen-2xl mx-auto px-6 py-4">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
           Request for Quote
