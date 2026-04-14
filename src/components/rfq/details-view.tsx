@@ -203,70 +203,56 @@ export function DetailsView({
 
   return (
     <div className="max-w-6xl mx-auto px-8 py-6">
-      {/* Top nav */}
-      <nav className="px-4 py-3 mb-6 bg-slate-50/90 border border-slate-200 rounded-lg">
-        <div className="flex items-center gap-3">
-          <Link href={`/rfq/${rfq.id}/edit`}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1 hover:bg-[#274579]/10 hover:text-[#274579]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-          </Link>
-
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Request for Quote
-          </h2>
-
-          <button
-            type="button"
-            onClick={copyRfqId}
-            title="Copy RFQ ID"
-            className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
+      {/* Top area — mirrors step 1 (entry view) */}
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
+          Request for Quote
+        </h2>
+        <button
+          type="button"
+          onClick={copyRfqId}
+          title="Copy RFQ ID"
+          className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
+        >
+          <span>#{rfq.rfqNumber}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-slate-400 group-hover:text-slate-600"
           >
-            <span>#{rfq.rfqNumber}</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="11"
-              height="11"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-slate-400 group-hover:text-slate-600"
-            >
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-          </button>
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        </button>
 
-          {rfq.status === "submitted" ? (
-            <span className="px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
-              Submitted
-            </span>
-          ) : (
-            <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
-              Draft
-            </span>
-          )}
+        {rfq.status === "submitted" ? (
+          <span className="px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
+            Submitted
+          </span>
+        ) : (
+          <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+            Draft
+          </span>
+        )}
 
-          <div className="ml-auto">
-            <Button
-              onClick={handleSubmit}
-              disabled={submitting || rfq.status === "submitted"}
-              style={{ backgroundColor: "#274579" }}
-              className="text-white hover:opacity-90"
-            >
-              {submitting ? "Submitting…" : "Create Quote"}
-            </Button>
-          </div>
-        </div>
-      </nav>
+        <Link href={`/rfq/${rfq.id}/edit`} className="ml-auto">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1 hover:bg-[#274579]/10 hover:text-[#274579]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </Link>
+      </div>
 
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 mb-8 px-1">
         <dl className="flex flex-wrap gap-x-10 gap-y-3">
