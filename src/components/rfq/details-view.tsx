@@ -207,7 +207,11 @@ export function DetailsView({
       <nav className="px-4 py-3 mb-6 bg-slate-50/90 border border-slate-200 rounded-lg">
         <div className="flex items-center gap-3">
           <Link href="/rfq/new">
-            <Button variant="ghost" size="sm" className="gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1 hover:bg-[#274579]/10 hover:text-[#274579]"
+            >
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
