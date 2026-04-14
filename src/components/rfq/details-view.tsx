@@ -260,6 +260,10 @@ export function DetailsView({
         onRefresh={refreshBannerRates}
       />
 
+      <h3 className="mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        Items
+      </h3>
+
       <Accordion
         type="single"
         collapsible
