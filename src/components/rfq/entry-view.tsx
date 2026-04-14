@@ -187,8 +187,11 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
         {/* Left column: Requester + Form */}
         <div className="lg:col-span-7 space-y-4">
           {/* Requester input — belongs to the RFQ as a whole, not per-item */}
-          <div className="bg-white rounded-md shadow-xl px-4 py-3 border border-slate-100">
-            <Label htmlFor="requester" className="mb-1 block text-xs">
+          <div className="flex items-center gap-3 px-1">
+            <Label
+              htmlFor="requester"
+              className="text-xs font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
+            >
               Requester *
             </Label>
             <Input
@@ -196,7 +199,7 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
               value={requester}
               onChange={(e) => setRequester(e.target.value)}
               placeholder="Name of the client who sent this request"
-              className="h-8 text-xs"
+              className="h-8 text-xs flex-1 bg-transparent border-0 border-b border-slate-300 rounded-none focus-visible:ring-0 focus-visible:border-slate-500 px-0"
             />
           </div>
 
