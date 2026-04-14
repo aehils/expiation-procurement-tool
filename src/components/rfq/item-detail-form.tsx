@@ -200,106 +200,122 @@ export function ItemDetailForm({
 
   return (
     <div className="space-y-5">
-      {/* Section: product identification */}
-      <Section title="Product identification">
-        <Field label="Manufacturer Product Code" required>
-          <Input
-            className="h-8 text-xs"
-            value={draft.mProductCode}
-            onChange={(e) => setField("mProductCode", e.target.value)}
-            onBlur={(e) => blurString("mProductCode", e.target.value)}
-          />
-        </Field>
-        <Field label="Manufacturer">
-          <Input
-            className="h-8 text-xs"
-            value={draft.manufacturerName}
-            onChange={(e) => setField("manufacturerName", e.target.value)}
-            onBlur={(e) => blurString("manufacturerName", e.target.value)}
-          />
-        </Field>
-        <Field label="Country of Origin">
-          <Input
-            className="h-8 text-xs"
-            value={draft.countryOfOrigin}
-            onChange={(e) => setField("countryOfOrigin", e.target.value)}
-            onBlur={(e) => blurString("countryOfOrigin", e.target.value)}
-          />
-        </Field>
-        <Field label="Product Link" full>
-          <Input
-            type="url"
-            placeholder="https://"
-            className="h-8 text-xs"
-            value={draft.productLink}
-            onChange={(e) => setField("productLink", e.target.value)}
-            onBlur={(e) => blurString("productLink", e.target.value)}
-          />
-        </Field>
-      </Section>
+      {/* Split row: product + quantity (left) | vendor (right), with a casual
+          vertical divider between the two halves on md+ screens. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x md:divide-slate-200/80">
+        {/* LEFT HALF */}
+        <div className="md:pr-5 space-y-5">
+          <Section title="Product identification" layout="stack">
+            <Field label="Manufacturer">
+              <Input
+                className="h-8 text-xs"
+                value={draft.manufacturerName}
+                onChange={(e) => setField("manufacturerName", e.target.value)}
+                onBlur={(e) => blurString("manufacturerName", e.target.value)}
+              />
+            </Field>
+            <Field label="Manufacturer Product Code" required>
+              <Input
+                className="h-8 text-xs"
+                value={draft.mProductCode}
+                onChange={(e) => setField("mProductCode", e.target.value)}
+                onBlur={(e) => blurString("mProductCode", e.target.value)}
+              />
+            </Field>
+            <Field label="Country of Origin">
+              <Input
+                className="h-8 text-xs"
+                value={draft.countryOfOrigin}
+                onChange={(e) => setField("countryOfOrigin", e.target.value)}
+                onBlur={(e) => blurString("countryOfOrigin", e.target.value)}
+              />
+            </Field>
+          </Section>
 
-      {/* Section: quantity / UoM */}
-      <Section title="Quantity">
-        <Field label="Unit Quantity" required>
-          <Input
-            type="number"
-            min="0"
-            className="h-8 text-xs"
-            value={draft.unitQuantity}
-            onChange={(e) => setField("unitQuantity", e.target.value)}
-            onBlur={(e) => blurNumber("unitQuantity", e.target.value)}
-          />
-        </Field>
-        <Field label="Unit of Measure" required>
-          <Select
-            value={draft.uom}
-            onValueChange={(v) => {
-              setField("uom", v);
-              void persist({ uom: v });
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              {UNITS_OF_MEASURE.map((u) => (
-                <SelectItem key={u.value} value={u.value}>
-                  {u.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-      </Section>
+          <Section title="Quantity" layout="pair">
+            <Field label="Unit Quantity" required>
+              <Input
+                type="number"
+                min="0"
+                className="h-8 text-xs"
+                value={draft.unitQuantity}
+                onChange={(e) => setField("unitQuantity", e.target.value)}
+                onBlur={(e) => blurNumber("unitQuantity", e.target.value)}
+              />
+            </Field>
+            <Field label="Unit of Measure" required>
+              <Select
+                value={draft.uom}
+                onValueChange={(v) => {
+                  setField("uom", v);
+                  void persist({ uom: v });
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {UNITS_OF_MEASURE.map((u) => (
+                    <SelectItem key={u.value} value={u.value}>
+                      {u.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </Section>
+        </div>
 
-      {/* Section: vendor */}
-      <Section title="Vendor">
-        <Field label="Vendor" required>
-          <Input
-            className="h-8 text-xs"
-            value={draft.vendor}
-            onChange={(e) => setField("vendor", e.target.value)}
-            onBlur={(e) => blurString("vendor", e.target.value)}
-          />
-        </Field>
-        <Field label="Vendor Location">
-          <Input
-            className="h-8 text-xs"
-            value={draft.vendorLocation}
-            onChange={(e) => setField("vendorLocation", e.target.value)}
-            onBlur={(e) => blurString("vendorLocation", e.target.value)}
-          />
-        </Field>
-        <Field label="Vendor Delivery Timeline" full>
-          <Textarea
-            rows={2}
-            className="text-xs py-1.5"
-            value={draft.vendorDeliveryTimeline}
-            onChange={(e) => setField("vendorDeliveryTimeline", e.target.value)}
-            onBlur={(e) => blurString("vendorDeliveryTimeline", e.target.value)}
-          />
-        </Field>
-      </Section>
+        {/* RIGHT HALF */}
+        <div className="md:pl-5 pt-5 md:pt-0 flex flex-col">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+            Vendor
+          </h3>
+          <div className="flex flex-1 flex-col gap-3">
+            <Field label="Vendor Name" required>
+              <Input
+                className="h-8 text-xs"
+                value={draft.vendor}
+                onChange={(e) => setField("vendor", e.target.value)}
+                onBlur={(e) => blurString("vendor", e.target.value)}
+              />
+            </Field>
+            <Field label="Vendor Location">
+              <Input
+                className="h-8 text-xs"
+                value={draft.vendorLocation}
+                onChange={(e) => setField("vendorLocation", e.target.value)}
+                onBlur={(e) => blurString("vendorLocation", e.target.value)}
+              />
+            </Field>
+            <Field label="Product Link">
+              <Input
+                type="url"
+                placeholder="https://"
+                className="h-8 text-xs"
+                value={draft.productLink}
+                onChange={(e) => setField("productLink", e.target.value)}
+                onBlur={(e) => blurString("productLink", e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Vendor Delivery Timeline"
+              className="flex flex-1 flex-col"
+            >
+              <Textarea
+                className="text-xs py-1.5 flex-1 min-h-[80px] resize-none"
+                value={draft.vendorDeliveryTimeline}
+                onChange={(e) =>
+                  setField("vendorDeliveryTimeline", e.target.value)
+                }
+                onBlur={(e) =>
+                  blurString("vendorDeliveryTimeline", e.target.value)
+                }
+              />
+            </Field>
+          </div>
+        </div>
+      </div>
 
       {/* Section: pricing */}
       <Section title="Pricing">
@@ -390,13 +406,27 @@ export function ItemDetailForm({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  layout = "grid",
+  children,
+}: {
+  title: string;
+  layout?: "grid" | "stack" | "pair";
+  children: React.ReactNode;
+}) {
+  const contentClass =
+    layout === "stack"
+      ? "space-y-3"
+      : layout === "pair"
+        ? "grid grid-cols-2 gap-3"
+        : "grid grid-cols-1 md:grid-cols-3 gap-3";
   return (
     <section>
       <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
         {title}
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">{children}</div>
+      <div className={contentClass}>{children}</div>
     </section>
   );
 }
@@ -405,15 +435,20 @@ function Field({
   label,
   full,
   required,
+  className,
   children,
 }: {
   label: string;
   full?: boolean;
   required?: boolean;
+  className?: string;
   children: React.ReactNode;
 }) {
+  const classes =
+    [full ? "md:col-span-3" : "", className ?? ""].filter(Boolean).join(" ") ||
+    undefined;
   return (
-    <div className={full ? "md:col-span-3" : undefined}>
+    <div className={classes}>
       <Label className="mb-1 block text-xs">
         {label}
         {required && (
