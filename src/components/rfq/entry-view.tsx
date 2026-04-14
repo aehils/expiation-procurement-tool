@@ -365,7 +365,7 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
               <Button
                 type="submit"
                 size="sm"
-                style={{ backgroundColor: "#276e79" }}
+                style={{ backgroundColor: "#4a6aa5" }}
                 className="flex-1 hover:opacity-90 text-white"
               >
                 Add Item
