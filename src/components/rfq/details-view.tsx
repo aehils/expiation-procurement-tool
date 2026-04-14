@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, RefreshCw, Coins } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -23,6 +23,7 @@ type Rfq = {
   rfqNumber: string;
   requester: string;
   status: string;
+  createdAt: string;
 };
 
 const DETAIL_KEYS: (keyof DetailsItemPayload)[] = [
@@ -50,6 +51,15 @@ function countFilled(item: DetailsItemPayload): number {
     if (typeof v === "number" && Number.isNaN(v)) return acc;
     return acc + 1;
   }, 0);
+}
+
+function formatCreatedAt(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function relativeTime(iso: string): string {
@@ -182,11 +192,20 @@ export function DetailsView({
     }
   }
 
+  async function copyRfqId() {
+    try {
+      await navigator.clipboard.writeText(rfq.rfqNumber);
+      toast.success("RFQ ID copied");
+    } catch {
+      toast.error("Could not copy RFQ ID");
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-8 py-6">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-20 -mx-8 px-8 py-4 mb-6 bg-background/95 backdrop-blur border-b border-slate-200">
-        <div className="flex items-center gap-6">
+      {/* Sticky nav */}
+      <nav className="sticky top-0 z-20 px-4 py-3 mb-6 bg-slate-50/90 backdrop-blur border border-slate-200 rounded-lg">
+        <div className="flex items-center gap-3">
           <Link href="/rfq/new">
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
@@ -194,60 +213,94 @@ export function DetailsView({
             </Button>
           </Link>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="text-xl font-semibold text-slate-800 truncate">
-                Request for Quote
-              </div>
-              {rfq.status === "submitted" ? (
-                <span className="px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
-                  Submitted
-                </span>
-              ) : (
-                <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
-                  Draft
-                </span>
-              )}
-            </div>
-            <div className="text-sm text-muted-foreground truncate">
-              {rfq.rfqNumber} · Requester: {rfq.requester}
-            </div>
-          </div>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+            Request for Quote
+          </h2>
 
-          <RateRefresh
-            info={bannerFreshness}
-            onRefresh={refreshBannerRates}
-          />
-
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting || rfq.status === "submitted"}
-            style={{ backgroundColor: "#274579" }}
-            className="text-white hover:opacity-90"
+          <button
+            type="button"
+            onClick={copyRfqId}
+            title="Copy RFQ ID"
+            className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
           >
-            {submitting ? "Submitting…" : "Create Quote"}
-          </Button>
+            <span>#{rfq.rfqNumber}</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-slate-400 group-hover:text-slate-600"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
+
+          {rfq.status === "submitted" ? (
+            <span className="px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
+              Submitted
+            </span>
+          ) : (
+            <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+              Draft
+            </span>
+          )}
+
+          <div className="ml-auto">
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting || rfq.status === "submitted"}
+              style={{ backgroundColor: "#274579" }}
+              className="text-white hover:opacity-90"
+            >
+              {submitting ? "Submitting…" : "Create Quote"}
+            </Button>
+          </div>
         </div>
+      </nav>
+
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 mb-8 px-1">
+        <dl className="flex flex-wrap gap-x-10 gap-y-3">
+          <div>
+            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              Date Created
+            </dt>
+            <dd className="mt-0.5 text-sm font-medium text-slate-700 tabular-nums">
+              {formatCreatedAt(rfq.createdAt)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              Requester
+            </dt>
+            <dd className="mt-0.5 text-sm font-medium text-slate-700">
+              {rfq.requester}
+            </dd>
+          </div>
+        </dl>
+
+        <CurrencyBanner
+          rates={rates}
+          freshness={bannerFreshness}
+          onRefresh={refreshBannerRates}
+        />
       </div>
 
-      <CurrencyBanner rates={rates} />
-
-      <div className="mb-4">
-        <h1 className="text-3xl font-semibold text-slate-800 tracking-tight">
-          RFQ Details
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Fill in vendor, pricing, and sourcing info for each item. Progress
-          auto-saves on blur.
-        </p>
-      </div>
+      <h3 className="mb-4 pl-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        Items
+      </h3>
 
       <Accordion
         type="single"
         collapsible
         value={expanded}
         onValueChange={(v) => setExpanded(v || undefined)}
-        className="space-y-3"
+        className="space-y-2"
       >
         {items.map((item, index) => {
           const filled = countFilled(item);
@@ -255,26 +308,26 @@ export function DetailsView({
           return (
             <AccordionItem key={item.id} value={item.id}>
               <AccordionTrigger>
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="text-sm font-medium text-muted-foreground tabular-nums shrink-0 w-6 text-center">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 w-5 text-center">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-base text-slate-800 truncate">
+                    <div className="font-semibold text-sm text-slate-800 truncate">
                       {item.itemName}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
                       {categoryLabel(item.itemCategory)} •{" "}
                       {departmentLabel(item.department)} • Qty:{" "}
                       {item.requestQuantity}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-xs text-muted-foreground tabular-nums">
+                    <div className="text-[11px] text-muted-foreground tabular-nums">
                       {filled} / {TOTAL_DETAIL_FIELDS}
                     </div>
                     <div
-                      className={`w-2.5 h-2.5 rounded-full ${
+                      className={`w-2 h-2 rounded-full ${
                         complete ? "bg-teal-600" : "bg-slate-300"
                       }`}
                     />
@@ -301,56 +354,49 @@ export function DetailsView({
   );
 }
 
-// Compact pill in the sticky header: a coins glyph, a refresh button, and the
-// "updated X ago" label all bound into a single non-obtrusive container.
-function RateRefresh({
-  info,
+// Subtle strip of currency → Naira conversions. Shrinks to wrap only its
+// contents; leads with a refresh button that also doubles as the freshness
+// label. Colours are intentionally low-contrast so the strip recedes.
+function CurrencyBanner({
+  rates,
+  freshness,
   onRefresh,
 }: {
-  info: string | undefined;
+  rates: Record<string, RateInfo>;
+  freshness: string | undefined;
   onRefresh: () => void;
 }) {
   return (
-    <div className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 pl-2 pr-1 py-1 text-xs text-slate-600">
-      <Coins className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
-      <span className="tabular-nums text-slate-500">
-        {info ? `updated ${relativeTime(info)}` : "updating…"}
-      </span>
+    <div className="flex w-fit flex-wrap items-center gap-x-4 gap-y-1.5 rounded-md bg-slate-50/50 px-2.5 py-1.5">
       <button
         type="button"
         onClick={onRefresh}
-        className="flex items-center justify-center h-5 w-5 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-200"
+        className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
         aria-label="Refresh currency rates"
       >
-        <RefreshCw className="h-3.5 w-3.5" />
+        <RefreshCw className="h-3 w-3" />
+        <span className="tabular-nums">
+          {freshness ? `updated ${relativeTime(freshness)}` : "updating…"}
+        </span>
       </button>
-    </div>
-  );
-}
-
-// Subtle strip of currency → Naira conversions. Intentionally minimal: just
-// the symbol and the price — no headings, no descriptions.
-function CurrencyBanner({ rates }: { rates: Record<string, RateInfo> }) {
-  return (
-    <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-slate-200 bg-slate-50/60 px-4 py-2.5">
       {BANNER_CURRENCIES.map((c) => {
         const info = rates[c.code];
         return (
-          <div key={c.code} className="flex items-baseline gap-1.5 tabular-nums">
-            <span className="text-sm font-semibold text-slate-500">
+          <div key={c.code} className="flex items-baseline gap-1 tabular-nums">
+            <span className="text-xs font-medium text-slate-400">
               {c.symbol}
             </span>
             {info?.error ? (
-              <span className="text-xs text-amber-700">unavailable</span>
+              <span className="text-[11px] text-amber-600/80">unavailable</span>
             ) : info ? (
-              <span className="text-sm font-medium text-slate-800">
+              <span className="text-xs text-slate-500">
                 ₦
                 {info.rate.toLocaleString(undefined, {
                   maximumFractionDigits: 2,
                 })}
               </span>
             ) : (
-              <span className="inline-block w-14 h-3.5 rounded bg-slate-200/70 animate-pulse" />
+              <span className="inline-block w-12 h-3 rounded bg-slate-200/60 animate-pulse" />
             )}
           </div>
         );

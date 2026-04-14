@@ -48,6 +48,7 @@ export default async function RfqDetailsPage({
         rfqNumber: rfq.rfqNumber,
         requester: rfq.requester,
         status: rfq.status,
+        createdAt: rfq.createdAt.toISOString(),
       }}
       initialItems={items}
     />

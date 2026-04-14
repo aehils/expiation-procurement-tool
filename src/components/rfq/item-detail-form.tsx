@@ -199,11 +199,12 @@ export function ItemDetailForm({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {/* Section: product identification */}
       <Section title="Product identification">
         <Field label="Manufacturer Product Code" required>
           <Input
+            className="h-8 text-xs"
             value={draft.mProductCode}
             onChange={(e) => setField("mProductCode", e.target.value)}
             onBlur={(e) => blurString("mProductCode", e.target.value)}
@@ -211,6 +212,7 @@ export function ItemDetailForm({
         </Field>
         <Field label="Manufacturer">
           <Input
+            className="h-8 text-xs"
             value={draft.manufacturerName}
             onChange={(e) => setField("manufacturerName", e.target.value)}
             onBlur={(e) => blurString("manufacturerName", e.target.value)}
@@ -218,6 +220,7 @@ export function ItemDetailForm({
         </Field>
         <Field label="Country of Origin">
           <Input
+            className="h-8 text-xs"
             value={draft.countryOfOrigin}
             onChange={(e) => setField("countryOfOrigin", e.target.value)}
             onBlur={(e) => blurString("countryOfOrigin", e.target.value)}
@@ -227,6 +230,7 @@ export function ItemDetailForm({
           <Input
             type="url"
             placeholder="https://"
+            className="h-8 text-xs"
             value={draft.productLink}
             onChange={(e) => setField("productLink", e.target.value)}
             onBlur={(e) => blurString("productLink", e.target.value)}
@@ -240,6 +244,7 @@ export function ItemDetailForm({
           <Input
             type="number"
             min="0"
+            className="h-8 text-xs"
             value={draft.unitQuantity}
             onChange={(e) => setField("unitQuantity", e.target.value)}
             onBlur={(e) => blurNumber("unitQuantity", e.target.value)}
@@ -253,7 +258,7 @@ export function ItemDetailForm({
               void persist({ uom: v });
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-8 text-xs">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
@@ -271,6 +276,7 @@ export function ItemDetailForm({
       <Section title="Vendor">
         <Field label="Vendor" required>
           <Input
+            className="h-8 text-xs"
             value={draft.vendor}
             onChange={(e) => setField("vendor", e.target.value)}
             onBlur={(e) => blurString("vendor", e.target.value)}
@@ -278,6 +284,7 @@ export function ItemDetailForm({
         </Field>
         <Field label="Vendor Location">
           <Input
+            className="h-8 text-xs"
             value={draft.vendorLocation}
             onChange={(e) => setField("vendorLocation", e.target.value)}
             onBlur={(e) => blurString("vendorLocation", e.target.value)}
@@ -286,6 +293,7 @@ export function ItemDetailForm({
         <Field label="Vendor Delivery Timeline" full>
           <Textarea
             rows={2}
+            className="text-xs py-1.5"
             value={draft.vendorDeliveryTimeline}
             onChange={(e) => setField("vendorDeliveryTimeline", e.target.value)}
             onBlur={(e) => blurString("vendorDeliveryTimeline", e.target.value)}
@@ -300,7 +308,7 @@ export function ItemDetailForm({
             value={draft.originalCurrency}
             onValueChange={handleCurrencyChange}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-8 text-xs">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
@@ -317,6 +325,7 @@ export function ItemDetailForm({
             type="number"
             min="0"
             step="0.01"
+            className="h-8 text-xs"
             value={draft.ogUnitPrice}
             onChange={(e) => setField("ogUnitPrice", e.target.value)}
             onBlur={() => handleOgPriceBlur("ogUnitPrice")}
@@ -327,6 +336,7 @@ export function ItemDetailForm({
             type="number"
             min="0"
             step="0.01"
+            className="h-8 text-xs"
             value={draft.ogBoxPrice}
             onChange={(e) => setField("ogBoxPrice", e.target.value)}
             onBlur={() => handleOgPriceBlur("ogBoxPrice")}
@@ -337,6 +347,7 @@ export function ItemDetailForm({
             type="number"
             min="0"
             step="0.01"
+            className="h-8 text-xs"
             value={draft.nairaUnitPrice}
             onChange={(e) => setField("nairaUnitPrice", e.target.value)}
             onBlur={() => handleNairaBlur("nairaUnitPrice")}
@@ -347,6 +358,7 @@ export function ItemDetailForm({
             type="number"
             min="0"
             step="0.01"
+            className="h-8 text-xs"
             value={draft.boxPrice}
             onChange={(e) => setField("boxPrice", e.target.value)}
             onBlur={() => handleNairaBlur("boxPrice")}
@@ -354,7 +366,7 @@ export function ItemDetailForm({
         </Field>
 
         {overridden && (
-          <div className="md:col-span-3 flex items-center gap-3 text-xs text-amber-700">
+          <div className="md:col-span-3 flex items-center gap-2 text-[11px] text-amber-700">
             <span>Naira values are manually overridden — auto-conversion paused.</span>
             <button
               type="button"
@@ -369,7 +381,7 @@ export function ItemDetailForm({
           </div>
         )}
         {rate?.error && draft.originalCurrency && draft.originalCurrency !== "NGN" && (
-          <div className="md:col-span-3 text-xs text-amber-700">
+          <div className="md:col-span-3 text-[11px] text-amber-700">
             Couldn&apos;t fetch the {draft.originalCurrency}→NGN rate. Enter naira values manually.
           </div>
         )}
@@ -381,10 +393,10 @@ export function ItemDetailForm({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-3">
+      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
         {title}
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">{children}</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">{children}</div>
     </section>
   );
 }
@@ -402,7 +414,7 @@ function Field({
 }) {
   return (
     <div className={full ? "md:col-span-3" : undefined}>
-      <Label className="mb-1.5 block text-xs">
+      <Label className="mb-1 block text-xs">
         {label}
         {required && (
           <span className="text-slate-400 font-normal"> (Required)</span>
