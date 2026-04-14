@@ -22,6 +22,18 @@ export const createRfqSchema = z.object({
 });
 export type CreateRfqInput = z.infer<typeof createRfqSchema>;
 
+// Same shape as createRfqSchema but each item may carry the id of an existing
+// RfqItem so updateRfqEntryData can patch in place rather than replace — which
+// preserves any detail-stage fields the user has already filled in.
+export const editEntryItemSchema = entryItemSchema.extend({
+  id: z.string().optional(),
+});
+export const updateRfqEntryDataSchema = z.object({
+  requester: z.string().min(1, "Requester name is required"),
+  items: z.array(editEntryItemSchema).min(1, "At least one item is required"),
+});
+export type UpdateRfqEntryDataInput = z.infer<typeof updateRfqEntryDataSchema>;
+
 // Second-stage patch: every field optional so partial saves go through.
 // Empty strings are treated as "not yet filled" by the UI but still allowed to persist.
 export const updateItemSchema = z.object({
