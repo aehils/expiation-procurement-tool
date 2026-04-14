@@ -213,18 +213,16 @@ export function DetailsView({
         onValueChange={(v) => setExpanded(v || undefined)}
         className="space-y-3"
       >
-        {items.map((item) => {
+        {items.map((item, index) => {
           const filled = countFilled(item);
           const complete = filled === TOTAL_DETAIL_FIELDS;
           return (
             <AccordionItem key={item.id} value={item.id}>
               <AccordionTrigger>
                 <div className="flex items-center gap-4 flex-1">
-                  <div
-                    className={`w-2.5 h-2.5 rounded-full ${
-                      complete ? "bg-teal-600" : "bg-slate-300"
-                    }`}
-                  />
+                  <div className="text-sm font-medium text-muted-foreground tabular-nums shrink-0 w-6 text-center">
+                    {index + 1}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-base text-slate-800 truncate">
                       {item.itemName}
@@ -235,8 +233,15 @@ export function DetailsView({
                       {item.requestQuantity}
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground tabular-nums shrink-0">
-                    {filled} / {TOTAL_DETAIL_FIELDS} filled
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-xs text-muted-foreground tabular-nums">
+                      {filled} / {TOTAL_DETAIL_FIELDS}
+                    </div>
+                    <div
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        complete ? "bg-teal-600" : "bg-slate-300"
+                      }`}
+                    />
                   </div>
                 </div>
               </AccordionTrigger>
