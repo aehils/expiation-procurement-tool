@@ -144,37 +144,37 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-8 py-8">
-      <div className="flex justify-between items-start mb-8">
+    <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="flex justify-between items-start mb-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-4xl font-semibold text-slate-800 tracking-tight">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
               New Request for Quote
             </h2>
-            <span className="px-2.5 py-1 text-xs font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+            <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
               Draft
             </span>
           </div>
-          <p className="text-slate-600 mt-1">#{rfqNumber}</p>
+          <p className="text-slate-500 text-xs mt-0.5">#{rfqNumber}</p>
         </div>
         <div className="relative" ref={menuRef}>
           <button
             type="button"
             aria-label="RFQ options"
             onClick={() => setMenuOpen((o) => !o)}
-            className="w-11 h-11 flex items-center justify-center rounded hover:bg-slate-200 text-slate-900 text-4xl leading-none font-black"
+            className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-200 text-slate-900 text-xl leading-none font-black"
           >
             ⋮
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-md shadow-lg z-10 py-1">
+            <div className="absolute right-0 mt-1 w-40 bg-white border border-slate-200 rounded-md shadow-lg z-10 py-1">
               <button
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   clearAllItems();
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
               >
                 Clear all items
               </button>
@@ -184,8 +184,8 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
       </div>
 
       {/* Requester input — belongs to the RFQ as a whole, not per-item */}
-      <div className="bg-white rounded-md shadow-xl p-6 border border-slate-100 mb-8">
-        <Label htmlFor="requester" className="mb-2 block">
+      <div className="bg-white rounded-md shadow-xl px-4 py-3 border border-slate-100 mb-4">
+        <Label htmlFor="requester" className="mb-1 block text-xs">
           Requester *
         </Label>
         <Input
@@ -193,21 +193,22 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
           value={requester}
           onChange={(e) => setRequester(e.target.value)}
           placeholder="Name of the client who sent this request"
+          className="h-8 text-xs"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Form */}
-        <div className="lg:col-span-7 bg-white rounded-md shadow-xl p-8 border border-slate-100">
-          <form onSubmit={handleAdd} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="lg:col-span-7 bg-white rounded-md shadow-xl p-4 border border-slate-100">
+          <form onSubmit={handleAdd} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <Label className="mb-2 block">Item Category *</Label>
+                <Label className="mb-1 block text-xs">Item Category *</Label>
                 <Select
                   value={form.itemCategory}
                   onValueChange={(v) => patchForm("itemCategory", v)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -220,12 +221,12 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block">Department *</Label>
+                <Label className="mb-1 block text-xs">Department *</Label>
                 <Select
                   value={form.department}
                   onValueChange={(v) => patchForm("department", v)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -238,90 +239,98 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block">Request Quantity *</Label>
+                <Label className="mb-1 block text-xs">Request Quantity *</Label>
                 <Input
                   type="number"
                   min="1"
                   value={quantityRaw}
                   onChange={(e) => setQuantityRaw(e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <Label className="mb-2 block">Item Name *</Label>
+              <Label className="mb-1 block text-xs">Item Name *</Label>
               <Input
                 value={form.itemName}
                 onChange={(e) => patchForm("itemName", e.target.value)}
+                className="h-8 text-xs"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <Label className="mb-2 block">Brand</Label>
+                <Label className="mb-1 block text-xs">Brand</Label>
                 <Input
                   value={form.brand ?? ""}
                   onChange={(e) => patchForm("brand", e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
               <div>
-                <Label className="mb-2 block">Model</Label>
+                <Label className="mb-1 block text-xs">Model</Label>
                 <Input
                   value={form.model ?? ""}
                   onChange={(e) => patchForm("model", e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
               <div>
-                <Label className="mb-2 block">Size</Label>
+                <Label className="mb-1 block text-xs">Size</Label>
                 <Input
                   value={form.size ?? ""}
                   onChange={(e) => patchForm("size", e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <Label className="mb-2 block">Specification</Label>
+              <Label className="mb-1 block text-xs">Specification</Label>
               <Textarea
-                rows={3}
+                rows={2}
                 value={form.specification ?? ""}
                 onChange={(e) => patchForm("specification", e.target.value)}
+                className="text-xs py-1.5"
               />
             </div>
 
             <div>
-              <Label className="mb-2 block">Item Description</Label>
+              <Label className="mb-1 block text-xs">Item Description</Label>
               <Textarea
-                rows={3}
+                rows={2}
                 value={form.itemDescription ?? ""}
                 onChange={(e) => patchForm("itemDescription", e.target.value)}
+                className="text-xs py-1.5"
               />
             </div>
 
             <div>
-              <Label className="mb-2 block">Additional Notes</Label>
+              <Label className="mb-1 block text-xs">Additional Notes</Label>
               <Textarea
                 rows={2}
                 value={form.additionalNotes ?? ""}
                 onChange={(e) => patchForm("additionalNotes", e.target.value)}
+                className="text-xs py-1.5"
               />
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div className="flex gap-2">
               <Button
                 type="submit"
-                size="lg"
+                size="sm"
                 style={{ backgroundColor: "#276e79" }}
-                className="flex-1 hover:opacity-90 text-white text-base py-5 h-auto"
+                className="flex-1 hover:opacity-90 text-white"
               >
                 Add Item
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
+                size="sm"
                 onClick={clearForm}
-                className="px-10"
+                className="px-6"
               >
                 Clear Form
               </Button>
@@ -332,33 +341,33 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
         {/* Added items panel */}
         <div className="lg:col-span-5">
           <div className="bg-white rounded-md shadow-xl border border-slate-100 h-full flex flex-col">
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
-              <h3 className="font-semibold text-xl text-slate-800">Added</h3>
-              <span className="text-sm text-slate-400">{items.length} Items</span>
+            <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+              <h3 className="font-semibold text-sm text-slate-800">Added</h3>
+              <span className="text-xs text-slate-400">{items.length} Items</span>
             </div>
 
-            <div className="flex-1 p-8 overflow-auto">
+            <div className="flex-1 px-4 pb-3 overflow-auto">
               {items.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center text-slate-400">
-                  <p className="text-xl font-medium">No items added yet</p>
-                  <p className="mt-2">Add Item to RFQ</p>
+                  <p className="text-sm font-medium">No items added yet</p>
+                  <p className="mt-0.5 text-xs">Add Item to RFQ</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {items.map((item) => (
                     <div
                       key={item.tempId}
-                      className="bg-slate-50 border border-slate-200 rounded p-4 hover:shadow-md transition-shadow"
+                      className="bg-slate-50 border border-slate-200 rounded p-2.5 hover:shadow-md transition-shadow"
                     >
-                      <div className="font-semibold text-sm text-slate-800 break-words">
+                      <div className="font-semibold text-xs text-slate-800 break-words">
                         {item.itemName}
                       </div>
-                      <div className="mt-1.5">
-                        <span className="inline-block px-2 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
+                      <div className="mt-0.5">
+                        <span className="inline-block px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
                           {categoryLabel(item.itemCategory)}
                         </span>
                       </div>
-                      <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
                         <div>
                           <dt className="text-slate-400">Department</dt>
                           <dd className="text-slate-700">
@@ -398,7 +407,7 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
                           </div>
                         )}
                       </dl>
-                      <div className="mt-3 pt-2 border-t border-slate-200 flex justify-end gap-4">
+                      <div className="mt-1.5 pt-1.5 border-t border-slate-200 flex justify-end gap-3">
                         <button
                           type="button"
                           onClick={() => handleEdit(item.tempId)}
@@ -421,14 +430,14 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
             </div>
 
             {items.length > 0 && (
-              <div className="px-8 pb-8 pt-4">
+              <div className="px-4 pb-4 pt-2">
                 <Button
                   type="button"
-                  size="lg"
+                  size="sm"
                   onClick={handleProceed}
                   disabled={submitting}
                   style={{ backgroundColor: "#274579" }}
-                  className="w-full hover:opacity-90 text-white text-base py-5 h-auto"
+                  className="w-full hover:opacity-90 text-white"
                 >
                   {submitting ? "Creating RFQ…" : "Proceed with RFQ"}
                 </Button>
