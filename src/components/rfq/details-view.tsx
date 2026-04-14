@@ -194,7 +194,7 @@ export function DetailsView({
   return (
     <div className="max-w-6xl mx-auto px-8 py-6">
       {/* Sticky nav */}
-      <nav className="sticky top-0 z-20 -mx-8 px-8 py-3 mb-6 bg-background/95 backdrop-blur border-b border-slate-200">
+      <nav className="sticky top-0 z-20 -mx-8 px-8 py-3 mb-6 bg-slate-50/90 backdrop-blur border-b border-slate-200">
         <div className="flex items-center gap-3">
           <Link href="/rfq/new">
             <Button variant="ghost" size="sm" className="gap-1">
@@ -203,7 +203,7 @@ export function DetailsView({
             </Button>
           </Link>
 
-          <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             Request for Quote
           </h2>
 
