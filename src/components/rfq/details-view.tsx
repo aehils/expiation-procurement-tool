@@ -23,6 +23,7 @@ type Rfq = {
   rfqNumber: string;
   requester: string;
   status: string;
+  createdAt: string;
 };
 
 const DETAIL_KEYS: (keyof DetailsItemPayload)[] = [
@@ -50,6 +51,15 @@ function countFilled(item: DetailsItemPayload): number {
     if (typeof v === "number" && Number.isNaN(v)) return acc;
     return acc + 1;
   }, 0);
+}
+
+function formatCreatedAt(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function relativeTime(iso: string): string {
@@ -260,7 +270,26 @@ export function DetailsView({
         onRefresh={refreshBannerRates}
       />
 
-      <h3 className="mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      <dl className="flex flex-wrap gap-x-10 gap-y-3 mb-6 px-1">
+        <div>
+          <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+            Date Created
+          </dt>
+          <dd className="mt-0.5 text-sm font-medium text-slate-700 tabular-nums">
+            {formatCreatedAt(rfq.createdAt)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+            Requester
+          </dt>
+          <dd className="mt-0.5 text-sm font-medium text-slate-700">
+            {rfq.requester}
+          </dd>
+        </div>
+      </dl>
+
+      <h3 className="mb-3 pl-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
         Items
       </h3>
 
