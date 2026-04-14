@@ -206,7 +206,7 @@ export function DetailsView({
       {/* Sticky nav */}
       <nav className="sticky top-0 z-20 px-4 py-3 mb-6 bg-slate-50/90 backdrop-blur border border-slate-200 rounded-lg">
         <div className="flex items-center gap-3">
-          <Link href="/rfq/new">
+          <Link href={`/rfq/${rfq.id}/edit`}>
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
               Back

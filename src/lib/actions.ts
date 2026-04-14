@@ -6,9 +6,11 @@ import { prisma } from "./db";
 import {
   createRfqSchema,
   updateItemSchema,
+  updateRfqEntryDataSchema,
   findMissingDetailFields,
   type CreateRfqInput,
   type UpdateItemInput,
+  type UpdateRfqEntryDataInput,
 } from "./schemas";
 
 const rfqSuffix = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 4);
@@ -88,6 +90,73 @@ export async function finalizeDraftRfq(
   });
   revalidatePath("/");
   return { id: updated.id, rfqNumber: updated.rfqNumber };
+}
+
+// Called when a user navigates Back from the details view to edit the first-
+// stage data of an already-finalized RFQ. We patch existing items in place
+// (keeping their detail-stage fields intact), create any newly added items,
+// and delete items the user removed in the editor.
+export async function updateRfqEntryData(
+  rfqId: string,
+  input: UpdateRfqEntryDataInput,
+): Promise<{ id: string; rfqNumber: string }> {
+  const parsed = updateRfqEntryDataSchema.parse(input);
+
+  const existing = await prisma.rfq.findUnique({
+    where: { id: rfqId },
+    include: { items: { select: { id: true } } },
+  });
+  if (!existing) throw new Error("RFQ not found");
+  if (existing.status === "submitted") {
+    throw new Error("Submitted RFQs cannot be edited");
+  }
+
+  const keepIds = new Set(
+    parsed.items.map((it) => it.id).filter((id): id is string => Boolean(id)),
+  );
+  const toDelete = existing.items
+    .map((it) => it.id)
+    .filter((id) => !keepIds.has(id));
+
+  await prisma.$transaction([
+    prisma.rfq.update({
+      where: { id: rfqId },
+      data: { requester: parsed.requester },
+    }),
+    ...(toDelete.length > 0
+      ? [
+          prisma.rfqItem.deleteMany({
+            where: { id: { in: toDelete }, rfqId },
+          }),
+        ]
+      : []),
+    ...parsed.items.map((item) => {
+      const entryFields = {
+        itemCategory: item.itemCategory,
+        department: item.department,
+        itemName: item.itemName,
+        itemDescription: item.itemDescription || null,
+        requestQuantity: item.requestQuantity,
+        size: item.size || null,
+        specification: item.specification || null,
+        brand: item.brand || null,
+        model: item.model || null,
+        additionalNotes: item.additionalNotes || null,
+      };
+      if (item.id) {
+        return prisma.rfqItem.update({
+          where: { id: item.id },
+          data: entryFields,
+        });
+      }
+      return prisma.rfqItem.create({
+        data: { ...entryFields, rfqId },
+      });
+    }),
+  ]);
+
+  revalidatePath(`/rfq/${rfqId}/details`);
+  return { id: existing.id, rfqNumber: existing.rfqNumber };
 }
 
 export async function updateRfqItem(

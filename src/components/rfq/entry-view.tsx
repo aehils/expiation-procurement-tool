@@ -15,10 +15,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CATEGORIES, DEPARTMENTS, categoryLabel, departmentLabel } from "@/lib/constants";
-import { finalizeDraftRfq } from "@/lib/actions";
+import { finalizeDraftRfq, updateRfqEntryData } from "@/lib/actions";
 import type { EntryItem } from "@/lib/schemas";
 
-type DraftItem = EntryItem & { tempId: string };
+// `id` is only present on items already persisted to the DB (edit mode). New
+// items added during this session carry `tempId` only, and get created on save.
+type DraftItem = EntryItem & { tempId: string; id?: string };
+
+export type InitialEntryItem = EntryItem & { id: string };
 
 const emptyForm: EntryItem = {
   itemCategory: "",
@@ -36,13 +40,35 @@ const emptyForm: EntryItem = {
 type EntryViewProps = {
   draftId: string;
   rfqNumber: string;
+  // When present, the view operates in edit mode: it pre-fills requester and
+  // items, and "Proceed" updates the existing RFQ instead of creating one.
+  initialRequester?: string;
+  initialItems?: InitialEntryItem[];
+  mode?: "new" | "edit";
 };
 
-export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
+export function EntryView({
+  draftId,
+  rfqNumber,
+  initialRequester,
+  initialItems,
+  mode = "new",
+}: EntryViewProps) {
   const router = useRouter();
-  const [requester, setRequester] = React.useState("");
-  const [items, setItems] = React.useState<DraftItem[]>([]);
+  const [requester, setRequester] = React.useState(initialRequester ?? "");
+  const [items, setItems] = React.useState<DraftItem[]>(() =>
+    (initialItems ?? []).map((it) => ({
+      ...it,
+      tempId: crypto.randomUUID(),
+    })),
+  );
   const [form, setForm] = React.useState<EntryItem>(emptyForm);
+  // Tracks the persisted id of the item currently loaded in the form (set when
+  // the user clicks Edit on an existing item) so it round-trips back into the
+  // list when re-added.
+  const [editingItemId, setEditingItemId] = React.useState<string | undefined>(
+    undefined,
+  );
   const [quantityRaw, setQuantityRaw] = React.useState("");
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
@@ -65,6 +91,7 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
   function clearForm() {
     setForm(emptyForm);
     setQuantityRaw("");
+    setEditingItemId(undefined);
   }
 
   function handleAdd(e: React.FormEvent) {
@@ -84,10 +111,12 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
       ...form,
       requestQuantity: qty,
       tempId: crypto.randomUUID(),
+      ...(editingItemId ? { id: editingItemId } : {}),
     };
     setItems((prev) => [...prev, item]);
+    const wasEditing = Boolean(editingItemId);
     clearForm();
-    toast.success("Item added");
+    toast.success(wasEditing ? "Item updated" : "Item added");
   }
 
   function handleDelete(tempId: string) {
@@ -98,8 +127,11 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
   function handleEdit(tempId: string) {
     const target = items.find((it) => it.tempId === tempId);
     if (!target) return;
-    const { tempId: _omit, ...rest } = target;
+    const { tempId: _omit, id: _existingId, ...rest } = target;
     void _omit;
+    // Preserve the persisted id (if any) so re-adding the item keeps it linked
+    // to the same RfqItem row and its detail-stage fields.
+    setEditingItemId(_existingId);
     setForm(rest);
     setQuantityRaw(
       target.requestQuantity ? String(target.requestQuantity) : "",
@@ -136,18 +168,35 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
     }
     setSubmitting(true);
     try {
-      const { id } = await finalizeDraftRfq(draftId, {
-        requester: requester.trim(),
-        items: items.map((it) => {
-          const { tempId, ...rest } = it;
-          void tempId;
-          return rest;
-        }),
-      });
-      router.push(`/rfq/${id}/details`);
+      if (mode === "edit") {
+        const { id } = await updateRfqEntryData(draftId, {
+          requester: requester.trim(),
+          items: items.map((it) => {
+            const { tempId, ...rest } = it;
+            void tempId;
+            return rest;
+          }),
+        });
+        router.push(`/rfq/${id}/details`);
+      } else {
+        const { id } = await finalizeDraftRfq(draftId, {
+          requester: requester.trim(),
+          items: items.map((it) => {
+            const { tempId, id: _existingId, ...rest } = it;
+            void tempId;
+            void _existingId;
+            return rest;
+          }),
+        });
+        router.push(`/rfq/${id}/details`);
+      }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to create RFQ. Please try again.");
+      toast.error(
+        mode === "edit"
+          ? "Failed to save changes. Please try again."
+          : "Failed to create RFQ. Please try again.",
+      );
       setSubmitting(false);
     }
   }
@@ -156,7 +205,7 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
     <div className="max-w-7xl mx-auto px-4 py-4">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
-          New Request for Quote
+          {mode === "edit" ? "Edit Request for Quote" : "New Request for Quote"}
         </h2>
         <button
           type="button"
@@ -485,7 +534,13 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
                   style={{ backgroundColor: "#274579" }}
                   className="w-full hover:opacity-90 text-white"
                 >
-                  {submitting ? "Creating RFQ…" : "Proceed with RFQ"}
+                  {submitting
+                    ? mode === "edit"
+                      ? "Saving…"
+                      : "Creating RFQ…"
+                    : mode === "edit"
+                      ? "Save & Continue"
+                      : "Proceed with RFQ"}
                 </Button>
               </div>
             )}
