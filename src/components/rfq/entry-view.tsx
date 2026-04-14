@@ -183,24 +183,26 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
         </div>
       </div>
 
-      {/* Requester input — belongs to the RFQ as a whole, not per-item */}
-      <div className="bg-white rounded-md shadow-xl px-4 py-3 border border-slate-100 mb-4">
-        <Label htmlFor="requester" className="mb-1 block text-xs">
-          Requester *
-        </Label>
-        <Input
-          id="requester"
-          value={requester}
-          onChange={(e) => setRequester(e.target.value)}
-          placeholder="Name of the client who sent this request"
-          className="h-8 text-xs"
-        />
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Form */}
-        <div className="lg:col-span-7 bg-white rounded-md shadow-xl p-4 border border-slate-100">
-          <form onSubmit={handleAdd} className="space-y-4">
+        {/* Left column: Requester + Form */}
+        <div className="lg:col-span-7 space-y-4">
+          {/* Requester input — belongs to the RFQ as a whole, not per-item */}
+          <div className="bg-white rounded-md shadow-xl px-4 py-3 border border-slate-100">
+            <Label htmlFor="requester" className="mb-1 block text-xs">
+              Requester *
+            </Label>
+            <Input
+              id="requester"
+              value={requester}
+              onChange={(e) => setRequester(e.target.value)}
+              placeholder="Name of the client who sent this request"
+              className="h-8 text-xs"
+            />
+          </div>
+
+          {/* Form */}
+          <div className="bg-white rounded-md shadow-xl p-4 border border-slate-100">
+            <form onSubmit={handleAdd} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <Label className="mb-1 block text-xs">Item Category *</Label>
@@ -336,6 +338,7 @@ export function EntryView({ draftId, rfqNumber }: EntryViewProps) {
               </Button>
             </div>
           </form>
+          </div>
         </div>
 
         {/* Added items panel */}
