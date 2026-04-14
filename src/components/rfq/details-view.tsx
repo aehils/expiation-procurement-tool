@@ -194,7 +194,7 @@ export function DetailsView({
   return (
     <div className="max-w-6xl mx-auto px-8 py-6">
       {/* Sticky nav */}
-      <nav className="sticky top-0 z-20 -mx-8 px-8 py-3 mb-6 bg-slate-50/90 backdrop-blur border-b border-slate-200">
+      <nav className="sticky top-0 z-20 px-4 py-3 mb-6 bg-slate-50/90 backdrop-blur border border-slate-200 rounded-lg">
         <div className="flex items-center gap-3">
           <Link href="/rfq/new">
             <Button variant="ghost" size="sm" className="gap-1">
