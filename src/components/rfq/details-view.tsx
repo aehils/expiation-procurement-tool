@@ -88,6 +88,20 @@ export function DetailsView({
   const [expanded, setExpanded] = React.useState<string | undefined>(initialItems[0]?.id);
   const [rates, setRates] = React.useState<Record<string, RateInfo>>({});
   const [submitting, setSubmitting] = React.useState(false);
+  // Items the user has force-marked as complete even though not all 14 detail
+  // fields are populated. Kept client-side — the visual indicator resets on
+  // reload, which is fine since the only effect is on the progress dot.
+  const [manuallyComplete, setManuallyComplete] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+
+  function markComplete(itemId: string) {
+    setManuallyComplete((prev) => {
+      const next = new Set(prev);
+      next.add(itemId);
+      return next;
+    });
+  }
 
   function patchItem(itemId: string, patch: Partial<DetailsItemPayload>) {
     setItems((prev) =>
@@ -306,7 +320,8 @@ export function DetailsView({
       >
         {items.map((item, index) => {
           const filled = countFilled(item);
-          const complete = filled === TOTAL_DETAIL_FIELDS;
+          const allFieldsFilled = filled === TOTAL_DETAIL_FIELDS;
+          const complete = allFieldsFilled || manuallyComplete.has(item.id);
           return (
             <AccordionItem key={item.id} value={item.id}>
               <AccordionTrigger>
@@ -325,7 +340,58 @@ export function DetailsView({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-[11px] text-muted-foreground tabular-nums">
+                    {/* Nested inside the trigger button, so these act as buttons
+                        via role+keyboard rather than real <button> elements to
+                        keep the DOM valid. Clicks are stopped from propagating
+                        so they don't toggle the accordion. */}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(
+                          `/rfq/${rfq.id}/edit?itemId=${item.id}`,
+                        );
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          router.push(
+                            `/rfq/${rfq.id}/edit?itemId=${item.id}`,
+                          );
+                        }
+                      }}
+                      className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                    >
+                      Edit
+                    </span>
+                    <span
+                      role="button"
+                      aria-disabled={complete}
+                      tabIndex={complete ? -1 : 0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (complete) return;
+                        markComplete(item.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (complete) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          markComplete(item.id);
+                        }
+                      }}
+                      className={
+                        complete
+                          ? "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+                          : "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-[#276e79] bg-[#276e79] text-white hover:bg-[#1e5962] hover:border-[#1e5962] transition-colors cursor-pointer"
+                      }
+                    >
+                      Mark as Complete
+                    </span>
+                    <div className="text-[11px] text-muted-foreground tabular-nums ml-1">
                       {filled} / {TOTAL_DETAIL_FIELDS}
                     </div>
                     <div

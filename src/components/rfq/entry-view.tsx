@@ -45,6 +45,9 @@ type EntryViewProps = {
   initialRequester?: string;
   initialItems?: InitialEntryItem[];
   mode?: "new" | "edit";
+  // When set, the matching item is pulled out of the list and loaded into the
+  // form on mount. Used by the details view's per-item Edit button.
+  initialEditItemId?: string;
 };
 
 export function EntryView({
@@ -53,23 +56,45 @@ export function EntryView({
   initialRequester,
   initialItems,
   mode = "new",
+  initialEditItemId,
 }: EntryViewProps) {
   const router = useRouter();
   const [requester, setRequester] = React.useState(initialRequester ?? "");
-  const [items, setItems] = React.useState<DraftItem[]>(() =>
-    (initialItems ?? []).map((it) => ({
+  const [items, setItems] = React.useState<DraftItem[]>(() => {
+    const withTempIds = (initialItems ?? []).map((it) => ({
       ...it,
       tempId: crypto.randomUUID(),
-    })),
-  );
-  const [form, setForm] = React.useState<EntryItem>(emptyForm);
+    }));
+    // If we're deep-linked to edit a specific item, drop it from the list —
+    // it'll live in the form state below until the user re-adds it.
+    if (initialEditItemId) {
+      return withTempIds.filter((it) => it.id !== initialEditItemId);
+    }
+    return withTempIds;
+  });
+  const [form, setForm] = React.useState<EntryItem>(() => {
+    if (!initialEditItemId) return emptyForm;
+    const target = (initialItems ?? []).find(
+      (it) => it.id === initialEditItemId,
+    );
+    if (!target) return emptyForm;
+    const { id: _omit, ...rest } = target;
+    void _omit;
+    return rest;
+  });
   // Tracks the persisted id of the item currently loaded in the form (set when
   // the user clicks Edit on an existing item) so it round-trips back into the
   // list when re-added.
   const [editingItemId, setEditingItemId] = React.useState<string | undefined>(
-    undefined,
+    initialEditItemId,
   );
-  const [quantityRaw, setQuantityRaw] = React.useState("");
+  const [quantityRaw, setQuantityRaw] = React.useState(() => {
+    if (!initialEditItemId) return "";
+    const target = (initialItems ?? []).find(
+      (it) => it.id === initialEditItemId,
+    );
+    return target?.requestQuantity ? String(target.requestQuantity) : "";
+  });
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
