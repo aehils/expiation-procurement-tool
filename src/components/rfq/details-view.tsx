@@ -246,15 +246,21 @@ export function DetailsView({
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <Link href={`/rfq/${rfq.id}/edit`}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1 hover:bg-[#274579]/10 hover:text-[#274579]"
-            >
-              <ArrowLeft className="h-4 w-4" />
+          <Link
+            href={`/rfq/${rfq.id}/edit`}
+            className="group inline-flex items-center h-8 text-sm font-medium text-slate-700 hover:text-[#274579] transition-colors"
+          >
+            {/* Pointed tip — a small clipped triangle flush against the body */}
+            <span
+              aria-hidden
+              className="block h-full w-3 bg-slate-100 group-hover:bg-[#274579]/10 transition-colors"
+              style={{ clipPath: "polygon(100% 0, 100% 100%, 0 50%)" }}
+            />
+            {/* Rounded-square body around the icon and label */}
+            <span className="inline-flex items-center gap-1 h-full pl-1 pr-3 bg-slate-100 group-hover:bg-[#274579]/10 rounded-r-md transition-colors">
+              <ArrowLeft className="h-3.5 w-3.5" />
               Back
-            </Button>
+            </span>
           </Link>
           <Button
             onClick={handleSubmit}
