@@ -452,16 +452,18 @@ export function EntryView({
                   {items.map((item, index) => (
                     <div
                       key={item.tempId}
-                      className="relative bg-slate-50 border border-slate-200 rounded p-2.5 hover:shadow-md transition-shadow"
+                      className="bg-slate-50 border border-slate-200 rounded p-2.5 hover:shadow-md transition-shadow"
                     >
-                      <span
-                        aria-hidden="true"
-                        className="absolute top-2.5 left-2.5 w-4 h-4 flex items-center justify-center rounded bg-slate-300 text-slate-50 text-[11px] font-semibold leading-none"
-                      >
-                        {index + 1}
-                      </span>
-                      <div className="pl-7 font-semibold text-xs text-slate-800 break-words">
-                        {item.itemName}
+                      <div className="flex items-start gap-2">
+                        <span
+                          aria-hidden="true"
+                          className="shrink-0 w-4 h-4 flex items-center justify-center rounded bg-slate-300 text-slate-50 text-[11px] font-semibold leading-none"
+                        >
+                          {index + 1}
+                        </span>
+                        <div className="font-semibold text-xs text-slate-800 break-words">
+                          {item.itemName}
+                        </div>
                       </div>
                       <div className="mt-0.5">
                         <span className="inline-block px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
