@@ -434,8 +434,8 @@ export function EntryView({
         </div>
 
         {/* Added items panel */}
-        <div className="lg:col-span-5">
-          <div className="bg-white rounded-md shadow-xl border border-slate-100 h-full flex flex-col">
+        <div className="lg:col-span-5 lg:sticky lg:top-4 lg:self-start">
+          <div className="bg-white rounded-md shadow-xl border border-slate-100 flex flex-col lg:h-[calc(100vh-6rem)]">
             <div className="px-4 pt-4 pb-2 flex items-center justify-between">
               <h3 className="font-semibold text-sm text-slate-800">Added</h3>
               <span className="text-xs text-slate-400">{items.length} Items</span>
@@ -449,13 +449,21 @@ export function EntryView({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {items.map((item) => (
+                  {items.map((item, index) => (
                     <div
                       key={item.tempId}
                       className="bg-slate-50 border border-slate-200 rounded p-2.5 hover:shadow-md transition-shadow"
                     >
-                      <div className="font-semibold text-xs text-slate-800 break-words">
-                        {item.itemName}
+                      <div className="flex items-start gap-2">
+                        <span
+                          aria-hidden="true"
+                          className="shrink-0 w-4 h-4 flex items-center justify-center rounded bg-slate-300 text-slate-50 text-[11px] font-semibold leading-none"
+                        >
+                          {index + 1}
+                        </span>
+                        <div className="font-semibold text-xs text-slate-800 break-words">
+                          {item.itemName}
+                        </div>
                       </div>
                       <div className="mt-0.5">
                         <span className="inline-block px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
