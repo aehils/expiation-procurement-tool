@@ -95,10 +95,14 @@ export function DetailsView({
     () => new Set(),
   );
 
-  function markComplete(itemId: string) {
+  function toggleManuallyComplete(itemId: string) {
     setManuallyComplete((prev) => {
       const next = new Set(prev);
-      next.add(itemId);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
       return next;
     });
   }
@@ -262,19 +266,10 @@ export function DetailsView({
         <div className="ml-auto flex items-center gap-2">
           <Link
             href={`/rfq/${rfq.id}/edit`}
-            className="group inline-flex items-center h-8 text-sm font-medium text-slate-700 hover:text-[#274579] transition-colors"
+            className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
           >
-            {/* Pointed tip — a small clipped triangle flush against the body */}
-            <span
-              aria-hidden
-              className="block h-full w-3 group-hover:bg-[#274579]/10 transition-colors"
-              style={{ clipPath: "polygon(100% 0, 100% 100%, 0 50%)" }}
-            />
-            {/* Rounded-square body around the icon and label */}
-            <span className="inline-flex items-center gap-1 h-full pl-1 pr-3 group-hover:bg-[#274579]/10 rounded-r-md transition-colors">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back
-            </span>
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back
           </Link>
         </div>
       </div>
@@ -368,25 +363,27 @@ export function DetailsView({
                     </span>
                     <span
                       role="button"
-                      aria-disabled={complete}
-                      tabIndex={complete ? -1 : 0}
+                      aria-disabled={allFieldsFilled}
+                      tabIndex={allFieldsFilled ? -1 : 0}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (complete) return;
-                        markComplete(item.id);
+                        if (allFieldsFilled) return;
+                        toggleManuallyComplete(item.id);
                       }}
                       onKeyDown={(e) => {
-                        if (complete) return;
+                        if (allFieldsFilled) return;
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           e.stopPropagation();
-                          markComplete(item.id);
+                          toggleManuallyComplete(item.id);
                         }
                       }}
                       className={
-                        complete
+                        allFieldsFilled
                           ? "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
-                          : "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-[#276e79] bg-[#276e79] text-white hover:bg-[#1e5962] hover:border-[#1e5962] transition-colors cursor-pointer"
+                          : complete
+                            ? "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-300 bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors cursor-pointer"
+                            : "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-[#276e79] bg-[#276e79] text-white hover:bg-[#1e5962] hover:border-[#1e5962] transition-colors cursor-pointer"
                       }
                     >
                       Mark as Complete
