@@ -262,15 +262,6 @@ export function DetailsView({
               Back
             </span>
           </Link>
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting || rfq.status === "submitted"}
-            size="sm"
-            style={{ backgroundColor: "#274579" }}
-            className="text-white hover:opacity-90"
-          >
-            {submitting ? "Submitting…" : "Quote"}
-          </Button>
         </div>
       </div>
 
@@ -361,6 +352,18 @@ export function DetailsView({
           );
         })}
       </Accordion>
+
+      <div className="mt-6 flex justify-end">
+        <Button
+          onClick={handleSubmit}
+          disabled={submitting || rfq.status === "submitted"}
+          size="sm"
+          style={{ backgroundColor: "#274579" }}
+          className="text-white hover:opacity-90"
+        >
+          {submitting ? "Submitting…" : "Create Quote"}
+        </Button>
+      </div>
     </div>
   );
 }
