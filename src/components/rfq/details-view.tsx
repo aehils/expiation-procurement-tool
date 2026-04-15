@@ -88,6 +88,20 @@ export function DetailsView({
   const [expanded, setExpanded] = React.useState<string | undefined>(initialItems[0]?.id);
   const [rates, setRates] = React.useState<Record<string, RateInfo>>({});
   const [submitting, setSubmitting] = React.useState(false);
+  // Items the user has force-marked as complete even though not all 14 detail
+  // fields are populated. Kept client-side — the visual indicator resets on
+  // reload, which is fine since the only effect is on the progress dot.
+  const [manuallyComplete, setManuallyComplete] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+
+  function markComplete(itemId: string) {
+    setManuallyComplete((prev) => {
+      const next = new Set(prev);
+      next.add(itemId);
+      return next;
+    });
+  }
 
   function patchItem(itemId: string, patch: Partial<DetailsItemPayload>) {
     setItems((prev) =>
@@ -315,7 +329,8 @@ export function DetailsView({
       >
         {items.map((item, index) => {
           const filled = countFilled(item);
-          const complete = filled === TOTAL_DETAIL_FIELDS;
+          const allFieldsFilled = filled === TOTAL_DETAIL_FIELDS;
+          const complete = allFieldsFilled || manuallyComplete.has(item.id);
           return (
             <AccordionItem key={item.id} value={item.id}>
               <AccordionTrigger>
@@ -333,7 +348,58 @@ export function DetailsView({
                       {item.requestQuantity}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-3 shrink-0">
+                    {/* Nested inside the trigger button, so these act as buttons
+                        via role+keyboard rather than real <button> elements to
+                        keep the DOM valid. Clicks are stopped from propagating
+                        so they don't toggle the accordion. */}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(
+                          `/rfq/${rfq.id}/edit?itemId=${item.id}`,
+                        );
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          router.push(
+                            `/rfq/${rfq.id}/edit?itemId=${item.id}`,
+                          );
+                        }
+                      }}
+                      className="text-[11px] font-medium text-slate-500 hover:text-[#274579] cursor-pointer"
+                    >
+                      Edit
+                    </span>
+                    <span
+                      role="button"
+                      aria-disabled={complete}
+                      tabIndex={complete ? -1 : 0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (complete) return;
+                        markComplete(item.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (complete) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          markComplete(item.id);
+                        }
+                      }}
+                      className={
+                        complete
+                          ? "text-[11px] font-medium text-slate-300 cursor-not-allowed"
+                          : "text-[11px] font-medium text-slate-500 hover:text-teal-600 cursor-pointer"
+                      }
+                    >
+                      Mark as Complete
+                    </span>
                     <div className="text-[11px] text-muted-foreground tabular-nums">
                       {filled} / {TOTAL_DETAIL_FIELDS}
                     </div>
