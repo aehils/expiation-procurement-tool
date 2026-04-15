@@ -253,11 +253,11 @@ export function DetailsView({
             {/* Pointed tip — a small clipped triangle flush against the body */}
             <span
               aria-hidden
-              className="block h-full w-3 bg-slate-100 group-hover:bg-[#274579]/10 transition-colors"
+              className="block h-full w-3 group-hover:bg-[#274579]/10 transition-colors"
               style={{ clipPath: "polygon(100% 0, 100% 100%, 0 50%)" }}
             />
             {/* Rounded-square body around the icon and label */}
-            <span className="inline-flex items-center gap-1 h-full pl-1 pr-3 bg-slate-100 group-hover:bg-[#274579]/10 rounded-r-md transition-colors">
+            <span className="inline-flex items-center gap-1 h-full pl-1 pr-3 group-hover:bg-[#274579]/10 rounded-r-md transition-colors">
               <ArrowLeft className="h-3.5 w-3.5" />
               Back
             </span>
