@@ -245,16 +245,27 @@ export function DetailsView({
           </button>
         </div>
 
-        <Link href={`/rfq/${rfq.id}/edit`} className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Link href={`/rfq/${rfq.id}/edit`}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1 hover:bg-[#274579]/10 hover:text-[#274579]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </Link>
           <Button
-            variant="ghost"
+            onClick={handleSubmit}
+            disabled={submitting || rfq.status === "submitted"}
             size="sm"
-            className="gap-1 hover:bg-[#274579]/10 hover:text-[#274579]"
+            style={{ backgroundColor: "#274579" }}
+            className="text-white hover:opacity-90"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back
+            {submitting ? "Submitting…" : "Quote"}
           </Button>
-        </Link>
+        </div>
       </div>
 
       {/* Requester row (mirrors step 1 exactly) with the currency banner inline beside it */}
@@ -361,7 +372,7 @@ function CurrencyBanner({
   onRefresh: () => void;
 }) {
   return (
-    <div className="flex w-fit flex-wrap items-center gap-x-4 gap-y-1.5 rounded-md bg-slate-50/50 px-2.5 py-1.5">
+    <div className="flex w-fit flex-nowrap items-center gap-x-4 rounded-md bg-slate-50/50 px-2.5 py-1.5 whitespace-nowrap">
       <button
         type="button"
         onClick={onRefresh}
