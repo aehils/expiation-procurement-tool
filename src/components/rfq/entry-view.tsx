@@ -456,7 +456,7 @@ export function EntryView({
                     >
                       <span
                         aria-hidden="true"
-                        className="absolute top-2.5 left-2.5 w-5 h-5 flex items-center justify-center rounded bg-slate-400 text-slate-50 text-[10px] font-semibold leading-none"
+                        className="absolute top-2.5 left-2.5 w-4 h-4 flex items-center justify-center rounded bg-slate-300 text-slate-50 text-[11px] font-semibold leading-none"
                       >
                         {index + 1}
                       </span>
