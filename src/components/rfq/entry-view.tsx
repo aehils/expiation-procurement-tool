@@ -434,8 +434,8 @@ export function EntryView({
         </div>
 
         {/* Added items panel */}
-        <div className="lg:col-span-5">
-          <div className="bg-white rounded-md shadow-xl border border-slate-100 h-full flex flex-col">
+        <div className="lg:col-span-5 lg:sticky lg:top-4 lg:self-start">
+          <div className="bg-white rounded-md shadow-xl border border-slate-100 flex flex-col lg:h-[calc(100vh-6rem)]">
             <div className="px-4 pt-4 pb-2 flex items-center justify-between">
               <h3 className="font-semibold text-sm text-slate-800">Added</h3>
               <span className="text-xs text-slate-400">{items.length} Items</span>
@@ -449,11 +449,18 @@ export function EntryView({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {items.map((item) => (
+                  {items.map((item, index) => (
                     <div
                       key={item.tempId}
-                      className="bg-slate-50 border border-slate-200 rounded p-2.5 hover:shadow-md transition-shadow"
+                      className="relative bg-slate-50 border border-slate-200 rounded p-2.5 hover:shadow-md transition-shadow"
                     >
+                      <span
+                        aria-hidden="true"
+                        className="absolute -top-1.5 -left-1.5 w-5 h-5 flex items-center justify-center rounded text-[10px] font-semibold leading-none text-white shadow-sm"
+                        style={{ backgroundColor: "#274579" }}
+                      >
+                        {index + 1}
+                      </span>
                       <div className="font-semibold text-xs text-slate-800 break-words">
                         {item.itemName}
                       </div>
