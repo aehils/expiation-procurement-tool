@@ -456,12 +456,11 @@ export function EntryView({
                     >
                       <span
                         aria-hidden="true"
-                        className="absolute -top-1.5 -left-1.5 w-5 h-5 flex items-center justify-center rounded text-[10px] font-semibold leading-none text-white shadow-sm"
-                        style={{ backgroundColor: "#274579" }}
+                        className="absolute top-2.5 left-2.5 w-5 h-5 flex items-center justify-center rounded bg-slate-400 text-slate-50 text-[10px] font-semibold leading-none"
                       >
                         {index + 1}
                       </span>
-                      <div className="font-semibold text-xs text-slate-800 break-words">
+                      <div className="pl-7 font-semibold text-xs text-slate-800 break-words">
                         {item.itemName}
                       </div>
                       <div className="mt-0.5">
