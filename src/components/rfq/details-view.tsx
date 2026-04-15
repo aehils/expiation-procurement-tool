@@ -12,6 +12,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { categoryLabel, departmentLabel, TOTAL_DETAIL_FIELDS } from "@/lib/constants";
 import { submitRfq } from "@/lib/actions";
 import { ItemDetailForm, type DetailsItemPayload } from "./item-detail-form";
@@ -51,15 +53,6 @@ function countFilled(item: DetailsItemPayload): number {
     if (typeof v === "number" && Number.isNaN(v)) return acc;
     return acc + 1;
   }, 0);
-}
-
-function formatCreatedAt(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function relativeTime(iso: string): string {
@@ -202,97 +195,111 @@ export function DetailsView({
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-6">
-      {/* Top nav */}
-      <nav className="px-4 py-3 mb-6 bg-slate-50/90 border border-slate-200 rounded-lg">
-        <div className="flex items-center gap-3">
-          <Link href={`/rfq/${rfq.id}/edit`}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1 hover:bg-[#274579]/10 hover:text-[#274579]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-          </Link>
-
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Request for Quote
-          </h2>
-
+    <div className="max-w-screen-2xl mx-auto px-6 py-4">
+      {/* Top area — matches step 1 (entry view) so moving between pages feels static */}
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
+          Request for Quote
+        </h2>
+        <button
+          type="button"
+          onClick={copyRfqId}
+          title="Copy RFQ ID"
+          className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
+        >
+          <span>#{rfq.rfqNumber}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-slate-400 group-hover:text-slate-600"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        </button>
+        {rfq.status === "submitted" ? (
+          <span className="px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
+            Submitted
+          </span>
+        ) : (
+          <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+            Draft
+          </span>
+        )}
+        {/* Visual-only placeholder to keep the dot-menu slot aligned with step 1;
+            actions will be wired up later. */}
+        <div className="relative">
           <button
             type="button"
-            onClick={copyRfqId}
-            title="Copy RFQ ID"
-            className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
+            aria-label="RFQ options"
+            className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-200 text-slate-900 text-xl leading-none font-black"
           >
-            <span>#{rfq.rfqNumber}</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="11"
-              height="11"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-slate-400 group-hover:text-slate-600"
-            >
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
+            ⋮
           </button>
+        </div>
 
-          {rfq.status === "submitted" ? (
-            <span className="px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
-              Submitted
+        <div className="ml-auto flex items-center gap-2">
+          <Link
+            href={`/rfq/${rfq.id}/edit`}
+            className="group inline-flex items-center h-8 text-sm font-medium text-slate-700 hover:text-[#274579] transition-colors"
+          >
+            {/* Pointed tip — a small clipped triangle flush against the body */}
+            <span
+              aria-hidden
+              className="block h-full w-3 group-hover:bg-[#274579]/10 transition-colors"
+              style={{ clipPath: "polygon(100% 0, 100% 100%, 0 50%)" }}
+            />
+            {/* Rounded-square body around the icon and label */}
+            <span className="inline-flex items-center gap-1 h-full pl-1 pr-3 group-hover:bg-[#274579]/10 rounded-r-md transition-colors">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back
             </span>
-          ) : (
-            <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
-              Draft
-            </span>
-          )}
+          </Link>
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting || rfq.status === "submitted"}
+            size="sm"
+            style={{ backgroundColor: "#274579" }}
+            className="text-white hover:opacity-90"
+          >
+            {submitting ? "Submitting…" : "Quote"}
+          </Button>
+        </div>
+      </div>
 
-          <div className="ml-auto">
-            <Button
-              onClick={handleSubmit}
-              disabled={submitting || rfq.status === "submitted"}
-              style={{ backgroundColor: "#274579" }}
-              className="text-white hover:opacity-90"
+      {/* Requester row (mirrors step 1 exactly) with the currency banner inline beside it */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+        <div className="lg:col-span-7">
+          <div className="flex items-center gap-3 px-1 max-w-[70%]">
+            <Label
+              htmlFor="requester"
+              className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+              style={{ color: "#274579" }}
             >
-              {submitting ? "Submitting…" : "Create Quote"}
-            </Button>
+              Requester
+            </Label>
+            <Input
+              id="requester"
+              value={rfq.requester}
+              readOnly
+              className="h-8 text-xs flex-1 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+            />
           </div>
         </div>
-      </nav>
-
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 mb-8 px-1">
-        <dl className="flex flex-wrap gap-x-10 gap-y-3">
-          <div>
-            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-              Date Created
-            </dt>
-            <dd className="mt-0.5 text-sm font-medium text-slate-700 tabular-nums">
-              {formatCreatedAt(rfq.createdAt)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-              Requester
-            </dt>
-            <dd className="mt-0.5 text-sm font-medium text-slate-700">
-              {rfq.requester}
-            </dd>
-          </div>
-        </dl>
-
-        <CurrencyBanner
-          rates={rates}
-          freshness={bannerFreshness}
-          onRefresh={refreshBannerRates}
-        />
+        <div className="lg:col-span-5 flex items-center justify-end">
+          <CurrencyBanner
+            rates={rates}
+            freshness={bannerFreshness}
+            onRefresh={refreshBannerRates}
+          />
+        </div>
       </div>
 
       <h3 className="mb-4 pl-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -371,7 +378,7 @@ function CurrencyBanner({
   onRefresh: () => void;
 }) {
   return (
-    <div className="flex w-fit flex-wrap items-center gap-x-4 gap-y-1.5 rounded-md bg-slate-50/50 px-2.5 py-1.5">
+    <div className="flex w-fit flex-nowrap items-center gap-x-4 rounded-md bg-slate-50/50 px-2.5 py-1.5 whitespace-nowrap">
       <button
         type="button"
         onClick={onRefresh}

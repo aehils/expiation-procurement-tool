@@ -202,10 +202,10 @@ export function EntryView({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="max-w-screen-2xl mx-auto px-6 py-4">
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
-          {mode === "edit" ? "Edit Request for Quote" : "New Request for Quote"}
+          Request for Quote
         </h2>
         <button
           type="button"
@@ -263,7 +263,7 @@ export function EntryView({
         {/* Left column: Requester + Form */}
         <div className="lg:col-span-7 space-y-4">
           {/* Requester input — belongs to the RFQ as a whole, not per-item */}
-          <div className="flex items-center gap-3 px-1">
+          <div className="flex items-center gap-3 px-1 max-w-[70%]">
             <Label
               htmlFor="requester"
               className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
