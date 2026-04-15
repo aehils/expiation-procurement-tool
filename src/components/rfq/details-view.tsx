@@ -348,7 +348,7 @@ export function DetailsView({
                       {item.requestQuantity}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {/* Nested inside the trigger button, so these act as buttons
                         via role+keyboard rather than real <button> elements to
                         keep the DOM valid. Clicks are stopped from propagating
@@ -371,7 +371,7 @@ export function DetailsView({
                           );
                         }
                       }}
-                      className="text-[11px] font-medium text-slate-500 hover:text-[#274579] cursor-pointer"
+                      className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
                     >
                       Edit
                     </span>
@@ -394,13 +394,13 @@ export function DetailsView({
                       }}
                       className={
                         complete
-                          ? "text-[11px] font-medium text-slate-300 cursor-not-allowed"
-                          : "text-[11px] font-medium text-slate-500 hover:text-teal-600 cursor-pointer"
+                          ? "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+                          : "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800 hover:border-emerald-800 transition-colors cursor-pointer"
                       }
                     >
                       Mark as Complete
                     </span>
-                    <div className="text-[11px] text-muted-foreground tabular-nums">
+                    <div className="text-[11px] text-muted-foreground tabular-nums ml-1">
                       {filled} / {TOTAL_DETAIL_FIELDS}
                     </div>
                     <div
