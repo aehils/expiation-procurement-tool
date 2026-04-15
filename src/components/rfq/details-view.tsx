@@ -395,7 +395,7 @@ export function DetailsView({
                       className={
                         complete
                           ? "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
-                          : "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800 hover:border-emerald-800 transition-colors cursor-pointer"
+                          : "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-[#6b8e7a] bg-[#6b8e7a] text-white hover:bg-[#5c7d6b] hover:border-[#5c7d6b] transition-colors cursor-pointer"
                       }
                     >
                       Mark as Complete
