@@ -32,7 +32,7 @@ export const DEPARTMENTS: Option[] = [
 ];
 
 export const UNITS_OF_MEASURE: Option[] = [
-  { value: "each", label: "Each" },
+  { value: "piece", label: "Piece" },
   { value: "box", label: "Box" },
   { value: "pack", label: "Pack" },
   { value: "case", label: "Case" },
