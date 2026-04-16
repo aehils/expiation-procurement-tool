@@ -61,16 +61,10 @@ export function EntryView({
   const router = useRouter();
   const [requester, setRequester] = React.useState(initialRequester ?? "");
   const [items, setItems] = React.useState<DraftItem[]>(() => {
-    const withTempIds = (initialItems ?? []).map((it) => ({
+    return (initialItems ?? []).map((it) => ({
       ...it,
       tempId: crypto.randomUUID(),
     }));
-    // If we're deep-linked to edit a specific item, drop it from the list —
-    // it'll live in the form state below until the user re-adds it.
-    if (initialEditItemId) {
-      return withTempIds.filter((it) => it.id !== initialEditItemId);
-    }
-    return withTempIds;
   });
   const [form, setForm] = React.useState<EntryItem>(() => {
     if (!initialEditItemId) return emptyForm;
@@ -82,11 +76,16 @@ export function EntryView({
     void _omit;
     return rest;
   });
-  // Tracks the persisted id of the item currently loaded in the form (set when
-  // the user clicks Edit on an existing item) so it round-trips back into the
-  // list when re-added.
+  // Tracks the persisted DB id of the item currently loaded in the form so
+  // saving replaces it in-place rather than creating a duplicate.
   const [editingItemId, setEditingItemId] = React.useState<string | undefined>(
     initialEditItemId,
+  );
+  // Tracks the client-side tempId of the item being edited (set for in-page
+  // edits where we know the tempId; not set for deep-linked edits via
+  // initialEditItemId since tempIds are generated fresh on mount).
+  const [editingTempId, setEditingTempId] = React.useState<string | undefined>(
+    undefined,
   );
   const [quantityRaw, setQuantityRaw] = React.useState(() => {
     if (!initialEditItemId) return "";
@@ -117,6 +116,7 @@ export function EntryView({
     setForm(emptyForm);
     setQuantityRaw("");
     setEditingItemId(undefined);
+    setEditingTempId(undefined);
   }
 
   function handleAdd(e: React.FormEvent) {
@@ -132,21 +132,48 @@ export function EntryView({
       toast.error("Please fill in Item Name, Category, Department, and Quantity.");
       return;
     }
-    const item: DraftItem = {
-      ...form,
-      requestQuantity: qty,
-      tempId: crypto.randomUUID(),
-      ...(editingItemId ? { id: editingItemId } : {}),
-    };
-    setItems((prev) => [...prev, item]);
-    const wasEditing = Boolean(editingItemId);
+    const wasEditing = Boolean(editingItemId || editingTempId);
+    if (wasEditing) {
+      // Update the item in-place — match by tempId when available (in-page
+      // edit), otherwise fall back to the persisted DB id (deep-linked edit).
+      setItems((prev) =>
+        prev.map((it) => {
+          const match = editingTempId
+            ? it.tempId === editingTempId
+            : it.id === editingItemId;
+          if (!match) return it;
+          return {
+            ...form,
+            requestQuantity: qty,
+            tempId: it.tempId,
+            ...(it.id ? { id: it.id } : {}),
+          };
+        }),
+      );
+    } else {
+      const item: DraftItem = {
+        ...form,
+        requestQuantity: qty,
+        tempId: crypto.randomUUID(),
+      };
+      setItems((prev) => [...prev, item]);
+    }
     clearForm();
     toast.success(wasEditing ? "Item updated" : "Item added");
   }
 
   function handleDelete(tempId: string) {
     if (!confirm("Remove this item from the RFQ?")) return;
+    const target = items.find((it) => it.tempId === tempId);
     setItems((prev) => prev.filter((it) => it.tempId !== tempId));
+    // If the deleted item was the one being edited, clear the form so the user
+    // doesn't accidentally re-add it.
+    if (
+      editingTempId === tempId ||
+      (editingItemId && target?.id === editingItemId)
+    ) {
+      clearForm();
+    }
   }
 
   function handleEdit(tempId: string) {
@@ -154,14 +181,15 @@ export function EntryView({
     if (!target) return;
     const { tempId: _omit, id: _existingId, ...rest } = target;
     void _omit;
-    // Preserve the persisted id (if any) so re-adding the item keeps it linked
-    // to the same RfqItem row and its detail-stage fields.
     setEditingItemId(_existingId);
+    setEditingTempId(tempId);
     setForm(rest);
     setQuantityRaw(
       target.requestQuantity ? String(target.requestQuantity) : "",
     );
-    setItems((prev) => prev.filter((it) => it.tempId !== tempId));
+    // Item stays in the list — it will be updated in-place when the user
+    // clicks "Update Item". If they navigate away without saving, the
+    // original data is preserved.
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -442,7 +470,7 @@ export function EntryView({
                 style={{ backgroundColor: "#4a6aa5" }}
                 className="flex-1 hover:opacity-90 text-white"
               >
-                Add Item
+                {editingItemId || editingTempId ? "Update Item" : "Add Item"}
               </Button>
               <Button
                 type="button"
@@ -474,10 +502,20 @@ export function EntryView({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {items.map((item, index) => (
+                  {items.map((item, index) => {
+                    const beingEdited = editingTempId
+                      ? item.tempId === editingTempId
+                      : editingItemId
+                        ? item.id === editingItemId
+                        : false;
+                    return (
                     <div
                       key={item.tempId}
-                      className="bg-slate-50 border border-slate-200 rounded p-2.5 hover:shadow-md transition-shadow"
+                      className={`rounded p-2.5 transition-shadow ${
+                        beingEdited
+                          ? "bg-blue-50/60 border-2 border-blue-300"
+                          : "bg-slate-50 border border-slate-200 hover:shadow-md"
+                      }`}
                     >
                       <div className="flex items-start gap-2">
                         <span
@@ -538,10 +576,16 @@ export function EntryView({
                       <div className="mt-1.5 pt-1.5 border-t border-slate-200 flex justify-end gap-3">
                         <button
                           type="button"
-                          onClick={() => handleEdit(item.tempId)}
-                          className="text-xs text-slate-500 hover:text-slate-800"
+                          onClick={() => {
+                            if (!beingEdited) handleEdit(item.tempId);
+                          }}
+                          className={`text-xs ${
+                            beingEdited
+                              ? "text-blue-500 font-medium cursor-default"
+                              : "text-slate-500 hover:text-slate-800"
+                          }`}
                         >
-                          Edit
+                          {beingEdited ? "Editing" : "Edit"}
                         </button>
                         <button
                           type="button"
@@ -552,7 +596,8 @@ export function EntryView({
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
