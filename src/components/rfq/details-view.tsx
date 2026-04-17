@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, ChevronDown, RefreshCw } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -318,7 +318,7 @@ export function DetailsView({
           const complete = allFieldsFilled || manuallyComplete.has(item.id);
           return (
             <AccordionItem key={item.id} value={item.id}>
-              <AccordionTrigger>
+              <AccordionTrigger hideChevron>
                 <div className="flex items-center gap-3 flex-1">
                   <div className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 w-5 text-center">
                     {index + 1}
@@ -338,28 +338,7 @@ export function DetailsView({
                         via role+keyboard rather than real <button> elements to
                         keep the DOM valid. Clicks are stopped from propagating
                         so they don't toggle the accordion. */}
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(
-                          `/rfq/${rfq.id}/edit?itemId=${item.id}`,
-                        );
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(
-                            `/rfq/${rfq.id}/edit?itemId=${item.id}`,
-                          );
-                        }
-                      }}
-                      className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
-                    >
-                      Edit
-                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
                     <span
                       role="button"
                       aria-disabled={allFieldsFilled}
@@ -386,6 +365,28 @@ export function DetailsView({
                       }
                     >
                       Mark as Complete
+                    </span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(
+                          `/rfq/${rfq.id}/edit?itemId=${item.id}`,
+                        );
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          router.push(
+                            `/rfq/${rfq.id}/edit?itemId=${item.id}`,
+                          );
+                        }
+                      }}
+                      className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                    >
+                      Edit
                     </span>
                     <div className="text-[11px] text-muted-foreground tabular-nums ml-1">
                       {filled} / {TOTAL_DETAIL_FIELDS}
