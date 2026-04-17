@@ -41,7 +41,9 @@ const AccordionTrigger = React.forwardRef<
       <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
     </AccordionPrimitive.Trigger>
     {actions && (
-      <div className="flex items-center gap-2 shrink-0 pr-4">{actions}</div>
+      <div className="flex items-center gap-3 shrink-0 pl-4 pr-4 border-l border-slate-200">
+        {actions}
+      </div>
     )}
   </AccordionPrimitive.Header>
 ));
