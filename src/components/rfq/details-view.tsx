@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, ChevronDown, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -318,27 +318,9 @@ export function DetailsView({
           const complete = allFieldsFilled || manuallyComplete.has(item.id);
           return (
             <AccordionItem key={item.id} value={item.id}>
-              <AccordionTrigger hideChevron>
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 w-5 text-center">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-slate-800 truncate">
-                      {item.itemName}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {categoryLabel(item.itemCategory)} •{" "}
-                      {departmentLabel(item.department)} • Qty:{" "}
-                      {item.requestQuantity}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Nested inside the trigger button, so these act as buttons
-                        via role+keyboard rather than real <button> elements to
-                        keep the DOM valid. Clicks are stopped from propagating
-                        so they don't toggle the accordion. */}
-                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              <AccordionTrigger
+                actions={
+                  <>
                     <span
                       role="button"
                       aria-disabled={allFieldsFilled}
@@ -351,7 +333,6 @@ export function DetailsView({
                       onKeyDown={(e) => {
                         if (allFieldsFilled) return;
                         if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
                           e.stopPropagation();
                           toggleManuallyComplete(item.id);
                         }
@@ -369,33 +350,37 @@ export function DetailsView({
                     <span
                       role="button"
                       tabIndex={0}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(
-                          `/rfq/${rfq.id}/edit?itemId=${item.id}`,
-                        );
-                      }}
+                      onClick={() => router.push(`/rfq/${rfq.id}/edit?itemId=${item.id}`)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(
-                            `/rfq/${rfq.id}/edit?itemId=${item.id}`,
-                          );
-                        }
+                        if (e.key === "Enter" || e.key === " ")
+                          router.push(`/rfq/${rfq.id}/edit?itemId=${item.id}`);
                       }}
                       className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
                     >
                       Edit
                     </span>
-                    <div className="text-[11px] text-muted-foreground tabular-nums ml-1">
+                    <div className="text-[11px] text-muted-foreground tabular-nums">
                       {filled} / {TOTAL_DETAIL_FIELDS}
                     </div>
                     <div
-                      className={`w-2 h-2 rounded-full ${
-                        complete ? "bg-teal-600" : "bg-slate-300"
-                      }`}
+                      className={`w-2 h-2 rounded-full ${complete ? "bg-teal-600" : "bg-slate-300"}`}
                     />
+                  </>
+                }
+              >
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 w-5 text-center">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm text-slate-800 truncate">
+                      {item.itemName}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {categoryLabel(item.itemCategory)} •{" "}
+                      {departmentLabel(item.department)} • Qty:{" "}
+                      {item.requestQuantity}
+                    </div>
                   </div>
                 </div>
               </AccordionTrigger>

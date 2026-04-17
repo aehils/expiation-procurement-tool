@@ -25,23 +25,24 @@ AccordionItem.displayName = "AccordionItem";
 const AccordionTrigger = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> & {
-    hideChevron?: boolean;
+    actions?: React.ReactNode;
   }
->(({ className, children, hideChevron, ...props }, ref) => (
-  <AccordionPrimitive.Header className="flex">
+>(({ className, children, actions, ...props }, ref) => (
+  <AccordionPrimitive.Header className="flex items-center">
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "group flex flex-1 items-center justify-between gap-3 px-4 py-3 text-left text-xs font-medium transition-all hover:bg-slate-50 [&[data-state=open]>svg]:rotate-180",
+        "flex flex-1 items-center justify-between gap-3 px-4 py-3 text-left text-xs font-medium transition-all hover:bg-slate-50 [&[data-state=open]>svg]:rotate-180",
         className,
       )}
       {...props}
     >
       {children}
-      {!hideChevron && (
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
-      )}
+      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
     </AccordionPrimitive.Trigger>
+    {actions && (
+      <div className="flex items-center gap-2 shrink-0 pr-4">{actions}</div>
+    )}
   </AccordionPrimitive.Header>
 ));
 AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName;
