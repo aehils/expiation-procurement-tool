@@ -381,7 +381,7 @@ export function ItemDetailForm({
           />
         </Field>
 
-        <div className="flex items-center">
+        <div className="flex items-end justify-end">
           <ItemTotals
             requestQuantity={item.requestQuantity}
             nairaUnitPrice={draft.nairaUnitPrice}
@@ -491,7 +491,7 @@ function ItemTotals({
 
   if (total === null) return null;
   return (
-    <span className="text-2xl text-slate-700">
+    <span className="text-lg text-slate-700">
       <span className="font-bold">Item Total:</span> ₦{fmt(total)}
     </span>
   );
