@@ -381,6 +381,14 @@ export function ItemDetailForm({
           />
         </Field>
 
+        <div className="flex items-end justify-end pr-10 pb-1">
+          <ItemTotals
+            requestQuantity={item.requestQuantity}
+            nairaUnitPrice={draft.nairaUnitPrice}
+            boxPrice={draft.boxPrice}
+          />
+        </div>
+
         {overridden && (
           <div className="md:col-span-3 flex items-center gap-2 text-[11px] text-amber-700">
             <span>Naira values are manually overridden — auto-conversion paused.</span>
@@ -457,5 +465,34 @@ function Field({
       </Label>
       {children}
     </div>
+  );
+}
+
+function fmt(n: number) {
+  return n.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function ItemTotals({
+  requestQuantity,
+  nairaUnitPrice,
+  boxPrice,
+}: {
+  requestQuantity: number;
+  nairaUnitPrice: string;
+  boxPrice: string;
+}) {
+  const qty = requestQuantity;
+  const total =
+    qty > 0 && parseFloat(nairaUnitPrice) > 0
+      ? qty * parseFloat(nairaUnitPrice)
+      : qty > 0 && parseFloat(boxPrice) > 0
+        ? qty * parseFloat(boxPrice)
+        : null;
+
+  if (total === null) return null;
+  return (
+    <span className="text-base text-slate-500">
+      <span className="font-bold">Item Total:</span> ₦{fmt(total)}
+    </span>
   );
 }
