@@ -381,8 +381,7 @@ export function ItemDetailForm({
           />
         </Field>
 
-        <div className="flex flex-col justify-start">
-          <Label className="mb-1 block text-xs">Item Total (₦)</Label>
+        <div className="flex items-end justify-end">
           <ItemTotals
             unitQuantity={draft.unitQuantity}
             nairaUnitPrice={draft.nairaUnitPrice}
@@ -483,24 +482,17 @@ function ItemTotals({
   boxPrice: string;
 }) {
   const qty = parseFloat(unitQuantity);
-  const unitTotal = qty > 0 && parseFloat(nairaUnitPrice) > 0 ? qty * parseFloat(nairaUnitPrice) : null;
-  const boxTotal = qty > 0 && parseFloat(boxPrice) > 0 ? qty * parseFloat(boxPrice) : null;
+  const total =
+    qty > 0 && parseFloat(nairaUnitPrice) > 0
+      ? qty * parseFloat(nairaUnitPrice)
+      : qty > 0 && parseFloat(boxPrice) > 0
+        ? qty * parseFloat(boxPrice)
+        : null;
 
-  if (unitTotal === null && boxTotal === null) {
-    return <span className="text-xs text-slate-400 italic">—</span>;
-  }
+  if (total === null) return null;
   return (
-    <div className="space-y-0.5">
-      {unitTotal !== null && (
-        <div className="text-xs text-slate-700">
-          <span className="text-[11px] text-slate-400">Unit · </span>₦{fmt(unitTotal)}
-        </div>
-      )}
-      {boxTotal !== null && (
-        <div className="text-xs text-slate-700">
-          <span className="text-[11px] text-slate-400">Box · </span>₦{fmt(boxTotal)}
-        </div>
-      )}
-    </div>
+    <span className="text-xs text-slate-600">
+      Item Total: ₦{fmt(total)}
+    </span>
   );
 }
