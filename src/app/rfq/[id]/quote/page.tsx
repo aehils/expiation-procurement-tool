@@ -39,6 +39,7 @@ export default async function QuotePage({
     nairaUnitPrice: it.nairaUnitPrice,
     boxPrice: it.boxPrice,
     nairaOverridden: it.nairaOverridden,
+    brand: it.brand,
   }));
 
   return (

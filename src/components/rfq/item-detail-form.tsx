@@ -39,6 +39,7 @@ export type DetailsItemPayload = {
   nairaUnitPrice: number | null;
   boxPrice: number | null;
   nairaOverridden: boolean;
+  brand: string | null;
 };
 
 type FieldKey = Exclude<keyof DetailsItemPayload, "id" | "itemCategory" | "department" | "itemName" | "requestQuantity">;

@@ -11,11 +11,12 @@ import { categoryLabel } from "@/lib/constants";
 import type { DetailsItemPayload } from "./item-detail-form";
 
 type ColKey =
+  | "requestQuantity"
   | "vendor"
   | "nairaUnitPrice"
   | "boxPrice"
-  | "requestQuantity"
   | "uom"
+  | "brand"
   | "mProductCode"
   | "manufacturerName"
   | "vendorDeliveryTimeline"
@@ -24,11 +25,12 @@ type ColKey =
   | "vendorLocation";
 
 const COLUMNS: { key: ColKey; label: string; defaultOn: boolean }[] = [
+  { key: "requestQuantity", label: "Quantity", defaultOn: true },
   { key: "vendor", label: "Vendor", defaultOn: true },
   { key: "nairaUnitPrice", label: "Unit Price", defaultOn: true },
   { key: "boxPrice", label: "Box Price", defaultOn: true },
-  { key: "requestQuantity", label: "Qty", defaultOn: true },
   { key: "uom", label: "UOM", defaultOn: false },
+  { key: "brand", label: "Brand", defaultOn: false },
   { key: "mProductCode", label: "Product Code", defaultOn: false },
   { key: "manufacturerName", label: "Manufacturer", defaultOn: false },
   { key: "vendorDeliveryTimeline", label: "Lead Time", defaultOn: false },
@@ -59,6 +61,8 @@ function cellValue(item: DetailsItemPayload, key: ColKey): React.ReactNode {
       return item.requestQuantity;
     case "itemCategory":
       return categoryLabel(item.itemCategory);
+    case "brand":
+      return item.brand ?? "—";
     case "vendor":
       return item.vendor ?? "—";
     case "uom":
