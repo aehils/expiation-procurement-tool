@@ -53,15 +53,19 @@ function formatNaira(v: number | null | undefined): string {
   return `₦${v.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
-function cellValue(item: DetailsItemPayload, key: ColKey): React.ReactNode {
+function cellValue(item: DetailsItemPayload, key: ColKey, markupFactor: number): React.ReactNode {
   switch (key) {
     case "nairaUnitPrice":
-      return formatNaira(item.nairaUnitPrice);
+      return item.nairaUnitPrice != null
+        ? formatNaira(item.nairaUnitPrice * markupFactor)
+        : "—";
     case "boxPrice":
-      return formatNaira(item.boxPrice);
+      return item.boxPrice != null
+        ? formatNaira(item.boxPrice * markupFactor)
+        : "—";
     case "totalPrice":
       return item.nairaUnitPrice != null
-        ? formatNaira(item.requestQuantity * item.nairaUnitPrice)
+        ? formatNaira(item.requestQuantity * item.nairaUnitPrice * markupFactor)
         : "—";
     case "requestQuantity":
       return item.requestQuantity;
@@ -161,6 +165,7 @@ export function QuoteView({
 
   const visibleCols = COLUMNS.filter((c) => enabledCols.has(c.key));
   const allSelected = selectedItems.size === items.length;
+  const markupFactor = 1 + (parseFloat(globalMarkup) || 0) / 100;
   const someSelected = selectedItems.size > 0 && !allSelected;
 
   function toggleItem(id: string) {
@@ -394,7 +399,7 @@ export function QuoteView({
                   </td>
                   {visibleCols.map((col) => (
                     <td key={col.key} className="px-3 py-2.5 text-slate-600">
-                      {cellValue(item, col.key)}
+                      {cellValue(item, col.key, markupFactor)}
                     </td>
                   ))}
                 </tr>
