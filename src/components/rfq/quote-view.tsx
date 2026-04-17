@@ -28,16 +28,16 @@ type ColKey =
 const COLUMNS: { key: ColKey; label: string; defaultOn: boolean; wrap?: boolean }[] = [
   { key: "requestQuantity", label: "Qty", defaultOn: true },
   { key: "vendor", label: "Vendor", defaultOn: true },
-  { key: "nairaUnitPrice", label: "Unit Price", defaultOn: true },
   { key: "uom", label: "UOM", defaultOn: false },
   { key: "brand", label: "Brand", defaultOn: false },
-  { key: "boxPrice", label: "Box Price", defaultOn: false },
   { key: "mProductCode", label: "Product Code", defaultOn: false },
   { key: "manufacturerName", label: "Manufacturer", defaultOn: false },
   { key: "vendorDeliveryTimeline", label: "Lead Time", defaultOn: false, wrap: true },
   { key: "countryOfOrigin", label: "Country of Origin", defaultOn: false },
   { key: "itemCategory", label: "Category", defaultOn: false },
   { key: "vendorLocation", label: "Vendor Location", defaultOn: false },
+  { key: "boxPrice", label: "Box Price", defaultOn: false },
+  { key: "nairaUnitPrice", label: "Unit Price", defaultOn: true },
   { key: "totalPrice", label: "Total Price", defaultOn: true },
 ];
 
