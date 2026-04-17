@@ -25,7 +25,7 @@ type ColKey =
   | "itemCategory"
   | "vendorLocation";
 
-const COLUMNS: { key: ColKey; label: string; defaultOn: boolean }[] = [
+const COLUMNS: { key: ColKey; label: string; defaultOn: boolean; wrap?: boolean }[] = [
   { key: "requestQuantity", label: "Qty", defaultOn: true },
   { key: "vendor", label: "Vendor", defaultOn: true },
   { key: "nairaUnitPrice", label: "Unit Price", defaultOn: true },
@@ -34,7 +34,7 @@ const COLUMNS: { key: ColKey; label: string; defaultOn: boolean }[] = [
   { key: "boxPrice", label: "Box Price", defaultOn: false },
   { key: "mProductCode", label: "Product Code", defaultOn: false },
   { key: "manufacturerName", label: "Manufacturer", defaultOn: false },
-  { key: "vendorDeliveryTimeline", label: "Lead Time", defaultOn: false },
+  { key: "vendorDeliveryTimeline", label: "Lead Time", defaultOn: false, wrap: true },
   { key: "countryOfOrigin", label: "Country of Origin", defaultOn: false },
   { key: "itemCategory", label: "Category", defaultOn: false },
   { key: "vendorLocation", label: "Vendor Location", defaultOn: false },
@@ -361,7 +361,7 @@ export function QuoteView({
               {visibleCols.map((col) => (
                 <th
                   key={col.key}
-                  className="px-3 py-2.5 text-left font-medium text-slate-500 whitespace-nowrap"
+                  className={`px-3 py-2.5 text-left font-medium text-slate-500 ${col.wrap ? "max-w-[140px] whitespace-normal" : "whitespace-nowrap"}`}
                 >
                   {col.label}
                 </th>
@@ -399,7 +399,7 @@ export function QuoteView({
                     {item.itemName}
                   </td>
                   {visibleCols.map((col) => (
-                    <td key={col.key} className="px-3 py-2.5 text-slate-600">
+                    <td key={col.key} className={`px-3 py-2.5 text-slate-600 ${col.wrap ? "max-w-[140px] whitespace-normal break-words" : ""}`}>
                       {cellValue(item, col.key, markupFactor)}
                     </td>
                   ))}
