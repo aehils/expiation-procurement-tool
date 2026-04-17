@@ -383,7 +383,7 @@ export function ItemDetailForm({
 
         <div className="flex items-end justify-end">
           <ItemTotals
-            unitQuantity={draft.unitQuantity}
+            requestQuantity={item.requestQuantity}
             nairaUnitPrice={draft.nairaUnitPrice}
             boxPrice={draft.boxPrice}
           />
@@ -473,15 +473,15 @@ function fmt(n: number) {
 }
 
 function ItemTotals({
-  unitQuantity,
+  requestQuantity,
   nairaUnitPrice,
   boxPrice,
 }: {
-  unitQuantity: string;
+  requestQuantity: number;
   nairaUnitPrice: string;
   boxPrice: string;
 }) {
-  const qty = parseFloat(unitQuantity);
+  const qty = requestQuantity;
   const total =
     qty > 0 && parseFloat(nairaUnitPrice) > 0
       ? qty * parseFloat(nairaUnitPrice)
