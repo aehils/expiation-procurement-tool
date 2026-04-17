@@ -15,6 +15,7 @@ type ColKey =
   | "vendor"
   | "nairaUnitPrice"
   | "boxPrice"
+  | "totalPrice"
   | "uom"
   | "brand"
   | "mProductCode"
@@ -25,18 +26,19 @@ type ColKey =
   | "vendorLocation";
 
 const COLUMNS: { key: ColKey; label: string; defaultOn: boolean }[] = [
-  { key: "requestQuantity", label: "Quantity", defaultOn: true },
+  { key: "requestQuantity", label: "Qty", defaultOn: true },
   { key: "vendor", label: "Vendor", defaultOn: true },
   { key: "nairaUnitPrice", label: "Unit Price", defaultOn: true },
-  { key: "boxPrice", label: "Box Price", defaultOn: true },
   { key: "uom", label: "UOM", defaultOn: false },
   { key: "brand", label: "Brand", defaultOn: false },
+  { key: "boxPrice", label: "Box Price", defaultOn: false },
   { key: "mProductCode", label: "Product Code", defaultOn: false },
   { key: "manufacturerName", label: "Manufacturer", defaultOn: false },
   { key: "vendorDeliveryTimeline", label: "Lead Time", defaultOn: false },
   { key: "countryOfOrigin", label: "Country of Origin", defaultOn: false },
   { key: "itemCategory", label: "Category", defaultOn: false },
   { key: "vendorLocation", label: "Vendor Location", defaultOn: false },
+  { key: "totalPrice", label: "Total Price", defaultOn: true },
 ];
 
 type Rfq = {
@@ -57,6 +59,10 @@ function cellValue(item: DetailsItemPayload, key: ColKey): React.ReactNode {
       return formatNaira(item.nairaUnitPrice);
     case "boxPrice":
       return formatNaira(item.boxPrice);
+    case "totalPrice":
+      return item.nairaUnitPrice != null
+        ? formatNaira(item.requestQuantity * item.nairaUnitPrice)
+        : "—";
     case "requestQuantity":
       return item.requestQuantity;
     case "itemCategory":
