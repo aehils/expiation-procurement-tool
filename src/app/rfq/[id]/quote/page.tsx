@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { DetailsView } from "@/components/rfq/details-view";
+import { QuoteView } from "@/components/rfq/quote-view";
 import type { DetailsItemPayload } from "@/components/rfq/item-detail-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function RfqDetailsPage({
+export default async function QuotePage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -43,15 +43,14 @@ export default async function RfqDetailsPage({
   }));
 
   return (
-    <DetailsView
+    <QuoteView
       rfq={{
         id: rfq.id,
         rfqNumber: rfq.rfqNumber,
         requester: rfq.requester,
         status: rfq.status,
-        createdAt: rfq.createdAt.toISOString(),
       }}
-      initialItems={items}
+      items={items}
     />
   );
 }

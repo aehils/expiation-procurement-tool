@@ -192,8 +192,7 @@ export function DetailsView({
     setSubmitting(false);
     if (result.ok) {
       toast.success(`RFQ ${result.rfqNumber} submitted`);
-      // No read-only view yet — refresh in place so the status badge updates.
-      router.refresh();
+      router.push(`/rfq/${rfq.id}/quote`);
     } else {
       const first = result.missing[0];
       toast.error(
@@ -418,13 +417,17 @@ export function DetailsView({
 
       <div className="mt-6 flex justify-end">
         <Button
-          onClick={handleSubmit}
-          disabled={submitting || rfq.status === "submitted"}
+          onClick={
+            rfq.status === "submitted"
+              ? () => router.push(`/rfq/${rfq.id}/quote`)
+              : handleSubmit
+          }
+          disabled={submitting}
           size="sm"
           style={{ backgroundColor: "#274579" }}
           className="text-white hover:opacity-90"
         >
-          {submitting ? "Submitting…" : "Create Quote"}
+          {submitting ? "Submitting…" : "Proceed to Quote"}
         </Button>
       </div>
     </div>
