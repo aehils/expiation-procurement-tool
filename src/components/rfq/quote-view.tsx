@@ -330,7 +330,7 @@ export function QuoteView({
       </div>
 
       {/* Items table */}
-      <div className="rounded-md border border-slate-200 overflow-hidden">
+      <div className="rounded-md border border-slate-200 overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
