@@ -381,6 +381,15 @@ export function ItemDetailForm({
           />
         </Field>
 
+        <div className="flex flex-col justify-start">
+          <Label className="mb-1 block text-xs">Item Total (₦)</Label>
+          <ItemTotals
+            unitQuantity={draft.unitQuantity}
+            nairaUnitPrice={draft.nairaUnitPrice}
+            boxPrice={draft.boxPrice}
+          />
+        </div>
+
         {overridden && (
           <div className="md:col-span-3 flex items-center gap-2 text-[11px] text-amber-700">
             <span>Naira values are manually overridden — auto-conversion paused.</span>
@@ -456,6 +465,42 @@ function Field({
         )}
       </Label>
       {children}
+    </div>
+  );
+}
+
+function fmt(n: number) {
+  return n.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function ItemTotals({
+  unitQuantity,
+  nairaUnitPrice,
+  boxPrice,
+}: {
+  unitQuantity: string;
+  nairaUnitPrice: string;
+  boxPrice: string;
+}) {
+  const qty = parseFloat(unitQuantity);
+  const unitTotal = qty > 0 && parseFloat(nairaUnitPrice) > 0 ? qty * parseFloat(nairaUnitPrice) : null;
+  const boxTotal = qty > 0 && parseFloat(boxPrice) > 0 ? qty * parseFloat(boxPrice) : null;
+
+  if (unitTotal === null && boxTotal === null) {
+    return <span className="text-xs text-slate-400 italic">—</span>;
+  }
+  return (
+    <div className="space-y-0.5">
+      {unitTotal !== null && (
+        <div className="text-xs text-slate-700">
+          <span className="text-[11px] text-slate-400">Unit · </span>₦{fmt(unitTotal)}
+        </div>
+      )}
+      {boxTotal !== null && (
+        <div className="text-xs text-slate-700">
+          <span className="text-[11px] text-slate-400">Box · </span>₦{fmt(boxTotal)}
+        </div>
+      )}
     </div>
   );
 }
