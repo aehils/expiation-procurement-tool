@@ -331,7 +331,8 @@ export function QuoteView({
 
       {/* Items table */}
       <div className="rounded-md border border-[#274579]/35 overflow-x-auto">
-        <table className="text-xs min-w-max">
+        <div className="w-max min-w-full">
+        <table className="text-xs w-full">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
               <th className="w-8 px-3 py-2.5 text-center">
@@ -407,6 +408,7 @@ export function QuoteView({
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
