@@ -361,7 +361,7 @@ export function QuoteView({
               {visibleCols.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-3 py-2.5 text-left font-medium text-slate-500 ${col.wrap ? "max-w-[200px] whitespace-normal" : "whitespace-nowrap"}`}
+                  className={`px-3 py-2.5 text-left font-medium text-slate-500 ${col.wrap ? "max-w-[280px] whitespace-normal" : "whitespace-nowrap"}`}
                 >
                   {col.label}
                 </th>
@@ -399,7 +399,7 @@ export function QuoteView({
                     {item.itemName}
                   </td>
                   {visibleCols.map((col) => (
-                    <td key={col.key} className={`px-3 py-2.5 text-slate-600 ${col.wrap ? "max-w-[200px] whitespace-normal break-words" : ""}`}>
+                    <td key={col.key} className={`px-3 py-2.5 text-slate-600 ${col.wrap ? "max-w-[280px] whitespace-normal break-words" : ""}`}>
                       {cellValue(item, col.key, markupFactor)}
                     </td>
                   ))}
