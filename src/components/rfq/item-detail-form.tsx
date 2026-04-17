@@ -490,5 +490,9 @@ function ItemTotals({
         : null;
 
   if (total === null) return null;
-  return <span className="text-[14px] text-slate-700">Item Total: ₦{fmt(total)}</span>;
+  return (
+    <span className="text-2xl text-slate-700">
+      <span className="font-bold">Item Total:</span> ₦{fmt(total)}
+    </span>
+  );
 }
