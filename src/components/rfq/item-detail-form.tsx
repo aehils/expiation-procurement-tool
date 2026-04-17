@@ -381,13 +381,13 @@ export function ItemDetailForm({
           />
         </Field>
 
-        <Field label="Item Total">
+        <div className="flex items-center">
           <ItemTotals
             requestQuantity={item.requestQuantity}
             nairaUnitPrice={draft.nairaUnitPrice}
             boxPrice={draft.boxPrice}
           />
-        </Field>
+        </div>
 
         {overridden && (
           <div className="md:col-span-3 flex items-center gap-2 text-[11px] text-amber-700">
@@ -489,6 +489,6 @@ function ItemTotals({
         ? qty * parseFloat(boxPrice)
         : null;
 
-  if (total === null) return <span className="text-xs text-slate-400">—</span>;
-  return <span className="text-xs text-slate-700">₦{fmt(total)}</span>;
+  if (total === null) return null;
+  return <span className="text-[14px] text-slate-700">Item Total: ₦{fmt(total)}</span>;
 }
