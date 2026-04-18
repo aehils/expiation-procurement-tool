@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -162,6 +162,15 @@ export function QuoteView({
     () => new Set(COLUMNS.filter((c) => c.defaultOn).map((c) => c.key)),
   );
   const [globalMarkup, setGlobalMarkup] = React.useState("");
+  const [hoveredItemId, setHoveredItemId] = React.useState<string | null>(null);
+  const [menuOpenItemId, setMenuOpenItemId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!menuOpenItemId) return;
+    function onDocClick() { setMenuOpenItemId(null); }
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [menuOpenItemId]);
 
   const visibleCols = COLUMNS.filter((c) => enabledCols.has(c.key));
   const allSelected = selectedItems.size === items.length;
@@ -366,16 +375,21 @@ export function QuoteView({
                   {col.label}
                 </th>
               ))}
+              <th className="w-10 px-1 py-2.5 sticky right-0 bg-slate-50" />
             </tr>
           </thead>
           <tbody>
             {items.map((item, index) => {
               const included = selectedItems.has(item.id);
+              const isHovered = hoveredItemId === item.id;
+              const isMenuOpen = menuOpenItemId === item.id;
               return (
                 <tr
                   key={item.id}
+                  onMouseEnter={() => setHoveredItemId(item.id)}
+                  onMouseLeave={() => setHoveredItemId(null)}
                   onClick={() => toggleItem(item.id)}
-                  className={`border-b border-slate-100 last:border-0 cursor-pointer transition-all ${
+                  className={`group border-b border-slate-100 last:border-0 cursor-pointer transition-all ${
                     included
                       ? "hover:bg-slate-50"
                       : "opacity-40 hover:opacity-60 hover:bg-slate-50"
@@ -403,6 +417,36 @@ export function QuoteView({
                       {cellValue(item, col.key, markupFactor)}
                     </td>
                   ))}
+                  <td
+                    className="sticky right-0 w-10 px-1 py-2 text-center align-middle bg-white group-hover:bg-slate-50 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {(isHovered || isMenuOpen) && (
+                      <div className="relative inline-flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuOpenItemId(isMenuOpen ? null : item.id);
+                          }}
+                          className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+                        >
+                          <MoreVertical className="h-3.5 w-3.5" />
+                        </button>
+                        {isMenuOpen && (
+                          <div className="absolute right-0 top-full mt-0.5 z-50 bg-white border border-slate-200 rounded-md shadow-md py-1 min-w-[140px]">
+                            <button
+                              type="button"
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              Custom Markup
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </td>
                 </tr>
               );
             })}
