@@ -165,6 +165,31 @@ export function QuoteView({
   const [hoveredItemId, setHoveredItemId] = React.useState<string | null>(null);
   const [menuOpenItemId, setMenuOpenItemId] = React.useState<string | null>(null);
 
+  const outerRef = React.useRef<HTMLDivElement>(null);
+  const rowRefs = React.useRef<Map<string, HTMLTableRowElement>>(new Map());
+  const [rowPositions, setRowPositions] = React.useState<Map<string, { top: number; height: number }>>(new Map());
+  const hoverClearTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useLayoutEffect(() => {
+    const outer = outerRef.current;
+    if (!outer) return;
+    const outerTop = outer.getBoundingClientRect().top;
+    const next = new Map<string, { top: number; height: number }>();
+    for (const [id, row] of rowRefs.current) {
+      if (!row) continue;
+      const r = row.getBoundingClientRect();
+      next.set(id, { top: r.top - outerTop, height: r.height });
+    }
+    setRowPositions(next);
+  }, [items]);
+
+  function scheduleHoverClear() {
+    hoverClearTimer.current = setTimeout(() => setHoveredItemId(null), 80);
+  }
+  function cancelHoverClear() {
+    if (hoverClearTimer.current) clearTimeout(hoverClearTimer.current);
+  }
+
   React.useEffect(() => {
     if (!menuOpenItemId) return;
     function onDocClick() { setMenuOpenItemId(null); }
@@ -338,121 +363,136 @@ export function QuoteView({
         })}
       </div>
 
-      {/* Items table */}
-      <div className="rounded-md border border-[#274579]/35 overflow-x-auto">
-        <div className="w-max min-w-full">
-        <table className="text-xs w-full">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="w-8 px-3 py-2.5 text-center">
-                <button
-                  type="button"
-                  onClick={toggleAll}
-                  aria-label="Select all items"
-                  className={`w-3.5 h-3.5 rounded border mx-auto flex items-center justify-center transition-colors ${
-                    allSelected
-                      ? "bg-[#274579] border-[#274579]"
-                      : someSelected
-                        ? "bg-[#274579]/50 border-[#274579]/70"
-                        : "bg-white border-slate-300 hover:border-slate-400"
-                  }`}
-                >
-                  {allSelected && <CheckIcon />}
-                  {someSelected && <MinusIcon />}
-                </button>
-              </th>
-              <th className="w-8 px-2 py-2.5 text-center font-medium text-slate-500 tabular-nums whitespace-nowrap">
-                #
-              </th>
-              <th className="px-3 py-2.5 text-left font-medium text-slate-500 whitespace-nowrap">
-                Item Name
-              </th>
-              {visibleCols.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-3 py-2.5 text-left font-medium text-slate-500 ${col.wrap ? "max-w-[280px] whitespace-normal" : "whitespace-nowrap"}`}
-                >
-                  {col.label}
-                </th>
-              ))}
-              <th className="w-10 px-1 py-2.5 sticky right-0 bg-slate-50" />
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, index) => {
-              const included = selectedItems.has(item.id);
-              const isHovered = hoveredItemId === item.id;
-              const isMenuOpen = menuOpenItemId === item.id;
-              return (
-                <tr
-                  key={item.id}
-                  onMouseEnter={() => setHoveredItemId(item.id)}
-                  onMouseLeave={() => setHoveredItemId(null)}
-                  onClick={() => toggleItem(item.id)}
-                  className={`group border-b border-slate-100 last:border-0 cursor-pointer transition-all ${
-                    included
-                      ? "hover:bg-slate-50"
-                      : "opacity-40 hover:opacity-60 hover:bg-slate-50"
-                  }`}
-                >
-                  <td className="px-3 py-2.5 text-center">
-                    <div
+      {/* Items table — outer div is the positioning anchor; overflow lives one level in */}
+      <div ref={outerRef} className="relative rounded-md border border-[#274579]/35">
+        <div className="overflow-x-auto">
+          <div className="w-max min-w-full">
+            <table className="text-xs w-full">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="w-8 px-3 py-2.5 text-center">
+                    <button
+                      type="button"
+                      onClick={toggleAll}
+                      aria-label="Select all items"
                       className={`w-3.5 h-3.5 rounded border mx-auto flex items-center justify-center transition-colors ${
-                        included
+                        allSelected
                           ? "bg-[#274579] border-[#274579]"
-                          : "bg-white border-slate-300"
+                          : someSelected
+                            ? "bg-[#274579]/50 border-[#274579]/70"
+                            : "bg-white border-slate-300 hover:border-slate-400"
                       }`}
                     >
-                      {included && <CheckIcon />}
-                    </div>
-                  </td>
-                  <td className="px-2 py-2.5 text-center text-slate-400 tabular-nums">
-                    {index + 1}
-                  </td>
-                  <td className="px-3 py-2.5 font-medium text-slate-800">
-                    {item.itemName}
-                  </td>
+                      {allSelected && <CheckIcon />}
+                      {someSelected && <MinusIcon />}
+                    </button>
+                  </th>
+                  <th className="w-8 px-2 py-2.5 text-center font-medium text-slate-500 tabular-nums whitespace-nowrap">
+                    #
+                  </th>
+                  <th className="px-3 py-2.5 text-left font-medium text-slate-500 whitespace-nowrap">
+                    Item Name
+                  </th>
                   {visibleCols.map((col) => (
-                    <td key={col.key} className={`px-3 py-2.5 text-slate-600 ${col.wrap ? "max-w-[280px] whitespace-normal break-words" : ""}`}>
-                      {cellValue(item, col.key, markupFactor)}
-                    </td>
+                    <th
+                      key={col.key}
+                      className={`px-3 py-2.5 text-left font-medium text-slate-500 ${col.wrap ? "max-w-[280px] whitespace-normal" : "whitespace-nowrap"}`}
+                    >
+                      {col.label}
+                    </th>
                   ))}
-                  <td
-                    className="sticky right-0 w-10 px-1 py-2 text-center align-middle bg-white group-hover:bg-slate-50 transition-colors"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {(isHovered || isMenuOpen) && (
-                      <div className="relative inline-flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMenuOpenItemId(isMenuOpen ? null : item.id);
-                          }}
-                          className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
-                        >
-                          <MoreVertical className="h-3.5 w-3.5" />
-                        </button>
-                        {isMenuOpen && (
-                          <div className="absolute right-0 top-full mt-0.5 z-50 bg-white border border-slate-200 rounded-md shadow-md py-1 min-w-[140px]">
-                            <button
-                              type="button"
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
-                            >
-                              Custom Markup
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {items.map((item, index) => {
+                  const included = selectedItems.has(item.id);
+                  return (
+                    <tr
+                      key={item.id}
+                      ref={(el) => {
+                        if (el) rowRefs.current.set(item.id, el);
+                        else rowRefs.current.delete(item.id);
+                      }}
+                      onMouseEnter={() => { cancelHoverClear(); setHoveredItemId(item.id); }}
+                      onMouseLeave={scheduleHoverClear}
+                      onClick={() => toggleItem(item.id)}
+                      className={`border-b border-slate-100 last:border-0 cursor-pointer transition-all ${
+                        included
+                          ? "hover:bg-slate-50"
+                          : "opacity-40 hover:opacity-60 hover:bg-slate-50"
+                      }`}
+                    >
+                      <td className="px-3 py-2.5 text-center">
+                        <div
+                          className={`w-3.5 h-3.5 rounded border mx-auto flex items-center justify-center transition-colors ${
+                            included
+                              ? "bg-[#274579] border-[#274579]"
+                              : "bg-white border-slate-300"
+                          }`}
+                        >
+                          {included && <CheckIcon />}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2.5 text-center text-slate-400 tabular-nums">
+                        {index + 1}
+                      </td>
+                      <td className="px-3 py-2.5 font-medium text-slate-800">
+                        {item.itemName}
+                      </td>
+                      {visibleCols.map((col) => (
+                        <td key={col.key} className={`px-3 py-2.5 text-slate-600 ${col.wrap ? "max-w-[280px] whitespace-normal break-words" : ""}`}>
+                          {cellValue(item, col.key, markupFactor)}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {/* Floating three-dot buttons — rendered outside the table's right border */}
+        {items.map((item) => {
+          const pos = rowPositions.get(item.id);
+          if (!pos) return null;
+          const isActive = hoveredItemId === item.id || menuOpenItemId === item.id;
+          return (
+            <div
+              key={item.id}
+              className="absolute flex items-center"
+              style={{ top: pos.top, height: pos.height, left: "calc(100% + 6px)", width: 28 }}
+              onMouseEnter={() => { cancelHoverClear(); setHoveredItemId(item.id); }}
+              onMouseLeave={scheduleHoverClear}
+            >
+              {isActive && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpenItemId(menuOpenItemId === item.id ? null : item.id);
+                    }}
+                    className="w-6 h-6 flex items-center justify-center rounded text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+                  >
+                    <MoreVertical className="h-3.5 w-3.5" />
+                  </button>
+                  {menuOpenItemId === item.id && (
+                    <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-md shadow-md py-1 min-w-[140px]">
+                      <button
+                        type="button"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        Custom Markup
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
