@@ -478,7 +478,7 @@ export function QuoteView({
                     <MoreVertical className="h-3.5 w-3.5" />
                   </button>
                   {menuOpenItemId === item.id && (
-                    <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-md shadow-md py-1 min-w-[140px]">
+                    <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-md shadow-md py-1 min-w-[140px]">
                       <button
                         type="button"
                         onClick={(e) => e.stopPropagation()}
