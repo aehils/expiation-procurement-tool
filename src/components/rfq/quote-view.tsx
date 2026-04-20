@@ -331,14 +331,14 @@ export function QuoteView({
       </div>
 
       {/* Section header */}
-      <div className="flex items-center justify-between mb-3 pl-1">
+      <div className="mb-3 pl-1">
         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Quote Lines
         </h3>
       </div>
 
       {/* Column toggles */}
-      <div className="flex flex-wrap gap-1.5 mb-3 px-1">
+      <div className="flex flex-wrap items-center gap-1.5 mb-3 px-1">
         {COLUMNS.map((col) => {
           const active = enabledCols.has(col.key);
           return (
@@ -357,10 +357,7 @@ export function QuoteView({
             </button>
           );
         })}
-      </div>
-
-      <div className="flex justify-end mb-1.5 px-1">
-        <span className="text-xs text-slate-400 tabular-nums">
+        <span className="ml-auto text-xs text-slate-400 tabular-nums">
           {selectedItems.size} of {items.length} item
           {items.length !== 1 ? "s" : ""} selected
         </span>
