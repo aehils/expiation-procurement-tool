@@ -365,7 +365,7 @@ export function QuoteView({
 
       {/* Items table — outer div is the positioning anchor; overflow lives one level in */}
       <div ref={outerRef} className="relative rounded-md border border-[#274579]/35">
-        <div className="overflow-x-auto overflow-y-hidden rounded-t-md">
+        <div className="overflow-x-auto overflow-y-hidden rounded-md">
           <div className="w-max min-w-full">
             <table className="text-xs w-full">
               <thead>
