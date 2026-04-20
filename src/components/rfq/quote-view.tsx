@@ -335,10 +335,6 @@ export function QuoteView({
         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Quote Lines
         </h3>
-        <span className="text-xs text-slate-400 tabular-nums">
-          {selectedItems.size} of {items.length} item
-          {items.length !== 1 ? "s" : ""} selected
-        </span>
       </div>
 
       {/* Column toggles */}
@@ -361,6 +357,13 @@ export function QuoteView({
             </button>
           );
         })}
+      </div>
+
+      <div className="flex justify-end mb-1.5 px-1">
+        <span className="text-xs text-slate-400 tabular-nums">
+          {selectedItems.size} of {items.length} item
+          {items.length !== 1 ? "s" : ""} selected
+        </span>
       </div>
 
       {/* Items table — outer div is the positioning anchor; overflow lives one level in */}
