@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { customAlphabet } from "nanoid";
 import { prisma } from "./db";
+import { BANNER_CURRENCIES } from "./constants";
+import { fetchRate } from "./rates";
 import {
   createRfqSchema,
   updateItemSchema,
@@ -175,6 +177,57 @@ export async function updateRfqItem(
 
   await prisma.rfqItem.update({ where: { id: itemId }, data });
   return { ok: true };
+}
+
+export type PersistedRate = {
+  code: string;
+  rate: number;
+  fetchedAt: string;
+};
+
+// Reads the last-persisted snapshot of the banner currencies. Returns whatever
+// is in the table — if a row is missing (first boot, fresh DB), that currency
+// simply won't be in the map and the banner will render a skeleton for it
+// until the user clicks Update.
+export async function readPersistedBannerRates(): Promise<PersistedRate[]> {
+  const rows = await prisma.currencyRate.findMany({
+    where: { code: { in: BANNER_CURRENCIES.map((c) => c.code) } },
+  });
+  return rows.map((r) => ({
+    code: r.code,
+    rate: r.rate,
+    fetchedAt: r.fetchedAt.toISOString(),
+  }));
+}
+
+// Force-refreshes every banner currency against the upstream FX API and
+// upserts the result. Returns the new snapshot so the caller can hydrate
+// state without a second round-trip.
+export async function refreshBannerCurrencyRates(): Promise<
+  { code: string; rate: number; fetchedAt: string; error?: string }[]
+> {
+  // Pull-time timestamp rather than the upstream's publish time — that's what
+  // "last time we pulled" actually means to the user staring at the banner.
+  const pulledAt = new Date();
+  const results = await Promise.all(
+    BANNER_CURRENCIES.map(async (c) => {
+      const result = await fetchRate(c.code, { force: true });
+      if ("error" in result) {
+        return { code: c.code, rate: 0, fetchedAt: "", error: result.error };
+      }
+      await prisma.currencyRate.upsert({
+        where: { code: c.code },
+        create: { code: c.code, rate: result.rate, fetchedAt: pulledAt },
+        update: { rate: result.rate, fetchedAt: pulledAt },
+      });
+      return {
+        code: c.code,
+        rate: result.rate,
+        fetchedAt: pulledAt.toISOString(),
+      };
+    }),
+  );
+  return results;
 }
 
 export async function submitRfq(

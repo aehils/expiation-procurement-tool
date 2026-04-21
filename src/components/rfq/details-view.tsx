@@ -14,8 +14,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { categoryLabel, departmentLabel, TOTAL_DETAIL_FIELDS } from "@/lib/constants";
-import { submitRfq } from "@/lib/actions";
+import {
+  BANNER_CURRENCIES,
+  categoryLabel,
+  departmentLabel,
+  TOTAL_DETAIL_FIELDS,
+} from "@/lib/constants";
+import {
+  refreshBannerCurrencyRates,
+  submitRfq,
+  type PersistedRate,
+} from "@/lib/actions";
 import { ItemDetailForm, type DetailsItemPayload } from "./item-detail-form";
 
 export type RateInfo = { rate: number; fetchedAt: string; error?: string };
@@ -58,35 +67,35 @@ function countFilled(item: DetailsItemPayload): number {
 function relativeTime(iso: string): string {
   if (!iso) return "";
   const then = new Date(iso).getTime();
-  const diffSec = Math.max(1, Math.round((Date.now() - then) / 1000));
-  if (diffSec < 60) return `${diffSec}s ago`;
-  if (diffSec < 3600) return `${Math.round(diffSec / 60)}m ago`;
-  if (diffSec < 86400) return `${Math.round(diffSec / 3600)}h ago`;
-  return `${Math.round(diffSec / 86400)}d ago`;
+  const diffSec = Math.round((Date.now() - then) / 1000);
+  if (diffSec < 5) return "Updated now";
+  if (diffSec < 60) return `Updated ${diffSec}s ago`;
+  if (diffSec < 3600) return `Updated ${Math.round(diffSec / 60)}m ago`;
+  if (diffSec < 86400) return `Updated ${Math.round(diffSec / 3600)}h ago`;
+  return `Updated ${Math.round(diffSec / 86400)}d ago`;
 }
-
-// Currencies surfaced in the conversion banner below the header. Kept narrow and
-// ordered by how often our buyers actually transact in them.
-const BANNER_CURRENCIES: { code: string; name: string; symbol: string }[] = [
-  { code: "USD", name: "US Dollar", symbol: "$" },
-  { code: "GBP", name: "British Pound", symbol: "£" },
-  { code: "EUR", name: "Euro", symbol: "€" },
-  { code: "CNY", name: "Chinese Yuan", symbol: "¥" },
-  { code: "INR", name: "Indian Rupee", symbol: "₹" },
-];
 
 export function DetailsView({
   rfq,
   initialItems,
+  initialBannerRates = [],
 }: {
   rfq: Rfq;
   initialItems: DetailsItemPayload[];
+  initialBannerRates?: PersistedRate[];
 }) {
   const router = useRouter();
   // Items live in client state so progress indicators update without a server roundtrip.
   const [items, setItems] = React.useState<DetailsItemPayload[]>(initialItems);
   const [expanded, setExpanded] = React.useState<string | undefined>(initialItems[0]?.id);
-  const [rates, setRates] = React.useState<Record<string, RateInfo>>({});
+  const [rates, setRates] = React.useState<Record<string, RateInfo>>(() => {
+    const seed: Record<string, RateInfo> = {};
+    for (const r of initialBannerRates) {
+      seed[r.code] = { rate: r.rate, fetchedAt: r.fetchedAt };
+    }
+    return seed;
+  });
+  const [refreshing, setRefreshing] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
   // Items the user has force-marked as complete even though not all 14 detail
   // fields are populated. Kept client-side — the visual indicator resets on
@@ -150,10 +159,12 @@ export function DetailsView({
     }
   }, []);
 
-  // Pre-load rates for any currency already saved on the items, plus every
-  // currency shown in the banner below the header.
+  // Pre-load rates for any currency already saved on the items, plus any
+  // banner currency we don't already have a persisted snapshot for. Persisted
+  // banner rates are seeded from the server, so on the common path we don't
+  // hammer the upstream on every mount — only the user clicking Update does.
   React.useEffect(() => {
-    const seen = new Set<string>();
+    const seen = new Set<string>(Object.keys(rates));
     initialItems.forEach((it) => {
       if (it.originalCurrency && !seen.has(it.originalCurrency)) {
         seen.add(it.originalCurrency);
@@ -166,13 +177,34 @@ export function DetailsView({
         void loadRate(c.code);
       }
     });
+    // Intentional: only run on mount. `rates` is used as an initial-check guard,
+    // not a trigger — re-running on every rate update would re-fetch forever.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialItems, loadRate]);
 
-  const refreshBannerRates = React.useCallback(() => {
-    BANNER_CURRENCIES.forEach((c) => {
-      void loadRate(c.code, true);
-    });
-  }, [loadRate]);
+  const refreshBannerRates = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const results = await refreshBannerCurrencyRates();
+      setRates((prev) => {
+        const next = { ...prev };
+        for (const r of results) {
+          if (r.error) {
+            next[r.code] = { rate: 0, fetchedAt: "", error: r.error };
+          } else {
+            next[r.code] = { rate: r.rate, fetchedAt: r.fetchedAt };
+          }
+        }
+        return next;
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Couldn't refresh currency rates",
+      );
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   // The banner's "updated X ago" reflects the oldest rate we have, so the
   // label never overstates freshness.
@@ -296,6 +328,7 @@ export function DetailsView({
           <CurrencyBanner
             rates={rates}
             freshness={bannerFreshness}
+            refreshing={refreshing}
             onRefresh={refreshBannerRates}
           />
         </div>
@@ -440,24 +473,39 @@ export function DetailsView({
 function CurrencyBanner({
   rates,
   freshness,
+  refreshing,
   onRefresh,
 }: {
   rates: Record<string, RateInfo>;
   freshness: string | undefined;
+  refreshing: boolean;
   onRefresh: () => void;
 }) {
+  // Re-render the freshness label every 30s so "Updated now" ticks to
+  // "Updated 1m ago" without the user having to interact.
+  const [, forceTick] = React.useReducer((n: number) => n + 1, 0);
+  React.useEffect(() => {
+    const id = setInterval(forceTick, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const label = refreshing
+    ? "Updating…"
+    : freshness
+      ? relativeTime(freshness)
+      : "Not yet updated";
+
   return (
     <div className="flex w-fit flex-nowrap items-center gap-x-4 rounded-md bg-slate-50/50 px-2.5 py-1.5 whitespace-nowrap">
       <button
         type="button"
         onClick={onRefresh}
-        className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
+        disabled={refreshing}
+        className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-600 transition-colors disabled:cursor-wait disabled:opacity-60"
         aria-label="Refresh currency rates"
       >
-        <RefreshCw className="h-3 w-3" />
-        <span className="tabular-nums">
-          {freshness ? `updated ${relativeTime(freshness)}` : "updating…"}
-        </span>
+        <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
+        <span className="tabular-nums">{label}</span>
       </button>
       {BANNER_CURRENCIES.map((c) => {
         const info = rates[c.code];
