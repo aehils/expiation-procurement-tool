@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { readPersistedBannerRates } from "@/lib/actions";
 import { DetailsView } from "@/components/rfq/details-view";
 import type { DetailsItemPayload } from "@/components/rfq/item-detail-form";
 
@@ -11,10 +12,13 @@ export default async function RfqDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const rfq = await prisma.rfq.findUnique({
-    where: { id },
-    include: { items: { orderBy: { createdAt: "asc" } } },
-  });
+  const [rfq, persistedRates] = await Promise.all([
+    prisma.rfq.findUnique({
+      where: { id },
+      include: { items: { orderBy: { createdAt: "asc" } } },
+    }),
+    readPersistedBannerRates(),
+  ]);
 
   if (!rfq) notFound();
 
@@ -52,6 +56,7 @@ export default async function RfqDetailsPage({
         createdAt: rfq.createdAt.toISOString(),
       }}
       initialItems={items}
+      initialBannerRates={persistedRates}
     />
   );
 }

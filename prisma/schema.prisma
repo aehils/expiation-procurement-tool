@@ -63,3 +63,13 @@ model RfqItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// Snapshot of the latest NGN exchange rate per base currency. Written by the
+// "Update" action on the details view so every user sees the same last-pulled
+// timestamp, and so the banner doesn't start blank on page load.
+model CurrencyRate {
+  code      String   @id
+  rate      Float
+  fetchedAt DateTime
+  updatedAt DateTime @updatedAt
+}

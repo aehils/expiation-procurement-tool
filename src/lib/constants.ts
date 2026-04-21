@@ -56,6 +56,17 @@ export const CURRENCIES: Option[] = [
   { value: "AED", label: "AED — UAE Dirham" },
 ];
 
+// Currencies surfaced in the conversion banner on the details view. Shared
+// with the server action that refreshes + persists rates, so both sides agree
+// on which codes to pull.
+export const BANNER_CURRENCIES: { code: string; name: string; symbol: string }[] = [
+  { code: "USD", name: "US Dollar", symbol: "$" },
+  { code: "GBP", name: "British Pound", symbol: "£" },
+  { code: "EUR", name: "Euro", symbol: "€" },
+  { code: "CNY", name: "Chinese Yuan", symbol: "¥" },
+  { code: "INR", name: "Indian Rupee", symbol: "₹" },
+];
+
 // Fields the user must fill on the details page before an RFQ can be submitted.
 export const REQUIRED_DETAIL_FIELDS = [
   "mProductCode",
