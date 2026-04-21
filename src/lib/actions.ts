@@ -9,6 +9,7 @@ import {
   createRfqSchema,
   updateItemSchema,
   updateRfqEntryDataSchema,
+  updateRfqItemsSchema,
   findMissingDetailFields,
   type CreateRfqInput,
   type UpdateItemInput,
@@ -158,13 +159,8 @@ export async function updateRfqEntryData(
   return { id: existing.id, rfqNumber: existing.rfqNumber };
 }
 
-export async function updateRfqItem(
-  itemId: string,
-  patch: UpdateItemInput,
-): Promise<{ ok: true }> {
-  const parsed = updateItemSchema.parse(patch);
-
-  // Convert undefined → skip; null/empty → set null; other → set value.
+// Convert undefined → skip; null/empty → set null; other → set value.
+function toUpdateData(parsed: UpdateItemInput): Record<string, unknown> {
   const data: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(parsed)) {
     if (value === undefined) continue;
@@ -174,8 +170,47 @@ export async function updateRfqItem(
       data[key] = value;
     }
   }
+  return data;
+}
 
-  await prisma.rfqItem.update({ where: { id: itemId }, data });
+export async function updateRfqItem(
+  itemId: string,
+  patch: UpdateItemInput,
+): Promise<{ ok: true }> {
+  const parsed = updateItemSchema.parse(patch);
+  await prisma.rfqItem.update({
+    where: { id: itemId },
+    data: toUpdateData(parsed),
+  });
+  return { ok: true };
+}
+
+// Batch update for the manual-save flow. All patches land in one transaction
+// so the page's dirty state clears atomically on success.
+export async function updateRfqItems(
+  rfqId: string,
+  patches: { id: string; patch: UpdateItemInput }[],
+): Promise<{ ok: true }> {
+  const parsed = updateRfqItemsSchema.parse({ rfqId, patches });
+
+  const ids = parsed.patches.map((p) => p.id);
+  const existing = await prisma.rfqItem.findMany({
+    where: { rfqId: parsed.rfqId, id: { in: ids } },
+    select: { id: true },
+  });
+  if (existing.length !== ids.length) {
+    throw new Error("One or more items do not belong to this RFQ");
+  }
+
+  await prisma.$transaction(
+    parsed.patches.map((p) =>
+      prisma.rfqItem.update({
+        where: { id: p.id },
+        data: toUpdateData(p.patch),
+      }),
+    ),
+  );
+  revalidatePath(`/rfq/${parsed.rfqId}/details`);
   return { ok: true };
 }
 

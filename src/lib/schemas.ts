@@ -55,6 +55,16 @@ export const updateItemSchema = z.object({
 });
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 
+// Batch patch for the manual-save flow: one request updates every dirty item
+// for an RFQ in a single transaction.
+export const updateRfqItemsSchema = z.object({
+  rfqId: z.string().min(1),
+  patches: z
+    .array(z.object({ id: z.string().min(1), patch: updateItemSchema }))
+    .min(1),
+});
+export type UpdateRfqItemsInput = z.infer<typeof updateRfqItemsSchema>;
+
 // Used by submitRfq to confirm every required detail field is filled per item.
 export function findMissingDetailFields(
   item: Record<string, unknown>,

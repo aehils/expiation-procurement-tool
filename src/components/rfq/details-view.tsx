@@ -23,8 +23,10 @@ import {
 import {
   refreshBannerCurrencyRates,
   submitRfq,
+  updateRfqItems,
   type PersistedRate,
 } from "@/lib/actions";
+import type { UpdateItemInput } from "@/lib/schemas";
 import { ItemDetailForm, type DetailsItemPayload } from "./item-detail-form";
 
 export type RateInfo = { rate: number; fetchedAt: string; error?: string };
@@ -64,6 +66,29 @@ function countFilled(item: DetailsItemPayload): number {
   }, 0);
 }
 
+// Projects an item into the UpdateItemInput shape expected by the batch-save
+// server action. Keeps the 14 detail fields + nairaOverridden; drops identity
+// and entry-stage fields.
+function pickSavableFields(item: DetailsItemPayload): UpdateItemInput {
+  return {
+    mProductCode: item.mProductCode,
+    unitQuantity: item.unitQuantity,
+    uom: item.uom,
+    manufacturerName: item.manufacturerName,
+    vendor: item.vendor,
+    vendorLocation: item.vendorLocation,
+    productLink: item.productLink,
+    countryOfOrigin: item.countryOfOrigin,
+    vendorDeliveryTimeline: item.vendorDeliveryTimeline,
+    originalCurrency: item.originalCurrency,
+    ogUnitPrice: item.ogUnitPrice,
+    ogBoxPrice: item.ogBoxPrice,
+    nairaUnitPrice: item.nairaUnitPrice,
+    boxPrice: item.boxPrice,
+    nairaOverridden: item.nairaOverridden,
+  };
+}
+
 function relativeTime(iso: string): string {
   if (!iso) return "";
   const then = new Date(iso).getTime();
@@ -97,6 +122,15 @@ export function DetailsView({
   });
   const [refreshing, setRefreshing] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  // Item ids with unsaved changes. Cleared on successful batch save.
+  const [dirtyItemIds, setDirtyItemIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  // Kept current across renders so navigation guard listeners can read it
+  // without re-registering on every dirty-set change.
+  const itemsRef = React.useRef<DetailsItemPayload[]>(initialItems);
+  const dirtyRef = React.useRef<Set<string>>(dirtyItemIds);
   // Items the user has force-marked as complete even though not all 14 detail
   // fields are populated. Kept client-side — the visual indicator resets on
   // reload, which is fine since the only effect is on the progress dot.
@@ -117,9 +151,23 @@ export function DetailsView({
   }
 
   function patchItem(itemId: string, patch: Partial<DetailsItemPayload>) {
-    setItems((prev) =>
-      prev.map((it) => (it.id === itemId ? { ...it, ...patch } : it)),
-    );
+    setItems((prev) => {
+      const next = prev.map((it) =>
+        it.id === itemId ? { ...it, ...patch } : it,
+      );
+      itemsRef.current = next;
+      return next;
+    });
+  }
+
+  function markDirty(itemId: string) {
+    setDirtyItemIds((prev) => {
+      if (prev.has(itemId)) return prev;
+      const next = new Set(prev);
+      next.add(itemId);
+      dirtyRef.current = next;
+      return next;
+    });
   }
 
   const loadRate = React.useCallback(async (base: string, force = false) => {
@@ -218,7 +266,51 @@ export function DetailsView({
     return oldest || undefined;
   }, [rates]);
 
+  // Flush any in-flight keystroke into parent state before we read `items`.
+  // The form's draft → parent sync happens on blur, so blurring the focused
+  // element synchronously runs that handler.
+  function flushActiveElement() {
+    if (typeof document === "undefined") return;
+    const active = document.activeElement as HTMLElement | null;
+    if (active && typeof active.blur === "function") active.blur();
+  }
+
+  // Runs the batch save for every dirty item. Returns true when the caller is
+  // safe to proceed (nothing to save, or save succeeded) and false on error.
+  async function handleSave(): Promise<boolean> {
+    flushActiveElement();
+    const currentDirty = dirtyRef.current;
+    if (currentDirty.size === 0) return true;
+
+    const patches = itemsRef.current
+      .filter((it) => currentDirty.has(it.id))
+      .map((it) => ({ id: it.id, patch: pickSavableFields(it) }));
+    if (patches.length === 0) return true;
+
+    setSaving(true);
+    try {
+      await updateRfqItems(rfq.id, patches);
+      setDirtyItemIds(() => {
+        const empty = new Set<string>();
+        dirtyRef.current = empty;
+        return empty;
+      });
+      toast.success("Saved");
+      return true;
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't save. Please try again.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleSubmit() {
+    if (dirtyRef.current.size > 0) {
+      const ok = await handleSave();
+      if (!ok) return;
+    }
     setSubmitting(true);
     const result = await submitRfq(rfq.id);
     setSubmitting(false);
@@ -233,6 +325,41 @@ export function DetailsView({
       setExpanded(first.itemId);
     }
   }
+
+  // Auto-save before an in-app navigation (Back link, per-item Edit button,
+  // browser back/forward). Returns false if the caller should abort the nav.
+  async function saveBeforeNavigate(): Promise<boolean> {
+    if (dirtyRef.current.size === 0) return true;
+    return handleSave();
+  }
+
+  // beforeunload: native prompt for tab-close / refresh / external navigation
+  // while dirty. Attaches only when there's unsaved work so clean pages stay
+  // silent.
+  React.useEffect(() => {
+    if (dirtyItemIds.size === 0) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirtyItemIds]);
+
+  // popstate: browser back/forward within the app. Route has already changed
+  // by the time this fires, so we kick off the batch save in the background
+  // and let the toast surface the result on the next page.
+  React.useEffect(() => {
+    if (dirtyItemIds.size === 0) return;
+    const handler = () => {
+      void handleSave();
+    };
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+    // handleSave is stable enough — it reads through refs — so omitting it
+    // from deps keeps the listener from re-registering on every edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirtyItemIds]);
 
   async function copyRfqId() {
     try {
@@ -297,6 +424,12 @@ export function DetailsView({
         <div className="ml-auto flex items-center gap-2">
           <Link
             href={`/rfq/${rfq.id}/edit`}
+            onClick={async (e) => {
+              if (dirtyRef.current.size === 0) return;
+              e.preventDefault();
+              const ok = await saveBeforeNavigate();
+              if (ok) router.push(`/rfq/${rfq.id}/edit`);
+            }}
             className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -374,19 +507,25 @@ export function DetailsView({
                     <span
                       role="button"
                       tabIndex={0}
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        router.push(
-                          `/rfq/${rfq.id}/edit?itemId=${item.id}`,
-                        );
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          e.stopPropagation();
+                        const ok = await saveBeforeNavigate();
+                        if (ok) {
                           router.push(
                             `/rfq/${rfq.id}/edit?itemId=${item.id}`,
                           );
+                        }
+                      }}
+                      onKeyDown={async (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const ok = await saveBeforeNavigate();
+                          if (ok) {
+                            router.push(
+                              `/rfq/${rfq.id}/edit?itemId=${item.id}`,
+                            );
+                          }
                         }
                       }}
                       className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
@@ -441,6 +580,7 @@ export function DetailsView({
                   }
                   onLoadRate={loadRate}
                   onLocalPatch={(patch) => patchItem(item.id, patch)}
+                  onMarkDirty={() => markDirty(item.id)}
                 />
               </AccordionContent>
             </AccordionItem>
@@ -448,19 +588,34 @@ export function DetailsView({
         })}
       </Accordion>
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex justify-end items-center gap-2">
+        {rfq.status !== "submitted" && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleSave}
+            disabled={saving || submitting || dirtyItemIds.size === 0}
+          >
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        )}
         <Button
           onClick={
             rfq.status === "submitted"
               ? () => router.push(`/rfq/${rfq.id}/quote`)
               : handleSubmit
           }
-          disabled={submitting}
+          disabled={submitting || saving}
           size="sm"
           style={{ backgroundColor: "#274579" }}
           className="text-white hover:opacity-90"
         >
-          {submitting ? "Submitting…" : "Proceed to Quote"}
+          {submitting
+            ? "Submitting…"
+            : saving
+              ? "Saving…"
+              : "Proceed to Quote"}
         </Button>
       </div>
     </div>

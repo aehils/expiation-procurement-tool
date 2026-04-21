@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CURRENCIES, UNITS_OF_MEASURE } from "@/lib/constants";
-import { updateRfqItem } from "@/lib/actions";
 import type { RateInfo } from "./details-view";
 
 // Subset of RfqItem the details view actually renders. Defined here so we don't
@@ -54,11 +52,13 @@ export function ItemDetailForm({
   rate,
   onLoadRate,
   onLocalPatch,
+  onMarkDirty,
 }: {
   item: DetailsItemPayload;
   rate: RateInfo | undefined;
   onLoadRate: (base: string, force?: boolean) => Promise<void> | void;
   onLocalPatch: (patch: Partial<DetailsItemPayload>) => void;
+  onMarkDirty: () => void;
 }) {
   // Local string state for every input so users can type freely; we cast on save.
   const [draft, setDraft] = React.useState({
@@ -83,19 +83,15 @@ export function ItemDetailForm({
     setDraft((prev) => ({ ...prev, [key]: value }));
   }
 
-  // Persist a patch to the server and mirror it in the parent's local items array
-  // so the progress indicator + rate strip stay in sync without a server roundtrip.
-  const persist = React.useCallback(
-    async (patch: Partial<DetailsItemPayload>) => {
-      try {
-        await updateRfqItem(item.id, patch);
-        onLocalPatch(patch);
-      } catch (err) {
-        console.error(err);
-        toast.error("Couldn't save change. Try again.");
-      }
+  // Mirror the change into the parent's local items state and mark this item
+  // dirty. No server call — persistence happens when the user clicks Save (or
+  // Proceed to Quote) at the bottom of the details view.
+  const applyChange = React.useCallback(
+    (patch: Partial<DetailsItemPayload>) => {
+      onLocalPatch(patch);
+      onMarkDirty();
     },
-    [item.id, onLocalPatch],
+    [onLocalPatch, onMarkDirty],
   );
 
   function parseNumber(raw: string): number | null {
@@ -106,7 +102,7 @@ export function ItemDetailForm({
 
   // --- Currency / conversion handlers -------------------------------------------------
 
-  async function handleCurrencyChange(value: string) {
+  function handleCurrencyChange(value: string) {
     setField("originalCurrency", value);
     if (value && value !== "NGN") void onLoadRate(value);
     if (value === "NGN") {
@@ -124,9 +120,9 @@ export function ItemDetailForm({
           setField("boxPrice", String(ogBox));
         }
       }
-      await persist(next);
+      applyChange(next);
     } else {
-      await persist({ originalCurrency: value });
+      applyChange({ originalCurrency: value });
     }
   }
 
@@ -157,7 +153,7 @@ export function ItemDetailForm({
         touched = true;
       }
     }
-    if (touched) void persist(patch);
+    if (touched) applyChange(patch);
     // We intentionally don't depend on draft.* string state — only on the rate
     // and override flag — so this only fires on those changes, not every keystroke.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -181,22 +177,22 @@ export function ItemDetailForm({
         }
       }
     }
-    void persist(patch);
+    applyChange(patch);
   }
 
   function handleNairaBlur(field: "nairaUnitPrice" | "boxPrice") {
     const value = parseNumber(draft[field]);
     setOverridden(true);
-    void persist({ [field]: value, nairaOverridden: true });
+    applyChange({ [field]: value, nairaOverridden: true });
   }
 
-  // --- Generic save-on-blur for non-pricing fields ------------------------------------
+  // --- Generic blur handlers for non-pricing fields ------------------------------------
 
   function blurString(field: FieldKey, raw: string) {
-    void persist({ [field]: raw.trim() === "" ? null : raw } as Partial<DetailsItemPayload>);
+    applyChange({ [field]: raw.trim() === "" ? null : raw } as Partial<DetailsItemPayload>);
   }
   function blurNumber(field: FieldKey, raw: string) {
-    void persist({ [field]: parseNumber(raw) } as Partial<DetailsItemPayload>);
+    applyChange({ [field]: parseNumber(raw) } as Partial<DetailsItemPayload>);
   }
 
   return (
@@ -249,7 +245,7 @@ export function ItemDetailForm({
                 value={draft.uom}
                 onValueChange={(v) => {
                   setField("uom", v);
-                  void persist({ uom: v });
+                  applyChange({ uom: v });
                 }}
               >
                 <SelectTrigger className="h-8 text-xs">
@@ -398,7 +394,7 @@ export function ItemDetailForm({
               className="underline hover:no-underline"
               onClick={() => {
                 setOverridden(false);
-                void persist({ nairaOverridden: false });
+                applyChange({ nairaOverridden: false });
               }}
             >
               Resume auto-conversion
