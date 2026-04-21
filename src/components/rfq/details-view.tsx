@@ -242,7 +242,7 @@ export function DetailsView({
           </svg>
         </button>
         {rfq.status === "submitted" ? (
-          <span className="px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
+          <span className="px-1.5 py-px text-[10px] font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
             Submitted
           </span>
         ) : (

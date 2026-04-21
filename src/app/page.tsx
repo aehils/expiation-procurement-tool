@@ -55,7 +55,7 @@ export default async function HomePage() {
                   <span
                     className={`text-xs font-medium px-2 py-1 rounded uppercase ${
                       rfq.status === "submitted"
-                        ? "bg-teal-100 text-teal-700"
+                        ? "bg-[#274579]/10 text-[#274579]"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
