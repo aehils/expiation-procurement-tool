@@ -185,24 +185,29 @@ export type PersistedRate = {
   fetchedAt: string;
 };
 
-// Reads the last-persisted snapshot of the banner currencies. Returns whatever
-// is in the table — if a row is missing (first boot, fresh DB), that currency
-// simply won't be in the map and the banner will render a skeleton for it
-// until the user clicks Update.
+// Reads the last-persisted snapshot of the banner currencies. Returns an
+// empty list if the table doesn't exist yet (migration not applied) so the
+// page still renders and the user can trigger a live pull.
 export async function readPersistedBannerRates(): Promise<PersistedRate[]> {
-  const rows = await prisma.currencyRate.findMany({
-    where: { code: { in: BANNER_CURRENCIES.map((c) => c.code) } },
-  });
-  return rows.map((r) => ({
-    code: r.code,
-    rate: r.rate,
-    fetchedAt: r.fetchedAt.toISOString(),
-  }));
+  try {
+    const rows = await prisma.currencyRate.findMany({
+      where: { code: { in: BANNER_CURRENCIES.map((c) => c.code) } },
+    });
+    return rows.map((r) => ({
+      code: r.code,
+      rate: r.rate,
+      fetchedAt: r.fetchedAt.toISOString(),
+    }));
+  } catch (err) {
+    console.warn("[currency] could not read persisted rates:", err);
+    return [];
+  }
 }
 
 // Force-refreshes every banner currency against the upstream FX API and
-// upserts the result. Returns the new snapshot so the caller can hydrate
-// state without a second round-trip.
+// (best-effort) upserts the result. Returns the fresh snapshot regardless of
+// whether the DB write succeeded — so the UI updates even if the CurrencyRate
+// migration hasn't been applied yet.
 export async function refreshBannerCurrencyRates(): Promise<
   { code: string; rate: number; fetchedAt: string; error?: string }[]
 > {
@@ -215,11 +220,15 @@ export async function refreshBannerCurrencyRates(): Promise<
       if ("error" in result) {
         return { code: c.code, rate: 0, fetchedAt: "", error: result.error };
       }
-      await prisma.currencyRate.upsert({
-        where: { code: c.code },
-        create: { code: c.code, rate: result.rate, fetchedAt: pulledAt },
-        update: { rate: result.rate, fetchedAt: pulledAt },
-      });
+      try {
+        await prisma.currencyRate.upsert({
+          where: { code: c.code },
+          create: { code: c.code, rate: result.rate, fetchedAt: pulledAt },
+          update: { rate: result.rate, fetchedAt: pulledAt },
+        });
+      } catch (err) {
+        console.warn(`[currency] could not persist ${c.code} rate:`, err);
+      }
       return {
         code: c.code,
         rate: result.rate,
