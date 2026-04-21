@@ -107,9 +107,6 @@ export async function updateRfqEntryData(
     include: { items: { select: { id: true } } },
   });
   if (!existing) throw new Error("RFQ not found");
-  if (existing.status === "submitted") {
-    throw new Error("Submitted RFQs cannot be edited");
-  }
 
   const keepIds = new Set(
     parsed.items.map((it) => it.id).filter((id): id is string => Boolean(id)),
