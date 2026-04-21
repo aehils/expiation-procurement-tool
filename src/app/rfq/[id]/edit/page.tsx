@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { EntryView, type InitialEntryItem } from "@/components/rfq/entry-view";
 
@@ -9,8 +9,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 // Lets the user step back from the details view into the entry form with
-// their existing requester + items pre-populated. Submitted RFQs are not
-// editable — we bounce those straight back to the details page.
+// their existing requester + items pre-populated.
 export default async function EditRfqPage({
   params,
   searchParams,
@@ -26,9 +25,6 @@ export default async function EditRfqPage({
   });
 
   if (!rfq) notFound();
-  if (rfq.status === "submitted") {
-    redirect(`/rfq/${rfq.id}/details`);
-  }
 
   const initialItems: InitialEntryItem[] = rfq.items.map((it) => ({
     id: it.id,
