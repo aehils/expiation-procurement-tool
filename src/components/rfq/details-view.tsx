@@ -592,10 +592,11 @@ export function DetailsView({
         {rfq.status !== "submitted" && (
           <Button
             type="button"
-            variant="outline"
             size="sm"
             onClick={handleSave}
             disabled={saving || submitting || dirtyItemIds.size === 0}
+            style={{ backgroundColor: "#276e79" }}
+            className="text-white hover:opacity-90"
           >
             {saving ? "Saving…" : "Save"}
           </Button>
