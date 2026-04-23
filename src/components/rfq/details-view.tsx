@@ -22,10 +22,18 @@ import {
 } from "@/lib/constants";
 import {
   refreshBannerCurrencyRates,
+  saveRfqItems,
   submitRfq,
   type PersistedRate,
 } from "@/lib/actions";
-import { ItemDetailForm, type DetailsItemPayload } from "./item-detail-form";
+import type { UpdateItemInput } from "@/lib/schemas";
+import {
+  ItemDetailForm,
+  initialDraftFromItem,
+  parseDraftNumber,
+  type DetailsItemPayload,
+  type ItemDraft,
+} from "./item-detail-form";
 
 export type RateInfo = { rate: number; fetchedAt: string; error?: string };
 
@@ -37,7 +45,7 @@ type Rfq = {
   createdAt: string;
 };
 
-const DETAIL_KEYS: (keyof DetailsItemPayload)[] = [
+const DETAIL_KEYS: (keyof ItemDraft)[] = [
   "mProductCode",
   "unitQuantity",
   "uom",
@@ -54,14 +62,69 @@ const DETAIL_KEYS: (keyof DetailsItemPayload)[] = [
   "boxPrice",
 ];
 
-function countFilled(item: DetailsItemPayload): number {
+const NUMERIC_KEYS = new Set<keyof ItemDraft>([
+  "unitQuantity",
+  "ogUnitPrice",
+  "ogBoxPrice",
+  "nairaUnitPrice",
+  "boxPrice",
+]);
+
+// Count how many detail fields the draft has populated. Drives the progress
+// indicator on each accordion row, so it must follow whatever the user has
+// typed locally (not the last-saved canonical value).
+function countFilledFromDraft(draft: ItemDraft): number {
   return DETAIL_KEYS.reduce((acc, key) => {
-    const v = item[key];
-    if (v === null || v === undefined) return acc;
-    if (typeof v === "string" && v.trim() === "") return acc;
-    if (typeof v === "number" && Number.isNaN(v)) return acc;
+    const raw = draft[key];
+    if (raw.trim() === "") return acc;
+    if (NUMERIC_KEYS.has(key)) {
+      const n = parseDraftNumber(raw);
+      if (n === null) return acc;
+    }
     return acc + 1;
   }, 0);
+}
+
+// Compute the minimal patch to send to the server — only fields whose
+// normalized draft value differs from the canonical item. Returns null if the
+// item has no changes. Includes `nairaOverridden` when the override flag was
+// flipped. This is the single source of truth for both dirty detection and
+// the save payload.
+function computePatch(
+  draft: ItemDraft,
+  overridden: boolean,
+  item: DetailsItemPayload,
+): UpdateItemInput | null {
+  const patch: Record<string, unknown> = {};
+  let changed = false;
+
+  for (const key of DETAIL_KEYS) {
+    const raw = draft[key];
+    if (NUMERIC_KEYS.has(key)) {
+      const next = parseDraftNumber(raw);
+      const current = item[key as keyof DetailsItemPayload] as number | null;
+      if ((next ?? null) !== (current ?? null)) {
+        patch[key] = next;
+        changed = true;
+      }
+    } else {
+      const next = raw.trim() === "" ? null : raw;
+      const current = (item[key as keyof DetailsItemPayload] ?? null) as
+        | string
+        | null;
+      if (next !== current) {
+        patch[key] = next;
+        changed = true;
+      }
+    }
+  }
+
+  if (overridden !== item.nairaOverridden) {
+    patch.nairaOverridden = overridden;
+    changed = true;
+  }
+
+  return changed ? (patch as UpdateItemInput) : null;
 }
 
 function relativeTime(iso: string): string {
@@ -85,9 +148,26 @@ export function DetailsView({
   initialBannerRates?: PersistedRate[];
 }) {
   const router = useRouter();
-  // Items live in client state so progress indicators update without a server roundtrip.
+  // Canonical server-reflected state. Mutated only after a successful save.
   const [items, setItems] = React.useState<DetailsItemPayload[]>(initialItems);
-  const [expanded, setExpanded] = React.useState<string | undefined>(initialItems[0]?.id);
+  // Per-item drafts live at this level because Radix AccordionContent unmounts
+  // collapsed panels — keeping drafts in the child would lose typed-but-unsaved
+  // edits whenever an item collapses.
+  const [drafts, setDrafts] = React.useState<Record<string, ItemDraft>>(() => {
+    const seed: Record<string, ItemDraft> = {};
+    for (const it of initialItems) seed[it.id] = initialDraftFromItem(it);
+    return seed;
+  });
+  const [overrides, setOverrides] = React.useState<Record<string, boolean>>(
+    () => {
+      const seed: Record<string, boolean> = {};
+      for (const it of initialItems) seed[it.id] = it.nairaOverridden;
+      return seed;
+    },
+  );
+  const [expanded, setExpanded] = React.useState<string | undefined>(
+    initialItems[0]?.id,
+  );
   const [rates, setRates] = React.useState<Record<string, RateInfo>>(() => {
     const seed: Record<string, RateInfo> = {};
     for (const r of initialBannerRates) {
@@ -96,13 +176,26 @@ export function DetailsView({
     return seed;
   });
   const [refreshing, setRefreshing] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
-  // Items the user has force-marked as complete even though not all 14 detail
-  // fields are populated. Kept client-side — the visual indicator resets on
-  // reload, which is fine since the only effect is on the progress dot.
   const [manuallyComplete, setManuallyComplete] = React.useState<Set<string>>(
     () => new Set(),
   );
+
+  // Map of itemId → patch for every item whose draft differs from canonical.
+  // Recomputed on each render; cheap at this scale (≤ a few dozen items).
+  const dirtyPatches = React.useMemo(() => {
+    const out: { itemId: string; patch: UpdateItemInput }[] = [];
+    for (const item of items) {
+      const d = drafts[item.id];
+      if (!d) continue;
+      const patch = computePatch(d, overrides[item.id] ?? false, item);
+      if (patch) out.push({ itemId: item.id, patch });
+    }
+    return out;
+  }, [items, drafts, overrides]);
+
+  const isDirty = dirtyPatches.length > 0;
 
   function toggleManuallyComplete(itemId: string) {
     setManuallyComplete((prev) => {
@@ -116,10 +209,15 @@ export function DetailsView({
     });
   }
 
-  function patchItem(itemId: string, patch: Partial<DetailsItemPayload>) {
-    setItems((prev) =>
-      prev.map((it) => (it.id === itemId ? { ...it, ...patch } : it)),
-    );
+  function patchDraft(itemId: string, patch: Partial<ItemDraft>) {
+    setDrafts((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], ...patch },
+    }));
+  }
+
+  function setOverride(itemId: string, value: boolean) {
+    setOverrides((prev) => ({ ...prev, [itemId]: value }));
   }
 
   const loadRate = React.useCallback(async (base: string, force = false) => {
@@ -159,10 +257,6 @@ export function DetailsView({
     }
   }, []);
 
-  // Pre-load rates for any currency already saved on the items, plus any
-  // banner currency we don't already have a persisted snapshot for. Persisted
-  // banner rates are seeded from the server, so on the common path we don't
-  // hammer the upstream on every mount — only the user clicking Update does.
   React.useEffect(() => {
     const seen = new Set<string>(Object.keys(rates));
     initialItems.forEach((it) => {
@@ -177,8 +271,6 @@ export function DetailsView({
         void loadRate(c.code);
       }
     });
-    // Intentional: only run on mount. `rates` is used as an initial-check guard,
-    // not a trigger — re-running on every rate update would re-fetch forever.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialItems, loadRate]);
 
@@ -206,8 +298,6 @@ export function DetailsView({
     }
   }, []);
 
-  // The banner's "updated X ago" reflects the oldest rate we have, so the
-  // label never overstates freshness.
   const bannerFreshness = React.useMemo(() => {
     let oldest = "";
     for (const c of BANNER_CURRENCIES) {
@@ -218,7 +308,39 @@ export function DetailsView({
     return oldest || undefined;
   }, [rates]);
 
+  // Returns true when the server reflects the user's current drafts (either
+  // because we just saved, or because there was nothing to save).
+  async function handleSave(): Promise<boolean> {
+    if (dirtyPatches.length === 0) return true;
+    setSaving(true);
+    try {
+      await saveRfqItems(rfq.id, dirtyPatches);
+      // Merge each patch into the canonical items array so the next dirty
+      // comparison shows the item as clean.
+      setItems((prev) =>
+        prev.map((it) => {
+          const entry = dirtyPatches.find((p) => p.itemId === it.id);
+          if (!entry) return it;
+          return { ...it, ...(entry.patch as Partial<DetailsItemPayload>) };
+        }),
+      );
+      toast.success("Changes saved");
+      return true;
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't save. Try again.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleSubmit() {
+    if (saving || submitting) return;
+    // Save-then-submit: submit validates server-side against the saved row, so
+    // we must flush drafts first or the user's latest edits won't be seen.
+    const saved = await handleSave();
+    if (!saved) return;
     setSubmitting(true);
     const result = await submitRfq(rfq.id);
     setSubmitting(false);
@@ -243,12 +365,31 @@ export function DetailsView({
     }
   }
 
+  // Warn on full-page unload (tab close / reload) when drafts are dirty.
+  // Intra-app navigation is guarded separately below via confirmLeaveIfDirty.
+  React.useEffect(() => {
+    if (!isDirty) return;
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isDirty]);
+
+  function confirmLeaveIfDirty(): boolean {
+    if (!isDirty) return true;
+    return window.confirm(
+      "You have unsaved changes. Leave without saving?",
+    );
+  }
+
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
       {/* Top area — matches step 1 (entry view) so moving between pages feels static */}
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
-          Request for Quote
+          Prepare Quote
         </h2>
         <button
           type="button"
@@ -282,8 +423,6 @@ export function DetailsView({
             Draft
           </span>
         )}
-        {/* Visual-only placeholder to keep the dot-menu slot aligned with step 1;
-            actions will be wired up later. */}
         <div className="relative">
           <button
             type="button"
@@ -297,6 +436,9 @@ export function DetailsView({
         <div className="ml-auto flex items-center gap-2">
           <Link
             href={`/rfq/${rfq.id}/edit`}
+            onClick={(e) => {
+              if (!confirmLeaveIfDirty()) e.preventDefault();
+            }}
             className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -346,7 +488,8 @@ export function DetailsView({
         className="space-y-2"
       >
         {items.map((item, index) => {
-          const filled = countFilled(item);
+          const draft = drafts[item.id];
+          const filled = draft ? countFilledFromDraft(draft) : 0;
           const allFieldsFilled = filled === TOTAL_DETAIL_FIELDS;
           const complete = allFieldsFilled || manuallyComplete.has(item.id);
           return (
@@ -367,26 +510,20 @@ export function DetailsView({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {/* Nested inside the trigger button, so these act as buttons
-                        via role+keyboard rather than real <button> elements to
-                        keep the DOM valid. Clicks are stopped from propagating
-                        so they don't toggle the accordion. */}
                     <span
                       role="button"
                       tabIndex={0}
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(
-                          `/rfq/${rfq.id}/edit?itemId=${item.id}`,
-                        );
+                        if (!confirmLeaveIfDirty()) return;
+                        router.push(`/rfq/${rfq.id}/edit?itemId=${item.id}`);
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           e.stopPropagation();
-                          router.push(
-                            `/rfq/${rfq.id}/edit?itemId=${item.id}`,
-                          );
+                          if (!confirmLeaveIfDirty()) return;
+                          router.push(`/rfq/${rfq.id}/edit?itemId=${item.id}`);
                         }
                       }}
                       className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
@@ -432,30 +569,46 @@ export function DetailsView({
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <ItemDetailForm
-                  item={item}
-                  rate={
-                    item.originalCurrency
-                      ? rates[item.originalCurrency]
-                      : undefined
-                  }
-                  onLoadRate={loadRate}
-                  onLocalPatch={(patch) => patchItem(item.id, patch)}
-                />
+                {draft && (
+                  <ItemDetailForm
+                    item={item}
+                    draft={draft}
+                    overridden={overrides[item.id] ?? false}
+                    rate={
+                      draft.originalCurrency
+                        ? rates[draft.originalCurrency]
+                        : undefined
+                    }
+                    onDraftChange={(patch) => patchDraft(item.id, patch)}
+                    onOverriddenChange={(v) => setOverride(item.id, v)}
+                    onLoadRate={loadRate}
+                  />
+                )}
               </AccordionContent>
             </AccordionItem>
           );
         })}
       </Accordion>
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex justify-end gap-2">
+        {rfq.status !== "submitted" && (
+          <Button
+            onClick={handleSave}
+            disabled={!isDirty || saving || submitting}
+            size="sm"
+            variant="outline"
+            className="border-slate-300 text-slate-700 hover:bg-slate-100"
+          >
+            {saving ? "Saving…" : "Save Changes"}
+          </Button>
+        )}
         <Button
           onClick={
             rfq.status === "submitted"
               ? () => router.push(`/rfq/${rfq.id}/quote`)
               : handleSubmit
           }
-          disabled={submitting}
+          disabled={saving || submitting}
           size="sm"
           style={{ backgroundColor: "#274579" }}
           className="text-white hover:opacity-90"
@@ -481,8 +634,6 @@ function CurrencyBanner({
   refreshing: boolean;
   onRefresh: () => void;
 }) {
-  // Re-render the freshness label every 30s so "Updated now" ticks to
-  // "Updated 1m ago" without the user having to interact.
   const [, forceTick] = React.useReducer((n: number) => n + 1, 0);
   React.useEffect(() => {
     const id = setInterval(forceTick, 30_000);

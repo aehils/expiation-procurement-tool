@@ -158,24 +158,34 @@ export async function updateRfqEntryData(
   return { id: existing.id, rfqNumber: existing.rfqNumber };
 }
 
-export async function updateRfqItem(
-  itemId: string,
-  patch: UpdateItemInput,
+// Batch-saves all dirty items on the details view in a single transaction.
+// Matches the manual-save UX: the user makes many edits locally, then hits
+// "Save Changes" once — one roundtrip, atomic write.
+export async function saveRfqItems(
+  rfqId: string,
+  patches: { itemId: string; patch: UpdateItemInput }[],
 ): Promise<{ ok: true }> {
-  const parsed = updateItemSchema.parse(patch);
+  if (patches.length === 0) return { ok: true };
 
-  // Convert undefined → skip; null/empty → set null; other → set value.
-  const data: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(parsed)) {
-    if (value === undefined) continue;
-    if (typeof value === "string" && value.trim() === "") {
-      data[key] = null;
-    } else {
-      data[key] = value;
+  const prepared = patches.map(({ itemId, patch }) => {
+    const parsed = updateItemSchema.parse(patch);
+    const data: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (value === undefined) continue;
+      if (typeof value === "string" && value.trim() === "") {
+        data[key] = null;
+      } else {
+        data[key] = value;
+      }
     }
-  }
+    return { itemId, data };
+  });
 
-  await prisma.rfqItem.update({ where: { id: itemId }, data });
+  await prisma.$transaction(
+    prepared.map(({ itemId, data }) =>
+      prisma.rfqItem.update({ where: { id: itemId, rfqId }, data }),
+    ),
+  );
   return { ok: true };
 }
 
