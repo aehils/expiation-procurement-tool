@@ -10,9 +10,8 @@ generator client {
 }
 
 datasource db {
-  // Change to "postgresql" when migrating off SQLite. The schema is otherwise portable.
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
 model Rfq {
