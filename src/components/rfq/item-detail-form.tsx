@@ -685,12 +685,12 @@ function SummationTable({
       <Row label="Unit Price" value={unitPrice} />
       <Row label={`+ Tax${taxNote}`} value={taxAmount} muted={taxAmount === 0} />
       <Row
-        label="+ Domestic Shipping / qty"
+        label="+ Domestic Shipping"
         value={domPerUnit}
         muted={domPerUnit === 0}
       />
       <Row
-        label="+ Intl Shipping / qty"
+        label="+ Intl Shipping"
         value={intlPerUnit}
         muted={intlPerUnit === 0}
       />
