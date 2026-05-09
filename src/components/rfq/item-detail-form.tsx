@@ -267,12 +267,12 @@ export function ItemDetailForm({
       ? 0
       : taxMode === "percent"
         ? +(ogUnit * (taxN / 100)).toFixed(2)
-        : taxN;
+        : +taxN.toFixed(2);
   const domOgTotal = parseNumber(draft.domesticShippingCost) ?? 0;
   const intlOgTotal = parseNumber(draft.intlShippingCost) ?? 0;
-  const domPerUnit = qty > 0 ? domOgTotal / qty : 0;
-  const intlPerUnit = qty > 0 ? intlOgTotal / qty : 0;
-  const perUnitTotalOg = ogUnit + taxAmountOg + domPerUnit + intlPerUnit;
+  const domPerUnit = qty > 0 ? +(domOgTotal / qty).toFixed(2) : 0;
+  const intlPerUnit = qty > 0 ? +(intlOgTotal / qty).toFixed(2) : 0;
+  const perUnitTotalOg = +( ogUnit + taxAmountOg + domPerUnit + intlPerUnit).toFixed(2);
   const perUnitTotalNaira = +(perUnitTotalOg * fxMultiplier).toFixed(2);
   const lineTotal = perUnitTotalNaira * qty;
 
