@@ -679,9 +679,6 @@ function SummationTable({
       : "";
   return (
     <div className="flex h-full flex-col rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-[11px]">
-      <div className="mb-1.5 font-semibold uppercase tracking-wider text-slate-500">
-        Per-item buildup
-      </div>
       <Row label="Unit Price" value={unitPrice} />
       <Row label={`+ Tax${taxNote}`} value={taxAmount} muted={taxAmount === 0} />
       <Row
