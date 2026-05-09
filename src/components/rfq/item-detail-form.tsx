@@ -472,7 +472,7 @@ export function ItemDetailForm({
         <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
           Tax &amp; Shipping
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-3 gap-y-3 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1.5fr] gap-x-3 gap-y-3 items-start">
           {/* Row 1 col 1: Tax field with the mode toggle nested inside the input */}
           <div>
             <Label className="mb-1 block text-xs">Tax</Label>
@@ -690,7 +690,7 @@ function SummationTable({
       ? ` (${taxRaw}% of unit)`
       : "";
   return (
-    <div className="flex h-full flex-col rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-[11px]">
+    <div className="flex h-full flex-col rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-[13px]">
       <Row label="Unit Price" value={unitPrice} symbol={ogSymbol} />
       <Row label={`Tax${taxNote}`} value={taxAmount} symbol={ogSymbol} plus={taxAmount > 0} muted={taxAmount === 0} />
       <Row
