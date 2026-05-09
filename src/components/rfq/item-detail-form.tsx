@@ -692,17 +692,19 @@ function SummationTable({
   return (
     <div className="flex h-full flex-col rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-[11px]">
       <Row label="Unit Price" value={unitPrice} symbol={ogSymbol} />
-      <Row label={`${taxAmount > 0 ? "+ " : ""}Tax${taxNote}`} value={taxAmount} symbol={ogSymbol} muted={taxAmount === 0} />
+      <Row label={`Tax${taxNote}`} value={taxAmount} symbol={ogSymbol} plus={taxAmount > 0} muted={taxAmount === 0} />
       <Row
-        label={`${domPerUnit > 0 ? "+ " : ""}Domestic Shipping`}
+        label="Domestic Shipping"
         value={domPerUnit}
         symbol={ogSymbol}
+        plus={domPerUnit > 0}
         muted={domPerUnit === 0}
       />
       <Row
-        label={`${intlPerUnit > 0 ? "+ " : ""}Intl Shipping`}
+        label="Intl Shipping"
         value={intlPerUnit}
         symbol={ogSymbol}
+        plus={intlPerUnit > 0}
         muted={intlPerUnit === 0}
       />
       <div className="my-1 border-t border-slate-200" />
@@ -728,12 +730,14 @@ function Row({
   symbol,
   bold,
   muted,
+  plus,
 }: {
   label: string;
   value: number | null;
   symbol: string;
   bold?: boolean;
   muted?: boolean;
+  plus?: boolean;
 }) {
   return (
     <div
@@ -741,7 +745,7 @@ function Row({
     >
       <span className={bold ? "font-semibold" : ""}>{label}</span>
       <span className={`tabular-nums ${bold ? "font-semibold" : ""}`}>
-        {value === null ? "" : `${symbol}${fmt(value)}`}
+        {value === null ? "" : `${plus ? "+" : ""}${symbol}${fmt(value)}`}
       </span>
     </div>
   );
