@@ -692,15 +692,15 @@ function SummationTable({
   return (
     <div className="flex h-full flex-col rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-[11px]">
       <Row label="Unit Price" value={unitPrice} symbol={ogSymbol} />
-      <Row label={`Tax${taxNote}`} value={taxAmount} symbol={ogSymbol} muted={taxAmount === 0} />
+      <Row label={`${taxAmount > 0 ? "+ " : ""}Tax${taxNote}`} value={taxAmount} symbol={ogSymbol} muted={taxAmount === 0} />
       <Row
-        label="Domestic Shipping"
+        label={`${domPerUnit > 0 ? "+ " : ""}Domestic Shipping`}
         value={domPerUnit}
         symbol={ogSymbol}
         muted={domPerUnit === 0}
       />
       <Row
-        label="Intl Shipping"
+        label={`${intlPerUnit > 0 ? "+ " : ""}Intl Shipping`}
         value={intlPerUnit}
         symbol={ogSymbol}
         muted={intlPerUnit === 0}
