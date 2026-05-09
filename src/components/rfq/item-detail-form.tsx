@@ -256,20 +256,25 @@ export function ItemDetailForm({
   // --- Derived summation values -------------------------------------------------------
 
   const qty = item.requestQuantity || 0;
-  const unitN = parseNumber(draft.nairaUnitPrice) ?? 0;
+  const fxMultiplier =
+    draft.originalCurrency === "NGN" ? 1 : (rate?.rate ?? 1);
+
+  // All intermediate rows operate in the original currency.
+  const ogUnit = parseNumber(draft.ogUnitPrice) ?? 0;
   const taxN = parseNumber(draft.tax);
-  const taxAmountPerUnit =
+  const taxAmountOg =
     taxN === null
       ? 0
       : taxMode === "percent"
-        ? +(unitN * (taxN / 100)).toFixed(2)
+        ? +(ogUnit * (taxN / 100)).toFixed(2)
         : taxN;
-  const domTotal = parseNumber(draft.domesticShippingNaira) ?? 0;
-  const intlTotal = parseNumber(draft.intlShippingNaira) ?? 0;
-  const domPerUnit = qty > 0 ? domTotal / qty : 0;
-  const intlPerUnit = qty > 0 ? intlTotal / qty : 0;
-  const perUnitTotal = unitN + taxAmountPerUnit + domPerUnit + intlPerUnit;
-  const lineTotal = perUnitTotal * qty;
+  const domOgTotal = parseNumber(draft.domesticShippingCost) ?? 0;
+  const intlOgTotal = parseNumber(draft.intlShippingCost) ?? 0;
+  const domPerUnit = qty > 0 ? domOgTotal / qty : 0;
+  const intlPerUnit = qty > 0 ? intlOgTotal / qty : 0;
+  const perUnitTotalOg = ogUnit + taxAmountOg + domPerUnit + intlPerUnit;
+  const perUnitTotalNaira = +(perUnitTotalOg * fxMultiplier).toFixed(2);
+  const lineTotal = perUnitTotalNaira * qty;
 
   const ogSymbol =
     draft.originalCurrency && CURRENCY_SYMBOLS[draft.originalCurrency]
@@ -522,16 +527,18 @@ export function ItemDetailForm({
           {/* Summation table — spans all three rows on the right column */}
           <div className="md:row-span-3 md:col-start-3 md:row-start-1 self-stretch">
             <SummationTable
-              currency="NGN"
+              ogSymbol={ogSymbol}
               qty={qty}
-              unitPrice={unitN}
-              taxAmount={taxAmountPerUnit}
+              unitPrice={ogUnit}
+              taxAmount={taxAmountOg}
               taxMode={taxMode}
               taxRaw={taxN}
               domPerUnit={domPerUnit}
               intlPerUnit={intlPerUnit}
-              perUnitTotal={perUnitTotal}
+              perUnitTotalOg={perUnitTotalOg}
+              perUnitTotalNaira={perUnitTotalNaira}
               lineTotal={lineTotal}
+              isNgn={draft.originalCurrency === "NGN"}
             />
           </div>
 
@@ -652,6 +659,7 @@ function fmt(n: number) {
 }
 
 function SummationTable({
+  ogSymbol,
   qty,
   unitPrice,
   taxAmount,
@@ -659,10 +667,12 @@ function SummationTable({
   taxRaw,
   domPerUnit,
   intlPerUnit,
-  perUnitTotal,
+  perUnitTotalOg,
+  perUnitTotalNaira,
   lineTotal,
+  isNgn,
 }: {
-  currency: string;
+  ogSymbol: string;
   qty: number;
   unitPrice: number;
   taxAmount: number;
@@ -670,8 +680,10 @@ function SummationTable({
   taxRaw: number | null;
   domPerUnit: number;
   intlPerUnit: number;
-  perUnitTotal: number;
+  perUnitTotalOg: number;
+  perUnitTotalNaira: number;
   lineTotal: number;
+  isNgn: boolean;
 }) {
   const taxNote =
     taxRaw !== null && taxMode === "percent"
@@ -679,21 +691,26 @@ function SummationTable({
       : "";
   return (
     <div className="flex h-full flex-col rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-[11px]">
-      <Row label="Unit Price" value={unitPrice} />
-      <Row label={`+ Tax${taxNote}`} value={taxAmount} muted={taxAmount === 0} />
+      <Row label="Unit Price" value={unitPrice} symbol={ogSymbol} />
+      <Row label={`+ Tax${taxNote}`} value={taxAmount} symbol={ogSymbol} muted={taxAmount === 0} />
       <Row
         label="+ Domestic Shipping"
         value={domPerUnit}
+        symbol={ogSymbol}
         muted={domPerUnit === 0}
       />
       <Row
         label="+ Intl Shipping"
         value={intlPerUnit}
+        symbol={ogSymbol}
         muted={intlPerUnit === 0}
       />
       <div className="my-1 border-t border-slate-200" />
-      <Row label="Per-unit Total" value={perUnitTotal} bold />
-      <Row label={`× Quantity (${qty})`} value={null} muted />
+      <Row label="Per-unit Total" value={perUnitTotalOg} symbol={ogSymbol} bold />
+      {!isNgn && (
+        <Row label="≈ Per-unit (NGN)" value={perUnitTotalNaira} symbol="₦" muted />
+      )}
+      <Row label={`× Quantity (${qty})`} value={null} symbol="" muted />
       <div className="my-1 border-t border-slate-200" />
       <div className="flex items-baseline justify-between">
         <span className="font-semibold text-slate-700">Item Total</span>
@@ -708,11 +725,13 @@ function SummationTable({
 function Row({
   label,
   value,
+  symbol,
   bold,
   muted,
 }: {
   label: string;
   value: number | null;
+  symbol: string;
   bold?: boolean;
   muted?: boolean;
 }) {
@@ -722,7 +741,7 @@ function Row({
     >
       <span className={bold ? "font-semibold" : ""}>{label}</span>
       <span className={`tabular-nums ${bold ? "font-semibold" : ""}`}>
-        {value === null ? "" : `₦${fmt(value)}`}
+        {value === null ? "" : `${symbol}${fmt(value)}`}
       </span>
     </div>
   );
