@@ -12,12 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CURRENCIES, UNITS_OF_MEASURE } from "@/lib/constants";
+import {
+  CURRENCIES,
+  CURRENCY_SYMBOLS,
+  UNITS_OF_MEASURE,
+} from "@/lib/constants";
 import { updateRfqItem } from "@/lib/actions";
 import type { RateInfo } from "./details-view";
 
-// Subset of RfqItem the details view actually renders. Defined here so we don't
-// import the Prisma type into client components.
 export type DetailsItemPayload = {
   id: string;
   itemCategory: string;
@@ -35,14 +37,21 @@ export type DetailsItemPayload = {
   vendorDeliveryTimeline: string | null;
   originalCurrency: string | null;
   ogUnitPrice: number | null;
-  ogBoxPrice: number | null;
   nairaUnitPrice: number | null;
-  boxPrice: number | null;
   nairaOverridden: boolean;
+  tax: number | null;
+  taxMode: "amount" | "percent" | null;
+  domesticShippingCost: number | null;
+  domesticShippingNaira: number | null;
+  intlShippingCost: number | null;
+  intlShippingNaira: number | null;
   brand: string | null;
 };
 
-type FieldKey = Exclude<keyof DetailsItemPayload, "id" | "itemCategory" | "department" | "itemName" | "requestQuantity">;
+type FieldKey = Exclude<
+  keyof DetailsItemPayload,
+  "id" | "itemCategory" | "department" | "itemName" | "requestQuantity"
+>;
 
 function toInputString(v: string | number | null | undefined): string {
   if (v === null || v === undefined) return "";
@@ -60,7 +69,6 @@ export function ItemDetailForm({
   onLoadRate: (base: string, force?: boolean) => Promise<void> | void;
   onLocalPatch: (patch: Partial<DetailsItemPayload>) => void;
 }) {
-  // Local string state for every input so users can type freely; we cast on save.
   const [draft, setDraft] = React.useState({
     mProductCode: toInputString(item.mProductCode),
     unitQuantity: toInputString(item.unitQuantity),
@@ -73,18 +81,22 @@ export function ItemDetailForm({
     vendorDeliveryTimeline: toInputString(item.vendorDeliveryTimeline),
     originalCurrency: item.originalCurrency ?? "",
     ogUnitPrice: toInputString(item.ogUnitPrice),
-    ogBoxPrice: toInputString(item.ogBoxPrice),
     nairaUnitPrice: toInputString(item.nairaUnitPrice),
-    boxPrice: toInputString(item.boxPrice),
+    tax: toInputString(item.tax),
+    domesticShippingCost: toInputString(item.domesticShippingCost),
+    domesticShippingNaira: toInputString(item.domesticShippingNaira),
+    intlShippingCost: toInputString(item.intlShippingCost),
+    intlShippingNaira: toInputString(item.intlShippingNaira),
   });
   const [overridden, setOverridden] = React.useState(item.nairaOverridden);
+  const [taxMode, setTaxMode] = React.useState<"amount" | "percent">(
+    item.taxMode ?? "amount",
+  );
 
   function setField<K extends keyof typeof draft>(key: K, value: string) {
     setDraft((prev) => ({ ...prev, [key]: value }));
   }
 
-  // Persist a patch to the server and mirror it in the parent's local items array
-  // so the progress indicator + rate strip stay in sync without a server roundtrip.
   const persist = React.useCallback(
     async (patch: Partial<DetailsItemPayload>) => {
       try {
@@ -110,19 +122,22 @@ export function ItemDetailForm({
     setField("originalCurrency", value);
     if (value && value !== "NGN") void onLoadRate(value);
     if (value === "NGN") {
-      // Mirror og into naira directly when the source currency IS naira.
       const og = parseNumber(draft.ogUnitPrice);
-      const ogBox = parseNumber(draft.ogBoxPrice);
       const next: Partial<DetailsItemPayload> = { originalCurrency: "NGN" };
-      if (!overridden) {
-        if (og !== null) {
-          next.nairaUnitPrice = og;
-          setField("nairaUnitPrice", String(og));
-        }
-        if (ogBox !== null) {
-          next.boxPrice = ogBox;
-          setField("boxPrice", String(ogBox));
-        }
+      if (!overridden && og !== null) {
+        next.nairaUnitPrice = og;
+        setField("nairaUnitPrice", String(og));
+      }
+      // Mirror shipping costs as-is when source is NGN.
+      const dom = parseNumber(draft.domesticShippingCost);
+      const intl = parseNumber(draft.intlShippingCost);
+      if (dom !== null) {
+        next.domesticShippingNaira = dom;
+        setField("domesticShippingNaira", String(dom));
+      }
+      if (intl !== null) {
+        next.intlShippingNaira = intl;
+        setField("intlShippingNaira", String(intl));
       }
       await persist(next);
     } else {
@@ -130,79 +145,139 @@ export function ItemDetailForm({
     }
   }
 
-  // When the rate arrives or changes, recompute naira fields if not overridden.
+  // Recompute naira unit price + naira shipping when the rate or override flag changes.
   React.useEffect(() => {
-    if (overridden) return;
     if (!rate || rate.error) return;
-    if (!draft.originalCurrency || draft.originalCurrency === "NGN") return;
+    if (!draft.originalCurrency) return;
+    const multiplier = draft.originalCurrency === "NGN" ? 1 : rate.rate;
 
-    const og = parseNumber(draft.ogUnitPrice);
-    const ogBox = parseNumber(draft.ogBoxPrice);
     const patch: Partial<DetailsItemPayload> = {};
     let touched = false;
 
-    if (og !== null) {
-      const computed = +(og * rate.rate).toFixed(2);
-      if (String(computed) !== draft.nairaUnitPrice) {
-        setField("nairaUnitPrice", String(computed));
-        patch.nairaUnitPrice = computed;
+    if (!overridden) {
+      const og = parseNumber(draft.ogUnitPrice);
+      if (og !== null) {
+        const computed = +(og * multiplier).toFixed(2);
+        if (String(computed) !== draft.nairaUnitPrice) {
+          setField("nairaUnitPrice", String(computed));
+          patch.nairaUnitPrice = computed;
+          touched = true;
+        }
+      }
+    }
+
+    const dom = parseNumber(draft.domesticShippingCost);
+    if (dom !== null) {
+      const computed = +(dom * multiplier).toFixed(2);
+      if (String(computed) !== draft.domesticShippingNaira) {
+        setField("domesticShippingNaira", String(computed));
+        patch.domesticShippingNaira = computed;
         touched = true;
       }
     }
-    if (ogBox !== null) {
-      const computed = +(ogBox * rate.rate).toFixed(2);
-      if (String(computed) !== draft.boxPrice) {
-        setField("boxPrice", String(computed));
-        patch.boxPrice = computed;
+    const intl = parseNumber(draft.intlShippingCost);
+    if (intl !== null) {
+      const computed = +(intl * multiplier).toFixed(2);
+      if (String(computed) !== draft.intlShippingNaira) {
+        setField("intlShippingNaira", String(computed));
+        patch.intlShippingNaira = computed;
         touched = true;
       }
     }
     if (touched) void persist(patch);
-    // We intentionally don't depend on draft.* string state — only on the rate
-    // and override flag — so this only fires on those changes, not every keystroke.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rate, overridden]);
 
-  function handleOgPriceBlur(field: "ogUnitPrice" | "ogBoxPrice") {
-    const value = parseNumber(draft[field]);
-    const patch: Partial<DetailsItemPayload> = { [field]: value };
-
+  function handleOgPriceBlur() {
+    const value = parseNumber(draft.ogUnitPrice);
+    const patch: Partial<DetailsItemPayload> = { ogUnitPrice: value };
     if (!overridden && rate && !rate.error && draft.originalCurrency) {
-      const multiplier =
-        draft.originalCurrency === "NGN" ? 1 : rate.rate;
+      const multiplier = draft.originalCurrency === "NGN" ? 1 : rate.rate;
       if (value !== null) {
         const computed = +(value * multiplier).toFixed(2);
-        if (field === "ogUnitPrice") {
-          setField("nairaUnitPrice", String(computed));
-          patch.nairaUnitPrice = computed;
-        } else {
-          setField("boxPrice", String(computed));
-          patch.boxPrice = computed;
-        }
+        setField("nairaUnitPrice", String(computed));
+        patch.nairaUnitPrice = computed;
       }
     }
     void persist(patch);
   }
 
-  function handleNairaBlur(field: "nairaUnitPrice" | "boxPrice") {
-    const value = parseNumber(draft[field]);
+  function handleNairaUnitBlur() {
+    const value = parseNumber(draft.nairaUnitPrice);
     setOverridden(true);
-    void persist({ [field]: value, nairaOverridden: true });
+    void persist({ nairaUnitPrice: value, nairaOverridden: true });
+  }
+
+  function handleShippingBlur(kind: "domestic" | "intl") {
+    const costKey =
+      kind === "domestic" ? "domesticShippingCost" : "intlShippingCost";
+    const nairaKey =
+      kind === "domestic" ? "domesticShippingNaira" : "intlShippingNaira";
+    const value = parseNumber(draft[costKey]);
+    const patch: Partial<DetailsItemPayload> = { [costKey]: value };
+    if (rate && !rate.error && draft.originalCurrency) {
+      const multiplier = draft.originalCurrency === "NGN" ? 1 : rate.rate;
+      if (value !== null) {
+        const computed = +(value * multiplier).toFixed(2);
+        setField(nairaKey, String(computed));
+        (patch as Record<string, unknown>)[nairaKey] = computed;
+      } else {
+        setField(nairaKey, "");
+        (patch as Record<string, unknown>)[nairaKey] = null;
+      }
+    }
+    void persist(patch);
+  }
+
+  function handleTaxBlur() {
+    const value = parseNumber(draft.tax);
+    void persist({ tax: value, taxMode });
+  }
+
+  function handleTaxModeToggle(mode: "amount" | "percent") {
+    if (mode === taxMode) return;
+    setTaxMode(mode);
+    void persist({ taxMode: mode });
   }
 
   // --- Generic save-on-blur for non-pricing fields ------------------------------------
 
   function blurString(field: FieldKey, raw: string) {
-    void persist({ [field]: raw.trim() === "" ? null : raw } as Partial<DetailsItemPayload>);
+    void persist({
+      [field]: raw.trim() === "" ? null : raw,
+    } as Partial<DetailsItemPayload>);
   }
   function blurNumber(field: FieldKey, raw: string) {
-    void persist({ [field]: parseNumber(raw) } as Partial<DetailsItemPayload>);
+    void persist({
+      [field]: parseNumber(raw),
+    } as Partial<DetailsItemPayload>);
   }
+
+  // --- Derived summation values -------------------------------------------------------
+
+  const qty = item.requestQuantity || 0;
+  const unitN = parseNumber(draft.nairaUnitPrice) ?? 0;
+  const taxN = parseNumber(draft.tax);
+  const taxAmountPerUnit =
+    taxN === null
+      ? 0
+      : taxMode === "percent"
+        ? +(unitN * (taxN / 100)).toFixed(2)
+        : taxN;
+  const domTotal = parseNumber(draft.domesticShippingNaira) ?? 0;
+  const intlTotal = parseNumber(draft.intlShippingNaira) ?? 0;
+  const domPerUnit = qty > 0 ? domTotal / qty : 0;
+  const intlPerUnit = qty > 0 ? intlTotal / qty : 0;
+  const perUnitTotal = unitN + taxAmountPerUnit + domPerUnit + intlPerUnit;
+  const lineTotal = perUnitTotal * qty;
+
+  const ogSymbol =
+    draft.originalCurrency && CURRENCY_SYMBOLS[draft.originalCurrency]
+      ? CURRENCY_SYMBOLS[draft.originalCurrency]
+      : draft.originalCurrency || "—";
 
   return (
     <div className="space-y-5">
-      {/* Split row: product + quantity (left) | vendor (right), with a casual
-          vertical divider between the two halves on md+ screens. */}
       <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x md:divide-slate-200/80">
         {/* LEFT HALF */}
         <div className="md:pr-5 space-y-5">
@@ -318,7 +393,7 @@ export function ItemDetailForm({
         </div>
       </div>
 
-      {/* Section: pricing */}
+      {/* Pricing — single row: currency, og unit price, naira unit price */}
       <Section title="Pricing">
         <Field label="Original Currency" required>
           <Select
@@ -345,18 +420,7 @@ export function ItemDetailForm({
             className="h-8 text-xs"
             value={draft.ogUnitPrice}
             onChange={(e) => setField("ogUnitPrice", e.target.value)}
-            onBlur={() => handleOgPriceBlur("ogUnitPrice")}
-          />
-        </Field>
-        <Field label="Original Box Price">
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            className="h-8 text-xs"
-            value={draft.ogBoxPrice}
-            onChange={(e) => setField("ogBoxPrice", e.target.value)}
-            onBlur={() => handleOgPriceBlur("ogBoxPrice")}
+            onBlur={handleOgPriceBlur}
           />
         </Field>
         <Field label="Naira Unit Price (₦)" required>
@@ -367,32 +431,15 @@ export function ItemDetailForm({
             className="h-8 text-xs"
             value={draft.nairaUnitPrice}
             onChange={(e) => setField("nairaUnitPrice", e.target.value)}
-            onBlur={() => handleNairaBlur("nairaUnitPrice")}
+            onBlur={handleNairaUnitBlur}
           />
         </Field>
-        <Field label="Box Price (₦)">
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            className="h-8 text-xs"
-            value={draft.boxPrice}
-            onChange={(e) => setField("boxPrice", e.target.value)}
-            onBlur={() => handleNairaBlur("boxPrice")}
-          />
-        </Field>
-
-        <div className="flex items-end justify-end pr-10 pb-1">
-          <ItemTotals
-            requestQuantity={item.requestQuantity}
-            nairaUnitPrice={draft.nairaUnitPrice}
-            boxPrice={draft.boxPrice}
-          />
-        </div>
 
         {overridden && (
           <div className="md:col-span-3 flex items-center gap-2 text-[11px] text-amber-700">
-            <span>Naira values are manually overridden — auto-conversion paused.</span>
+            <span>
+              Naira unit price is manually overridden — auto-conversion paused.
+            </span>
             <button
               type="button"
               className="underline hover:no-underline"
@@ -405,12 +452,138 @@ export function ItemDetailForm({
             </button>
           </div>
         )}
-        {rate?.error && draft.originalCurrency && draft.originalCurrency !== "NGN" && (
-          <div className="md:col-span-3 text-[11px] text-amber-700">
-            Couldn&apos;t fetch the {draft.originalCurrency}→NGN rate. Enter naira values manually.
-          </div>
-        )}
+        {rate?.error &&
+          draft.originalCurrency &&
+          draft.originalCurrency !== "NGN" && (
+            <div className="md:col-span-3 text-[11px] text-amber-700">
+              Couldn&apos;t fetch the {draft.originalCurrency}→NGN rate. Enter
+              naira values manually.
+            </div>
+          )}
       </Section>
+
+      {/* Tax + Shipping + per-item summation */}
+      <section>
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+          Tax &amp; Shipping
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+          {/* Tax field — full row, switcher on the right */}
+          <div className="md:col-span-2">
+            <Label className="mb-1 block text-xs">Tax</Label>
+            <div className="flex items-stretch gap-2">
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                className="h-8 text-xs flex-1"
+                value={draft.tax}
+                onChange={(e) => setField("tax", e.target.value)}
+                onBlur={handleTaxBlur}
+                placeholder={
+                  taxMode === "percent" ? "Tax rate" : "Tax amount per unit"
+                }
+              />
+              <div className="inline-flex h-8 items-stretch rounded-md border border-slate-300 overflow-hidden text-xs">
+                <button
+                  type="button"
+                  onClick={() => handleTaxModeToggle("amount")}
+                  aria-pressed={taxMode === "amount"}
+                  className={
+                    taxMode === "amount"
+                      ? "px-2.5 bg-[#274579] text-white"
+                      : "px-2.5 bg-white text-slate-500 hover:bg-slate-50"
+                  }
+                  title="Tax as a fixed amount"
+                >
+                  {ogSymbol}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTaxModeToggle("percent")}
+                  aria-pressed={taxMode === "percent"}
+                  className={
+                    taxMode === "percent"
+                      ? "px-2.5 border-l border-slate-300 bg-[#274579] text-white"
+                      : "px-2.5 border-l border-slate-300 bg-white text-slate-500 hover:bg-slate-50"
+                  }
+                  title="Tax as a percentage of unit price"
+                >
+                  %
+                </button>
+              </div>
+            </div>
+          </div>
+          {/* Right column: leave empty on the tax row, the summation table starts below */}
+          <div className="hidden md:block" />
+
+          {/* Domestic shipping row */}
+          <Field label="Domestic Shipping Cost">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              className="h-8 text-xs"
+              value={draft.domesticShippingCost}
+              onChange={(e) =>
+                setField("domesticShippingCost", e.target.value)
+              }
+              onBlur={() => handleShippingBlur("domestic")}
+            />
+          </Field>
+          <Field label="Domestic Shipping (Naira)">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              readOnly
+              className="h-8 text-xs bg-slate-50"
+              value={draft.domesticShippingNaira}
+              placeholder="Auto"
+            />
+          </Field>
+
+          {/* Summation table spans the rightmost column for both shipping rows */}
+          <div className="md:row-span-2 md:col-start-3">
+            <SummationTable
+              currency="NGN"
+              qty={qty}
+              unitPrice={unitN}
+              taxAmount={taxAmountPerUnit}
+              taxMode={taxMode}
+              taxRaw={taxN}
+              domPerUnit={domPerUnit}
+              intlPerUnit={intlPerUnit}
+              perUnitTotal={perUnitTotal}
+              lineTotal={lineTotal}
+            />
+          </div>
+
+          {/* International shipping row */}
+          <Field label="International Shipping Cost">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              className="h-8 text-xs"
+              value={draft.intlShippingCost}
+              onChange={(e) => setField("intlShippingCost", e.target.value)}
+              onBlur={() => handleShippingBlur("intl")}
+            />
+          </Field>
+          <Field label="International Shipping (Naira)">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              readOnly
+              className="h-8 text-xs bg-slate-50"
+              value={draft.intlShippingNaira}
+              placeholder="Auto"
+            />
+          </Field>
+        </div>
+      </section>
     </div>
   );
 }
@@ -470,30 +643,88 @@ function Field({
 }
 
 function fmt(n: number) {
-  return n.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
-function ItemTotals({
-  requestQuantity,
-  nairaUnitPrice,
-  boxPrice,
+function SummationTable({
+  qty,
+  unitPrice,
+  taxAmount,
+  taxMode,
+  taxRaw,
+  domPerUnit,
+  intlPerUnit,
+  perUnitTotal,
+  lineTotal,
 }: {
-  requestQuantity: number;
-  nairaUnitPrice: string;
-  boxPrice: string;
+  currency: string;
+  qty: number;
+  unitPrice: number;
+  taxAmount: number;
+  taxMode: "amount" | "percent";
+  taxRaw: number | null;
+  domPerUnit: number;
+  intlPerUnit: number;
+  perUnitTotal: number;
+  lineTotal: number;
 }) {
-  const qty = requestQuantity;
-  const total =
-    qty > 0 && parseFloat(nairaUnitPrice) > 0
-      ? qty * parseFloat(nairaUnitPrice)
-      : qty > 0 && parseFloat(boxPrice) > 0
-        ? qty * parseFloat(boxPrice)
-        : null;
-
-  if (total === null) return null;
+  const taxNote =
+    taxRaw !== null && taxMode === "percent"
+      ? ` (${taxRaw}% of unit)`
+      : "";
   return (
-    <span className="text-base text-slate-500">
-      <span className="font-bold">Item Total:</span> ₦{fmt(total)}
-    </span>
+    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-[11px]">
+      <div className="mb-1.5 font-semibold uppercase tracking-wider text-slate-500">
+        Per-item buildup
+      </div>
+      <Row label="Unit Price" value={unitPrice} />
+      <Row label={`+ Tax${taxNote}`} value={taxAmount} muted={taxAmount === 0} />
+      <Row
+        label="+ Domestic Shipping / qty"
+        value={domPerUnit}
+        muted={domPerUnit === 0}
+      />
+      <Row
+        label="+ Intl Shipping / qty"
+        value={intlPerUnit}
+        muted={intlPerUnit === 0}
+      />
+      <div className="my-1 border-t border-slate-200" />
+      <Row label="Per-unit Total" value={perUnitTotal} bold />
+      <Row label={`× Quantity (${qty})`} value={null} muted />
+      <div className="my-1 border-t border-slate-200" />
+      <div className="flex items-baseline justify-between">
+        <span className="font-semibold text-slate-700">Item Total</span>
+        <span className="font-semibold text-slate-800 tabular-nums">
+          ₦{fmt(lineTotal)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function Row({
+  label,
+  value,
+  bold,
+  muted,
+}: {
+  label: string;
+  value: number | null;
+  bold?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-baseline justify-between leading-5 ${muted ? "text-slate-400" : "text-slate-600"}`}
+    >
+      <span className={bold ? "font-semibold" : ""}>{label}</span>
+      <span className={`tabular-nums ${bold ? "font-semibold" : ""}`}>
+        {value === null ? "" : `₦${fmt(value)}`}
+      </span>
+    </div>
   );
 }

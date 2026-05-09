@@ -48,10 +48,14 @@ export const updateItemSchema = z.object({
   vendorDeliveryTimeline: z.string().nullish(),
   originalCurrency: z.string().nullish(),
   ogUnitPrice: z.number().nullish(),
-  ogBoxPrice: z.number().nullish(),
   nairaUnitPrice: z.number().nullish(),
-  boxPrice: z.number().nullish(),
   nairaOverridden: z.boolean().optional(),
+  tax: z.number().nullish(),
+  taxMode: z.enum(["amount", "percent"]).nullish(),
+  domesticShippingCost: z.number().nullish(),
+  domesticShippingNaira: z.number().nullish(),
+  intlShippingCost: z.number().nullish(),
+  intlShippingNaira: z.number().nullish(),
 });
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 
