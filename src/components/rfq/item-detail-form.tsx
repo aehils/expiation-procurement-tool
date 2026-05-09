@@ -467,16 +467,16 @@ export function ItemDetailForm({
         <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
           Tax &amp; Shipping
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
-          {/* Tax field — full row, switcher on the right */}
-          <div className="md:col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-3 gap-y-3 items-start">
+          {/* Row 1 col 1: Tax field with the mode toggle nested inside the input */}
+          <div>
             <Label className="mb-1 block text-xs">Tax</Label>
-            <div className="flex items-stretch gap-2">
+            <div className="relative h-8">
               <Input
                 type="number"
                 min="0"
                 step="0.01"
-                className="h-8 text-xs flex-1"
+                className="h-8 text-xs pr-[60px]"
                 value={draft.tax}
                 onChange={(e) => setField("tax", e.target.value)}
                 onBlur={handleTaxBlur}
@@ -484,17 +484,18 @@ export function ItemDetailForm({
                   taxMode === "percent" ? "Tax rate" : "Tax amount per unit"
                 }
               />
-              <div className="inline-flex h-8 items-stretch rounded-md border border-slate-300 overflow-hidden text-xs">
+              <div className="absolute inset-y-1 right-1 inline-flex items-stretch rounded border border-slate-200 overflow-hidden text-[11px] leading-none">
                 <button
                   type="button"
                   onClick={() => handleTaxModeToggle("amount")}
                   aria-pressed={taxMode === "amount"}
                   className={
                     taxMode === "amount"
-                      ? "px-2.5 bg-[#274579] text-white"
-                      : "px-2.5 bg-white text-slate-500 hover:bg-slate-50"
+                      ? "px-1.5 bg-[#274579] text-white"
+                      : "px-1.5 bg-white text-slate-500 hover:bg-slate-50"
                   }
                   title="Tax as a fixed amount"
+                  tabIndex={-1}
                 >
                   {ogSymbol}
                 </button>
@@ -504,20 +505,37 @@ export function ItemDetailForm({
                   aria-pressed={taxMode === "percent"}
                   className={
                     taxMode === "percent"
-                      ? "px-2.5 border-l border-slate-300 bg-[#274579] text-white"
-                      : "px-2.5 border-l border-slate-300 bg-white text-slate-500 hover:bg-slate-50"
+                      ? "px-1.5 border-l border-slate-200 bg-[#274579] text-white"
+                      : "px-1.5 border-l border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
                   }
                   title="Tax as a percentage of unit price"
+                  tabIndex={-1}
                 >
                   %
                 </button>
               </div>
             </div>
           </div>
-          {/* Right column: leave empty on the tax row, the summation table starts below */}
+          {/* Row 1 col 2: empty placeholder to keep grid alignment */}
           <div className="hidden md:block" />
 
-          {/* Domestic shipping row */}
+          {/* Summation table — spans all three rows on the right column */}
+          <div className="md:row-span-3 md:col-start-3 md:row-start-1 self-stretch">
+            <SummationTable
+              currency="NGN"
+              qty={qty}
+              unitPrice={unitN}
+              taxAmount={taxAmountPerUnit}
+              taxMode={taxMode}
+              taxRaw={taxN}
+              domPerUnit={domPerUnit}
+              intlPerUnit={intlPerUnit}
+              perUnitTotal={perUnitTotal}
+              lineTotal={lineTotal}
+            />
+          </div>
+
+          {/* Row 2: Domestic shipping */}
           <Field label="Domestic Shipping Cost">
             <Input
               type="number"
@@ -543,23 +561,7 @@ export function ItemDetailForm({
             />
           </Field>
 
-          {/* Summation table spans the rightmost column for both shipping rows */}
-          <div className="md:row-span-2 md:col-start-3">
-            <SummationTable
-              currency="NGN"
-              qty={qty}
-              unitPrice={unitN}
-              taxAmount={taxAmountPerUnit}
-              taxMode={taxMode}
-              taxRaw={taxN}
-              domPerUnit={domPerUnit}
-              intlPerUnit={intlPerUnit}
-              perUnitTotal={perUnitTotal}
-              lineTotal={lineTotal}
-            />
-          </div>
-
-          {/* International shipping row */}
+          {/* Row 3: International shipping */}
           <Field label="International Shipping Cost">
             <Input
               type="number"
@@ -676,7 +678,7 @@ function SummationTable({
       ? ` (${taxRaw}% of unit)`
       : "";
   return (
-    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-[11px]">
+    <div className="flex h-full flex-col rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-[11px]">
       <div className="mb-1.5 font-semibold uppercase tracking-wider text-slate-500">
         Per-item buildup
       </div>
