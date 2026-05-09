@@ -213,7 +213,9 @@ export function ItemDetailForm({
       kind === "domestic" ? "domesticShippingCost" : "intlShippingCost";
     const nairaKey =
       kind === "domestic" ? "domesticShippingNaira" : "intlShippingNaira";
-    const value = parseNumber(draft[costKey]);
+    const raw = parseNumber(draft[costKey]);
+    const value = raw !== null ? +(raw.toFixed(2)) : null;
+    if (value !== null) setField(costKey, String(value));
     const patch: Partial<DetailsItemPayload> = { [costKey]: value };
     if (rate && !rate.error && draft.originalCurrency) {
       const multiplier = draft.originalCurrency === "NGN" ? 1 : rate.rate;
@@ -230,7 +232,9 @@ export function ItemDetailForm({
   }
 
   function handleTaxBlur() {
-    const value = parseNumber(draft.tax);
+    const raw = parseNumber(draft.tax);
+    const value = raw !== null ? +(raw.toFixed(2)) : null;
+    if (value !== null) setField("tax", String(value));
     void persist({ tax: value, taxMode });
   }
 
