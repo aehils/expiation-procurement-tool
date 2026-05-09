@@ -708,9 +708,9 @@ function SummationTable({
       <div className="my-1 border-t border-slate-200" />
       <Row label="Per-unit Total" value={perUnitTotalOg} symbol={ogSymbol} bold />
       {!isNgn && (
-        <Row label="≈ Per-unit (NGN)" value={perUnitTotalNaira} symbol="₦" muted />
+        <Row label="Per-unit (NGN)" value={perUnitTotalNaira} symbol="₦" bold />
       )}
-      <Row label={`× Quantity (${qty})`} value={null} symbol="" muted />
+      <Row label={`× Quantity (${qty})`} value={unitPrice * qty} symbol={ogSymbol} muted />
       <div className="my-1 border-t border-slate-200" />
       <div className="flex items-baseline justify-between">
         <span className="font-semibold text-slate-700">Item Total</span>
