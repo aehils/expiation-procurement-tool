@@ -69,7 +69,6 @@ export const BANNER_CURRENCIES: { code: string; name: string; symbol: string }[]
 
 // Fields the user must fill on the details page before an RFQ can be submitted.
 export const REQUIRED_DETAIL_FIELDS = [
-  "mProductCode",
   "unitQuantity",
   "uom",
   "vendor",

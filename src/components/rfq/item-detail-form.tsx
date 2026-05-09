@@ -215,7 +215,7 @@ export function ItemDetailForm({
                 onBlur={(e) => blurString("manufacturerName", e.target.value)}
               />
             </Field>
-            <Field label="Manufacturer Product Code" required>
+            <Field label="Manufacturer Product Code">
               <Input
                 className="h-8 text-xs"
                 value={draft.mProductCode}
