@@ -714,9 +714,9 @@ function SummationTable({
         muted={intlPerUnit === 0}
       />
       <div className="my-1 border-t border-slate-200" />
-      <Row label="Per-unit Total" value={perUnitTotalOg} symbol={ogSymbol} bold />
+      <Row label="Unit Total" value={perUnitTotalOg} symbol={ogSymbol} bold />
       {!isNgn && (
-        <Row label="Per-unit (NGN)" value={perUnitTotalNaira} symbol="₦" bold />
+        <Row label="Unit Total in Naira" value={perUnitTotalNaira} symbol="₦" bold />
       )}
       <Row label={`Quantity ×${qty}`} value={perUnitTotalOg * qty} symbol={ogSymbol} />
       <div className="my-1 border-t border-slate-200" />
