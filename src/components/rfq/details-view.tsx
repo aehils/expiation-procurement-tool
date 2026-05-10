@@ -421,7 +421,7 @@ export function DetailsView({
                     >
                       Mark as Complete
                     </span>
-                    <div className="text-[11px] text-muted-foreground tabular-nums ml-1">
+                    <div className="text-[11px] text-muted-foreground tabular-nums w-10 text-right shrink-0">
                       {filled} / {TOTAL_DETAIL_FIELDS}
                     </div>
                     <div
