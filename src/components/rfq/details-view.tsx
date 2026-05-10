@@ -361,13 +361,13 @@ export function DetailsView({
                     <div className="font-semibold text-sm text-slate-800 truncate">
                       {item.itemName}
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                    <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
                       {categoryLabel(item.itemCategory)} •{" "}
                       {departmentLabel(item.department)} • Qty:{" "}
                       {item.requestQuantity}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0 mr-2">
+                  <div className="flex items-center gap-2 shrink-0 mr-2">
                     {/* Nested inside the trigger button, so these act as buttons
                         via role+keyboard rather than real <button> elements to
                         keep the DOM valid. Clicks are stopped from propagating
