@@ -367,7 +367,7 @@ export function DetailsView({
                       {item.requestQuantity}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-col items-end gap-1 shrink-0 mr-2">
                     {/* Nested inside the trigger button, so these act as buttons
                         via role+keyboard rather than real <button> elements to
                         keep the DOM valid. Clicks are stopped from propagating
