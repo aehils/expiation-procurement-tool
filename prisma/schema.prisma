@@ -54,10 +54,14 @@ model RfqItem {
   vendorDeliveryTimeline String?
   originalCurrency       String?
   ogUnitPrice            Float?
-  ogBoxPrice             Float?
   nairaUnitPrice         Float?
-  boxPrice               Float?
   nairaOverridden        Boolean @default(false)
+  tax                    Float?
+  taxMode                String? // "amount" | "percent"
+  domesticShippingCost   Float?
+  domesticShippingNaira  Float?
+  intlShippingCost       Float?
+  intlShippingNaira      Float?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

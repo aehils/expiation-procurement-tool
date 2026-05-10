@@ -14,7 +14,6 @@ type ColKey =
   | "requestQuantity"
   | "vendor"
   | "nairaUnitPrice"
-  | "boxPrice"
   | "totalPrice"
   | "uom"
   | "brand"
@@ -36,10 +35,33 @@ const COLUMNS: { key: ColKey; label: string; defaultOn: boolean; wrap?: boolean 
   { key: "countryOfOrigin", label: "Country of Origin", defaultOn: false },
   { key: "itemCategory", label: "Category", defaultOn: false },
   { key: "vendorLocation", label: "Vendor Location", defaultOn: false },
-  { key: "boxPrice", label: "Box Price", defaultOn: false },
   { key: "nairaUnitPrice", label: "Unit Price", defaultOn: true },
   { key: "totalPrice", label: "Total Price", defaultOn: true },
 ];
+
+// Per-item line total in naira: unit price + tax + domestic shipping share +
+// intl shipping share, all multiplied by request quantity. Tax can be a fixed
+// per-unit amount or a percentage of the unit price.
+function lineTotalNaira(item: DetailsItemPayload): number | null {
+  if (item.nairaUnitPrice == null) return null;
+  const qty = item.requestQuantity || 0;
+  const unit = item.nairaUnitPrice;
+  const taxPerUnit =
+    item.tax == null
+      ? 0
+      : item.taxMode === "percent"
+        ? unit * (item.tax / 100)
+        : item.tax;
+  const domPerUnit =
+    qty > 0 && item.domesticShippingNaira != null
+      ? item.domesticShippingNaira / qty
+      : 0;
+  const intlPerUnit =
+    qty > 0 && item.intlShippingNaira != null
+      ? item.intlShippingNaira / qty
+      : 0;
+  return (unit + taxPerUnit + domPerUnit + intlPerUnit) * qty;
+}
 
 type Rfq = {
   id: string;
@@ -59,14 +81,10 @@ function cellValue(item: DetailsItemPayload, key: ColKey, markupFactor: number):
       return item.nairaUnitPrice != null
         ? formatNaira(item.nairaUnitPrice * markupFactor)
         : "—";
-    case "boxPrice":
-      return item.boxPrice != null
-        ? formatNaira(item.boxPrice * markupFactor)
-        : "—";
-    case "totalPrice":
-      return item.nairaUnitPrice != null
-        ? formatNaira(item.requestQuantity * item.nairaUnitPrice * markupFactor)
-        : "—";
+    case "totalPrice": {
+      const total = lineTotalNaira(item);
+      return total != null ? formatNaira(total * markupFactor) : "—";
+    }
     case "requestQuantity":
       return item.requestQuantity;
     case "itemCategory":

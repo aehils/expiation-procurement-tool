@@ -80,7 +80,21 @@ export const REQUIRED_DETAIL_FIELDS = [
 export type RequiredDetailField = (typeof REQUIRED_DETAIL_FIELDS)[number];
 
 // Total fields a user can fill on the details view, used for the per-item progress indicator.
-export const TOTAL_DETAIL_FIELDS = 14;
+// 12 vendor/product/pricing fields + tax + domestic shipping cost + intl shipping cost.
+export const TOTAL_DETAIL_FIELDS = 15;
+
+// Maps an ISO currency code to the symbol shown on the inline tax-mode switcher.
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  NGN: "₦",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  CNY: "¥",
+  JPY: "¥",
+  INR: "₹",
+  ZAR: "R",
+  AED: "د.إ",
+};
 
 export function categoryLabel(value: string): string {
   return CATEGORIES.find((c) => c.value === value)?.label ?? value;

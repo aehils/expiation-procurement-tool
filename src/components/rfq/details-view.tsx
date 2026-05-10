@@ -49,9 +49,10 @@ const DETAIL_KEYS: (keyof DetailsItemPayload)[] = [
   "vendorDeliveryTimeline",
   "originalCurrency",
   "ogUnitPrice",
-  "ogBoxPrice",
   "nairaUnitPrice",
-  "boxPrice",
+  "tax",
+  "domesticShippingCost",
+  "intlShippingCost",
 ];
 
 function countFilled(item: DetailsItemPayload): number {

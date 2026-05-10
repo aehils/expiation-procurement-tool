@@ -35,10 +35,14 @@ export default async function QuotePage({
     vendorDeliveryTimeline: it.vendorDeliveryTimeline,
     originalCurrency: it.originalCurrency,
     ogUnitPrice: it.ogUnitPrice,
-    ogBoxPrice: it.ogBoxPrice,
     nairaUnitPrice: it.nairaUnitPrice,
-    boxPrice: it.boxPrice,
     nairaOverridden: it.nairaOverridden,
+    tax: it.tax,
+    taxMode: (it.taxMode as "amount" | "percent" | null) ?? null,
+    domesticShippingCost: it.domesticShippingCost,
+    domesticShippingNaira: it.domesticShippingNaira,
+    intlShippingCost: it.intlShippingCost,
+    intlShippingNaira: it.intlShippingNaira,
     brand: it.brand,
   }));
 
