@@ -58,6 +58,11 @@ function toInputString(v: string | number | null | undefined): string {
   return String(v);
 }
 
+function toCurrencyInputString(v: number | null | undefined): string {
+  if (v === null || v === undefined) return "";
+  return Number.isFinite(v) ? v.toFixed(2) : "";
+}
+
 export function ItemDetailForm({
   item,
   rate,
@@ -82,11 +87,11 @@ export function ItemDetailForm({
     originalCurrency: item.originalCurrency ?? "",
     ogUnitPrice: toInputString(item.ogUnitPrice),
     nairaUnitPrice: toInputString(item.nairaUnitPrice),
-    tax: toInputString(item.tax),
-    domesticShippingCost: toInputString(item.domesticShippingCost),
-    domesticShippingNaira: toInputString(item.domesticShippingNaira),
-    intlShippingCost: toInputString(item.intlShippingCost),
-    intlShippingNaira: toInputString(item.intlShippingNaira),
+    tax: toCurrencyInputString(item.tax),
+    domesticShippingCost: toCurrencyInputString(item.domesticShippingCost),
+    domesticShippingNaira: toCurrencyInputString(item.domesticShippingNaira),
+    intlShippingCost: toCurrencyInputString(item.intlShippingCost),
+    intlShippingNaira: toCurrencyInputString(item.intlShippingNaira),
   });
   const [overridden, setOverridden] = React.useState(item.nairaOverridden);
   const [taxMode, setTaxMode] = React.useState<"amount" | "percent">(
@@ -133,11 +138,11 @@ export function ItemDetailForm({
       const intl = parseNumber(draft.intlShippingCost);
       if (dom !== null) {
         next.domesticShippingNaira = dom;
-        setField("domesticShippingNaira", String(dom));
+        setField("domesticShippingNaira", dom.toFixed(2));
       }
       if (intl !== null) {
         next.intlShippingNaira = intl;
-        setField("intlShippingNaira", String(intl));
+        setField("intlShippingNaira", intl.toFixed(2));
       }
       await persist(next);
     } else {
@@ -169,8 +174,8 @@ export function ItemDetailForm({
     const dom = parseNumber(draft.domesticShippingCost);
     if (dom !== null) {
       const computed = +(dom * multiplier).toFixed(2);
-      if (String(computed) !== draft.domesticShippingNaira) {
-        setField("domesticShippingNaira", String(computed));
+      if (computed.toFixed(2) !== draft.domesticShippingNaira) {
+        setField("domesticShippingNaira", computed.toFixed(2));
         patch.domesticShippingNaira = computed;
         touched = true;
       }
@@ -178,8 +183,8 @@ export function ItemDetailForm({
     const intl = parseNumber(draft.intlShippingCost);
     if (intl !== null) {
       const computed = +(intl * multiplier).toFixed(2);
-      if (String(computed) !== draft.intlShippingNaira) {
-        setField("intlShippingNaira", String(computed));
+      if (computed.toFixed(2) !== draft.intlShippingNaira) {
+        setField("intlShippingNaira", computed.toFixed(2));
         patch.intlShippingNaira = computed;
         touched = true;
       }
@@ -222,7 +227,7 @@ export function ItemDetailForm({
       const multiplier = draft.originalCurrency === "NGN" ? 1 : rate.rate;
       if (value !== null) {
         const computed = +(value * multiplier).toFixed(2);
-        setField(nairaKey, String(computed));
+        setField(nairaKey, computed.toFixed(2));
         (patch as Record<string, unknown>)[nairaKey] = computed;
       } else {
         setField(nairaKey, "");
