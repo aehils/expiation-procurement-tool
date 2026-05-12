@@ -5,6 +5,7 @@ import "dotenv/config";
 
 export default defineConfig({
   earlyAccess: true,
+  experimental: { adapter: true },
   schema: path.join("prisma", "schema.prisma"),
   engine: "js",
   adapter: async () =>
