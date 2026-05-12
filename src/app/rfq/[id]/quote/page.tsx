@@ -44,6 +44,7 @@ export default async function QuotePage({
     intlShippingCost: it.intlShippingCost,
     intlShippingNaira: it.intlShippingNaira,
     brand: it.brand,
+    markedComplete: it.markedComplete,
   }));
 
   return (

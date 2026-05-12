@@ -18,7 +18,7 @@ model Rfq {
   id        String   @id @default(cuid())
   rfqNumber String   @unique
   requester String
-  status    String   @default("draft") // draft | details | submitted
+  status    String   @default("draft") // draft | details | quoted
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -62,6 +62,7 @@ model RfqItem {
   domesticShippingNaira  Float?
   intlShippingCost       Float?
   intlShippingNaira      Float?
+  markedComplete         Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

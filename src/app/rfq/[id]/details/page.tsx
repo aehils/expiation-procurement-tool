@@ -48,6 +48,7 @@ export default async function RfqDetailsPage({
     intlShippingCost: it.intlShippingCost,
     intlShippingNaira: it.intlShippingNaira,
     brand: it.brand,
+    markedComplete: it.markedComplete,
   }));
 
   return (

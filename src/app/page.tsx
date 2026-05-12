@@ -54,12 +54,12 @@ export default async function HomePage() {
                   </div>
                   <span
                     className={`text-xs font-medium px-2 py-1 rounded uppercase ${
-                      rfq.status === "submitted"
+                      rfq.status === "quoted"
                         ? "bg-[#274579]/10 text-[#274579]"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
-                    {rfq.status}
+                    {rfq.status === "quoted" ? "Quoted" : "Draft"}
                   </span>
                 </Link>
               </li>

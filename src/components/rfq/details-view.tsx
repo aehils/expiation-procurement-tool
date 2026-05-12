@@ -22,7 +22,8 @@ import {
 } from "@/lib/constants";
 import {
   refreshBannerCurrencyRates,
-  submitRfq,
+  proceedToQuote,
+  toggleItemComplete,
   type PersistedRate,
 } from "@/lib/actions";
 import { ItemDetailForm, type DetailsItemPayload } from "./item-detail-form";
@@ -98,23 +99,11 @@ export function DetailsView({
   });
   const [refreshing, setRefreshing] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
-  // Items the user has force-marked as complete even though not all 14 detail
-  // fields are populated. Kept client-side — the visual indicator resets on
-  // reload, which is fine since the only effect is on the progress dot.
-  const [manuallyComplete, setManuallyComplete] = React.useState<Set<string>>(
-    () => new Set(),
-  );
-
-  function toggleManuallyComplete(itemId: string) {
-    setManuallyComplete((prev) => {
-      const next = new Set(prev);
-      if (next.has(itemId)) {
-        next.delete(itemId);
-      } else {
-        next.add(itemId);
-      }
-      return next;
-    });
+  const [showCompleteWarning, setShowCompleteWarning] = React.useState(false);
+  function handleToggleComplete(itemId: string, currentValue: boolean) {
+    const next = !currentValue;
+    patchItem(itemId, { markedComplete: next });
+    void toggleItemComplete(itemId, next);
   }
 
   function patchItem(itemId: string, patch: Partial<DetailsItemPayload>) {
@@ -219,20 +208,21 @@ export function DetailsView({
     return oldest || undefined;
   }, [rates]);
 
+  function isComplete(item: DetailsItemPayload) {
+    return countFilled(item) === TOTAL_DETAIL_FIELDS || item.markedComplete;
+  }
+
+  const anyComplete = items.some(isComplete);
+
   async function handleSubmit() {
-    setSubmitting(true);
-    const result = await submitRfq(rfq.id);
-    setSubmitting(false);
-    if (result.ok) {
-      toast.success(`RFQ ${result.rfqNumber} submitted`);
-      router.push(`/rfq/${rfq.id}/quote`);
-    } else {
-      const first = result.missing[0];
-      toast.error(
-        `${result.missing.length} item(s) incomplete. "${first.itemName}" is missing: ${first.fields.join(", ")}`,
-      );
-      setExpanded(first.itemId);
+    if (!anyComplete) {
+      setShowCompleteWarning(true);
+      return;
     }
+    setShowCompleteWarning(false);
+    setSubmitting(true);
+    await proceedToQuote(rfq.id);
+    router.push(`/rfq/${rfq.id}/quote`);
   }
 
   async function copyRfqId() {
@@ -274,9 +264,9 @@ export function DetailsView({
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
           </svg>
         </button>
-        {rfq.status === "submitted" ? (
+        {rfq.status === "quoted" ? (
           <span className="px-1.5 py-px text-[10px] font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
-            Submitted
+            Quoted
           </span>
         ) : (
           <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
@@ -349,7 +339,7 @@ export function DetailsView({
         {items.map((item, index) => {
           const filled = countFilled(item);
           const allFieldsFilled = filled === TOTAL_DETAIL_FIELDS;
-          const complete = allFieldsFilled || manuallyComplete.has(item.id);
+          const complete = isComplete(item);
           return (
             <AccordionItem key={item.id} value={item.id}>
               <AccordionTrigger>
@@ -401,14 +391,14 @@ export function DetailsView({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (allFieldsFilled) return;
-                        toggleManuallyComplete(item.id);
+                        handleToggleComplete(item.id, item.markedComplete);
                       }}
                       onKeyDown={(e) => {
                         if (allFieldsFilled) return;
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           e.stopPropagation();
-                          toggleManuallyComplete(item.id);
+                          handleToggleComplete(item.id, item.markedComplete);
                         }
                       }}
                       className={
@@ -449,13 +439,14 @@ export function DetailsView({
         })}
       </Accordion>
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex items-center justify-end gap-3">
+        {showCompleteWarning && !anyComplete && (
+          <p className="text-xs text-orange-600 font-medium">
+            Mark at least one item as complete before proceeding.
+          </p>
+        )}
         <Button
-          onClick={
-            rfq.status === "submitted"
-              ? () => router.push(`/rfq/${rfq.id}/quote`)
-              : handleSubmit
-          }
+          onClick={handleSubmit}
           disabled={submitting}
           size="sm"
           style={{ backgroundColor: "#274579" }}

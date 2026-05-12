@@ -179,6 +179,16 @@ export async function updateRfqItem(
   return { ok: true };
 }
 
+export async function toggleItemComplete(
+  itemId: string,
+  value: boolean,
+): Promise<void> {
+  await prisma.rfqItem.update({
+    where: { id: itemId },
+    data: { markedComplete: value },
+  });
+}
+
 export type PersistedRate = {
   code: string;
   rate: number;
@@ -239,34 +249,10 @@ export async function refreshBannerCurrencyRates(): Promise<
   return results;
 }
 
-export async function submitRfq(
-  rfqId: string,
-): Promise<
-  | { ok: true; rfqNumber: string }
-  | { ok: false; missing: { itemId: string; itemName: string; fields: string[] }[] }
-> {
-  const rfq = await prisma.rfq.findUnique({
-    where: { id: rfqId },
-    include: { items: true },
-  });
-  if (!rfq) throw new Error("RFQ not found");
-
-  const missing = rfq.items
-    .map((item) => ({
-      itemId: item.id,
-      itemName: item.itemName,
-      fields: findMissingDetailFields(item as unknown as Record<string, unknown>),
-    }))
-    .filter((entry) => entry.fields.length > 0);
-
-  if (missing.length > 0) {
-    return { ok: false, missing };
-  }
-
+export async function proceedToQuote(rfqId: string): Promise<void> {
   await prisma.rfq.update({
     where: { id: rfqId },
-    data: { status: "submitted" },
+    data: { status: "quoted" },
   });
   revalidatePath(`/rfq/${rfqId}/details`);
-  return { ok: true, rfqNumber: rfq.rfqNumber };
 }

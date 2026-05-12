@@ -46,11 +46,12 @@ export type DetailsItemPayload = {
   intlShippingCost: number | null;
   intlShippingNaira: number | null;
   brand: string | null;
+  markedComplete: boolean;
 };
 
 type FieldKey = Exclude<
   keyof DetailsItemPayload,
-  "id" | "itemCategory" | "department" | "itemName" | "requestQuantity"
+  "id" | "itemCategory" | "department" | "itemName" | "requestQuantity" | "markedComplete"
 >;
 
 function toInputString(v: string | number | null | undefined): string {
@@ -61,6 +62,53 @@ function toInputString(v: string | number | null | undefined): string {
 function toCurrencyInputString(v: number | null | undefined): string {
   if (v === null || v === undefined) return "";
   return Number.isFinite(v) ? v.toFixed(2) : "";
+}
+
+function formatCurrencyDisplay(raw: string): string {
+  if (raw === "") return "";
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return raw;
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function CurrencyInput({
+  value,
+  onChange,
+  onBlur,
+  readOnly,
+  className,
+  placeholder,
+}: {
+  value: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: () => void;
+  readOnly?: boolean;
+  className?: string;
+  placeholder?: string;
+}) {
+  const [focused, setFocused] = React.useState(false);
+  return (
+    <Input
+      type="text"
+      inputMode="decimal"
+      className={className}
+      readOnly={readOnly}
+      placeholder={placeholder}
+      value={focused ? value : formatCurrencyDisplay(value)}
+      onChange={(e) => {
+        e.target.value = e.target.value.replace(/,/g, "");
+        onChange?.(e);
+      }}
+      onFocus={() => setFocused(true)}
+      onBlur={() => {
+        setFocused(false);
+        onBlur?.();
+      }}
+    />
+  );
 }
 
 export function ItemDetailForm({
@@ -85,8 +133,8 @@ export function ItemDetailForm({
     countryOfOrigin: toInputString(item.countryOfOrigin),
     vendorDeliveryTimeline: toInputString(item.vendorDeliveryTimeline),
     originalCurrency: item.originalCurrency ?? "",
-    ogUnitPrice: toInputString(item.ogUnitPrice),
-    nairaUnitPrice: toInputString(item.nairaUnitPrice),
+    ogUnitPrice: toCurrencyInputString(item.ogUnitPrice),
+    nairaUnitPrice: toCurrencyInputString(item.nairaUnitPrice),
     tax: toCurrencyInputString(item.tax),
     domesticShippingCost: toCurrencyInputString(item.domesticShippingCost),
     domesticShippingNaira: toCurrencyInputString(item.domesticShippingNaira),
@@ -131,7 +179,7 @@ export function ItemDetailForm({
       const next: Partial<DetailsItemPayload> = { originalCurrency: "NGN" };
       if (!overridden && og !== null) {
         next.nairaUnitPrice = og;
-        setField("nairaUnitPrice", String(og));
+        setField("nairaUnitPrice", og.toFixed(2));
       }
       // Mirror shipping costs as-is when source is NGN.
       const dom = parseNumber(draft.domesticShippingCost);
@@ -163,8 +211,8 @@ export function ItemDetailForm({
       const og = parseNumber(draft.ogUnitPrice);
       if (og !== null) {
         const computed = +(og * multiplier).toFixed(2);
-        if (String(computed) !== draft.nairaUnitPrice) {
-          setField("nairaUnitPrice", String(computed));
+        if (computed.toFixed(2) !== draft.nairaUnitPrice) {
+          setField("nairaUnitPrice", computed.toFixed(2));
           patch.nairaUnitPrice = computed;
           touched = true;
         }
@@ -195,12 +243,13 @@ export function ItemDetailForm({
 
   function handleOgPriceBlur() {
     const value = parseNumber(draft.ogUnitPrice);
+    if (value !== null) setField("ogUnitPrice", value.toFixed(2));
     const patch: Partial<DetailsItemPayload> = { ogUnitPrice: value };
     if (!overridden && rate && !rate.error && draft.originalCurrency) {
       const multiplier = draft.originalCurrency === "NGN" ? 1 : rate.rate;
       if (value !== null) {
         const computed = +(value * multiplier).toFixed(2);
-        setField("nairaUnitPrice", String(computed));
+        setField("nairaUnitPrice", computed.toFixed(2));
         patch.nairaUnitPrice = computed;
       }
     }
@@ -209,6 +258,7 @@ export function ItemDetailForm({
 
   function handleNairaUnitBlur() {
     const value = parseNumber(draft.nairaUnitPrice);
+    if (value !== null) setField("nairaUnitPrice", value.toFixed(2));
     setOverridden(true);
     void persist({ nairaUnitPrice: value, nairaOverridden: true });
   }
@@ -429,10 +479,7 @@ export function ItemDetailForm({
           </Select>
         </Field>
         <Field label="Original Unit Price" required>
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
+          <CurrencyInput
             className="h-8 text-xs"
             value={draft.ogUnitPrice}
             onChange={(e) => setField("ogUnitPrice", e.target.value)}
@@ -440,10 +487,7 @@ export function ItemDetailForm({
           />
         </Field>
         <Field label="Naira Unit Price (₦)" required>
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
+          <CurrencyInput
             className="h-8 text-xs"
             value={draft.nairaUnitPrice}
             onChange={(e) => setField("nairaUnitPrice", e.target.value)}
@@ -488,10 +532,7 @@ export function ItemDetailForm({
           <div>
             <Label className="mb-1 block text-xs">Tax</Label>
             <div className="relative h-8">
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
+              <CurrencyInput
                 className="h-8 text-xs pr-[60px]"
                 value={draft.tax}
                 onChange={(e) => setField("tax", e.target.value)}
@@ -555,10 +596,7 @@ export function ItemDetailForm({
 
           {/* Row 2: Domestic shipping */}
           <Field label="Domestic Shipping Cost">
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
+            <CurrencyInput
               className="h-8 text-xs"
               value={draft.domesticShippingCost}
               onChange={(e) =>
@@ -568,10 +606,7 @@ export function ItemDetailForm({
             />
           </Field>
           <Field label="Domestic Shipping (Naira)">
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
+            <CurrencyInput
               readOnly
               className="h-8 text-xs bg-slate-50"
               value={draft.domesticShippingNaira}
@@ -581,10 +616,7 @@ export function ItemDetailForm({
 
           {/* Row 3: International shipping */}
           <Field label="International Shipping Cost">
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
+            <CurrencyInput
               className="h-8 text-xs"
               value={draft.intlShippingCost}
               onChange={(e) => setField("intlShippingCost", e.target.value)}
@@ -592,10 +624,7 @@ export function ItemDetailForm({
             />
           </Field>
           <Field label="International Shipping (Naira)">
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
+            <CurrencyInput
               readOnly
               className="h-8 text-xs bg-slate-50"
               value={draft.intlShippingNaira}
