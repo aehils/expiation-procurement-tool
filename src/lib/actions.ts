@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { customAlphabet } from "nanoid";
 import { prisma } from "./db";
 import { BANNER_CURRENCIES } from "./constants";
@@ -255,4 +256,5 @@ export async function proceedToQuote(rfqId: string): Promise<void> {
     data: { status: "quoted" },
   });
   revalidatePath(`/rfq/${rfqId}/details`);
+  redirect(`/rfq/${rfqId}/quote`);
 }

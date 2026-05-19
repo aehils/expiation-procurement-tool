@@ -221,8 +221,15 @@ export function DetailsView({
     }
     setShowCompleteWarning(false);
     setSubmitting(true);
-    await proceedToQuote(rfq.id);
-    router.push(`/rfq/${rfq.id}/quote`);
+    // proceedToQuote redirects on success; if it returns, something went wrong.
+    try {
+      await proceedToQuote(rfq.id);
+    } catch (err) {
+      setSubmitting(false);
+      toast.error(
+        err instanceof Error ? err.message : "Could not proceed to quote",
+      );
+    }
   }
 
   async function copyRfqId() {
