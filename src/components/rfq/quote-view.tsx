@@ -3,65 +3,17 @@
 import * as React from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, Download, MoreVertical } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, MoreVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { categoryLabel } from "@/lib/constants";
 import type { DetailsItemPayload } from "./item-detail-form";
-
-type ColKey =
-  | "requestQuantity"
-  | "vendor"
-  | "nairaUnitPrice"
-  | "totalPrice"
-  | "uom"
-  | "brand"
-  | "mProductCode"
-  | "manufacturerName"
-  | "vendorDeliveryTimeline"
-  | "countryOfOrigin"
-  | "itemCategory"
-  | "vendorLocation";
-
-const COLUMNS: { key: ColKey; label: string; defaultOn: boolean; wrap?: boolean }[] = [
-  { key: "requestQuantity", label: "Qty", defaultOn: true },
-  { key: "vendor", label: "Vendor", defaultOn: true },
-  { key: "uom", label: "UOM", defaultOn: false },
-  { key: "brand", label: "Brand", defaultOn: false },
-  { key: "mProductCode", label: "Product Code", defaultOn: false },
-  { key: "manufacturerName", label: "Manufacturer", defaultOn: false },
-  { key: "vendorDeliveryTimeline", label: "Lead Time", defaultOn: false, wrap: true },
-  { key: "countryOfOrigin", label: "Country of Origin", defaultOn: false },
-  { key: "itemCategory", label: "Category", defaultOn: false },
-  { key: "vendorLocation", label: "Vendor Location", defaultOn: false },
-  { key: "nairaUnitPrice", label: "Unit Price", defaultOn: true },
-  { key: "totalPrice", label: "Total Price", defaultOn: true },
-];
-
-// Per-item line total in naira: unit price + tax + domestic shipping share +
-// intl shipping share, all multiplied by request quantity. Tax can be a fixed
-// per-unit amount or a percentage of the unit price.
-function lineTotalNaira(item: DetailsItemPayload): number | null {
-  if (item.nairaUnitPrice == null) return null;
-  const qty = item.requestQuantity || 0;
-  const unit = item.nairaUnitPrice;
-  const taxPerUnit =
-    item.tax == null
-      ? 0
-      : item.taxMode === "percent"
-        ? unit * (item.tax / 100)
-        : item.tax;
-  const domPerUnit =
-    qty > 0 && item.domesticShippingNaira != null
-      ? item.domesticShippingNaira / qty
-      : 0;
-  const intlPerUnit =
-    qty > 0 && item.intlShippingNaira != null
-      ? item.intlShippingNaira / qty
-      : 0;
-  return (unit + taxPerUnit + domPerUnit + intlPerUnit) * qty;
-}
+import { ExportMenu } from "./export-menu";
+import {
+  COLUMNS,
+  type ColKey,
+  formatNaira,
+  cellValueRaw,
+} from "@/lib/export/types";
 
 type Rfq = {
   id: string;
@@ -70,42 +22,12 @@ type Rfq = {
   status: string;
 };
 
-function formatNaira(v: number | null | undefined): string {
-  if (v == null) return "—";
-  return `₦${v.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-}
-
 function cellValue(item: DetailsItemPayload, key: ColKey, markupFactor: number): React.ReactNode {
-  switch (key) {
-    case "nairaUnitPrice":
-      return item.nairaUnitPrice != null
-        ? formatNaira(item.nairaUnitPrice * markupFactor)
-        : "—";
-    case "totalPrice": {
-      const total = lineTotalNaira(item);
-      return total != null ? formatNaira(total * markupFactor) : "—";
-    }
-    case "requestQuantity":
-      return item.requestQuantity;
-    case "itemCategory":
-      return categoryLabel(item.itemCategory);
-    case "brand":
-      return item.brand ?? "—";
-    case "vendor":
-      return item.vendor ?? "—";
-    case "uom":
-      return item.uom ?? "—";
-    case "mProductCode":
-      return item.mProductCode ?? "—";
-    case "manufacturerName":
-      return item.manufacturerName ?? "—";
-    case "vendorDeliveryTimeline":
-      return item.vendorDeliveryTimeline ?? "—";
-    case "countryOfOrigin":
-      return item.countryOfOrigin ?? "—";
-    case "vendorLocation":
-      return item.vendorLocation ?? "—";
+  const raw = cellValueRaw(item, key, markupFactor);
+  if (key === "nairaUnitPrice" || key === "totalPrice") {
+    return raw != null ? formatNaira(raw as number) : "—";
   }
+  return raw ?? "—";
 }
 
 function CheckIcon({ stroke = "white" }: { stroke?: string }) {
@@ -337,14 +259,17 @@ export function QuoteView({
               </span>
             </div>
           </div>
-          <Button
-            size="sm"
-            style={{ backgroundColor: "#274579" }}
-            className="text-white hover:opacity-90 gap-1.5"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Export Quote
-          </Button>
+          <ExportMenu
+            data={{
+              quoteNumber,
+              rfqNumber: rfq.rfqNumber,
+              requester: rfq.requester,
+              items,
+              selectedItemIds: selectedItems,
+              enabledColumns: visibleCols.map((c) => c.key),
+              markupFactor,
+            }}
+          />
         </div>
       </div>
 
