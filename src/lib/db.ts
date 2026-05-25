@@ -1,10 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
 
-// Single Prisma instance across hot reloads in dev.
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
-const adapter = new PrismaLibSql({
+const adapter = new PrismaLibSQL({
   url: process.env.TURSO_DATABASE_URL!,
   authToken: process.env.TURSO_AUTH_TOKEN,
 });

@@ -11,6 +11,8 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+  // Placeholder only — the libsql driver adapter in prisma.config.ts and
+  // src/lib/db.ts handles the real connection to Turso.
   url      = "file:./dev.db"
 }
 
