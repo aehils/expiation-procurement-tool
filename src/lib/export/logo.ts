@@ -1,4 +1,4 @@
-const LOGO_PATH = "/img/expaition-text-logo.webp";
+const LOGO_PATH = "/img/expiation-text-logo-blue.png";
 
 type LogoData = {
   dataUrl: string;

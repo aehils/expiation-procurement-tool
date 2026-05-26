@@ -26,24 +26,28 @@ export async function generateQuoteXlsx(
 
   let rowIdx = 1;
 
-  // Logo
+  // Logo — fixed height, width calculated from aspect ratio to avoid distortion
   const logo = await loadLogo();
   if (logo) {
     const base64 = logo.dataUrl.replace(/^data:image\/\w+;base64,/, "");
     const imageId = workbook.addImage({ base64, extension: "png" });
-    const logoColSpan = Math.min(3, totalDataCols);
-    const logoRowSpan = 3;
-    ws.addImage(imageId, {
+    const logoHeightPx = 48;
+    const logoWidthPx = Math.round(logoHeightPx * (logo.width / logo.height));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ws as any).addImage(imageId, {
       tl: { col: 0, row: 0 },
-      br: { col: logoColSpan, row: logoRowSpan },
+      ext: { width: logoWidthPx, height: logoHeightPx },
     });
-    for (let i = 0; i < logoRowSpan; i++) {
-      ws.addRow([]);
+    // Two rows whose combined height matches the logo (1px ≈ 0.75pt)
+    const rowHeightPt = Math.ceil((logoHeightPx * 0.75) / 2);
+    for (let i = 0; i < 2; i++) {
+      const r = ws.addRow([]);
+      r.height = rowHeightPt;
       rowIdx++;
     }
   }
 
-  // Header text (e.g. "QUOTATION")
+  // Header text (e.g. "QUOTATION") — centered across the full table width
   if (config.headerText) {
     const r = ws.addRow([config.headerText]);
     ws.mergeCells(rowIdx, 1, rowIdx, totalDataCols);

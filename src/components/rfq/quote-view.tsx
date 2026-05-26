@@ -251,6 +251,7 @@ export function QuoteView({
                 step="0.1"
                 value={globalMarkup}
                 onChange={(e) => setGlobalMarkup(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
                 placeholder="0"
                 className="h-8 w-20 text-xs text-right pr-6 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
               />
