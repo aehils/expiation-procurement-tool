@@ -3,8 +3,6 @@ import type { ExportConfig } from "./types";
 const STORAGE_KEY = "quote-export-config";
 
 export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
-  companyName: "",
-  logoDataUrl: null,
   headerText: "QUOTATION",
   footerText: "",
   termsAndConditions: "",

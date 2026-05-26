@@ -1,5 +1,6 @@
 import type { ExportConfig, ExportQuoteData } from "./types";
 import { COLUMNS, cellValueRaw, formatNaira, lineTotalNaira } from "./types";
+import { loadLogo } from "./logo";
 
 export async function generateQuoteXlsx(
   data: ExportQuoteData,
@@ -25,13 +26,21 @@ export async function generateQuoteXlsx(
 
   let rowIdx = 1;
 
-  // Company name
-  if (config.companyName) {
-    const r = ws.addRow([config.companyName]);
-    ws.mergeCells(rowIdx, 1, rowIdx, totalDataCols);
-    r.getCell(1).font = { bold: true, size: 14 };
-    r.getCell(1).alignment = { horizontal: "center" };
-    rowIdx++;
+  // Logo
+  const logo = await loadLogo();
+  if (logo) {
+    const base64 = logo.dataUrl.replace(/^data:image\/\w+;base64,/, "");
+    const imageId = workbook.addImage({ base64, extension: "png" });
+    const logoColSpan = Math.min(3, totalDataCols);
+    const logoRowSpan = 3;
+    ws.addImage(imageId, {
+      tl: { col: 0, row: 0 },
+      br: { col: logoColSpan, row: logoRowSpan },
+    });
+    for (let i = 0; i < logoRowSpan; i++) {
+      ws.addRow([]);
+      rowIdx++;
+    }
   }
 
   // Header text (e.g. "QUOTATION")

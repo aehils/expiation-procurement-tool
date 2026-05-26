@@ -1,5 +1,6 @@
 import type { ExportConfig, ExportQuoteData } from "./types";
 import { COLUMNS, cellValueRaw, lineTotalNaira } from "./types";
+import { loadLogo } from "./logo";
 
 function formatNairaPdf(v: number | null | undefined, withPrefix = false): string {
   if (v == null) return "—";
@@ -20,32 +21,28 @@ export async function generateQuotePdf(
   let y = margin;
 
   // Logo
-  if (config.logoDataUrl) {
+  const logo = await loadLogo();
+  if (logo) {
     try {
-      doc.addImage(config.logoDataUrl, "PNG", margin, y, 24, 24);
-      // Push text start right if logo present
-      const textX = margin + 30;
-      if (config.companyName) {
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
-        doc.text(config.companyName, textX, y + 8);
-      }
+      const logoHeight = 12;
+      const logoWidth = logoHeight * (logo.width / logo.height);
+      doc.addImage(logo.dataUrl, "PNG", margin, y, logoWidth, logoHeight);
+      const textX = margin + logoWidth + 6;
       if (config.headerText) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "normal");
-        doc.text(config.headerText, textX, y + 16);
+        doc.text(config.headerText, textX, y + 8);
       }
-      y += 28;
+      y += logoHeight + 4;
     } catch {
-      // Skip logo if it fails to render
+      if (config.headerText) {
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        doc.text(config.headerText, pageWidth / 2, y, { align: "center" });
+        y += 8;
+      }
     }
   } else {
-    if (config.companyName) {
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text(config.companyName, pageWidth / 2, y, { align: "center" });
-      y += 8;
-    }
     if (config.headerText) {
       doc.setFontSize(12);
       doc.setFont("helvetica", "normal");
