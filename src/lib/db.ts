@@ -10,7 +10,6 @@ const PrismaLibSql: new (...args: any[]) => any =
   (adapterModule as any).default?.PrismaLibSql;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-// Single Prisma instance across hot reloads in dev.
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
 const adapter = new PrismaLibSql({

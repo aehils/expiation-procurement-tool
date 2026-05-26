@@ -238,6 +238,13 @@ export function DetailsView({
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
       {/* Top area — matches step 1 (entry view) so moving between pages feels static */}
       <div className="flex items-center gap-2 mb-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back
+        </Link>
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
           Request for Quote
         </h2>
@@ -273,27 +280,6 @@ export function DetailsView({
             Draft
           </span>
         )}
-        {/* Visual-only placeholder to keep the dot-menu slot aligned with step 1;
-            actions will be wired up later. */}
-        <div className="relative">
-          <button
-            type="button"
-            aria-label="RFQ options"
-            className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-200 text-slate-900 text-xl leading-none font-black"
-          >
-            ⋮
-          </button>
-        </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          <Link
-            href={`/rfq/${rfq.id}/edit`}
-            className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back
-          </Link>
-        </div>
       </div>
 
       {/* Requester row (mirrors step 1 exactly) with the currency banner inline beside it */}
