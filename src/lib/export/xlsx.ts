@@ -74,10 +74,10 @@ export async function generateQuoteXlsx(
   const headerLabels = ["#", "Item Name", ...visibleCols.map((c) => c.label)];
   const headerRow = ws.addRow(headerLabels);
   rowIdx++;
-  headerRow.eachCell((cell) => {
+  headerRow.eachCell((cell, colNumber) => {
     cell.fill = headerFill;
     cell.font = headerFont;
-    cell.alignment = { horizontal: "left", vertical: "middle" };
+    cell.alignment = { horizontal: colNumber === 1 ? "center" : "left", vertical: "middle" };
     cell.border = {
       bottom: { style: "thin", color: { argb: "FF274579" } },
     };
@@ -95,7 +95,7 @@ export async function generateQuoteXlsx(
     const rowValues: (string | number)[] = [itemNum, item.itemName];
     for (const col of visibleCols) {
       const raw = cellValueRaw(item, col.key, data.markupFactor);
-      if (col.key === "nairaUnitPrice" || col.key === "totalPrice") {
+      if (col.key === "nairaUnitPrice" || col.key === "totalPrice" || col.key === "requestQuantity") {
         rowValues.push(typeof raw === "number" ? raw : 0);
       } else {
         rowValues.push(raw != null ? String(raw) : "—");
@@ -104,11 +104,17 @@ export async function generateQuoteXlsx(
     const dataRow = ws.addRow(rowValues);
     rowIdx++;
 
-    // Format currency cells
+    // Center the # cell
+    dataRow.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+
+    // Format currency and quantity cells
     visibleCols.forEach((col, ci) => {
       if (col.key === "nairaUnitPrice" || col.key === "totalPrice") {
-        const cell = dataRow.getCell(3 + ci); // offset by # and Item Name
+        const cell = dataRow.getCell(3 + ci);
         cell.numFmt = '₦#,##0.00';
+      } else if (col.key === "requestQuantity") {
+        const cell = dataRow.getCell(3 + ci);
+        cell.numFmt = '#,##0';
       }
     });
 

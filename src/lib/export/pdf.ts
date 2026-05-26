@@ -1,9 +1,10 @@
 import type { ExportConfig, ExportQuoteData } from "./types";
 import { COLUMNS, cellValueRaw, lineTotalNaira } from "./types";
 
-function formatNairaPdf(v: number | null | undefined): string {
+function formatNairaPdf(v: number | null | undefined, withPrefix = false): string {
   if (v == null) return "—";
-  return `NGN ${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const num = v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return withPrefix ? `NGN ${num}` : num;
 }
 
 export async function generateQuotePdf(
@@ -111,12 +112,23 @@ export async function generateQuotePdf(
     totalRow[1] = "GRAND TOTAL";
     const totalPriceIdx = visibleCols.findIndex((c) => c.key === "totalPrice");
     if (totalPriceIdx >= 0) {
-      totalRow[2 + totalPriceIdx] = formatNairaPdf(grandTotal);
+      totalRow[2 + totalPriceIdx] = formatNairaPdf(grandTotal, true);
     } else {
-      totalRow[2] = formatNairaPdf(grandTotal);
+      totalRow[2] = formatNairaPdf(grandTotal, true);
     }
     body.push(totalRow);
   }
+
+  // Pin price columns to a fixed width so "NGN 1,077,462.69" never gets compressed.
+  // Column layout: 0=#, 1=Item Name, 2..N=visibleCols
+  const columnStyles: Record<number, { cellWidth: number; halign?: string }> = {
+    0: { cellWidth: 8 },
+  };
+  visibleCols.forEach((col, i) => {
+    if (col.key === "nairaUnitPrice" || col.key === "totalPrice") {
+      columnStyles[2 + i] = { cellWidth: 34, halign: "right" };
+    }
+  });
 
   autoTable(doc, {
     head,
@@ -124,6 +136,7 @@ export async function generateQuotePdf(
     startY: y,
     margin: { left: margin, right: margin },
     theme: "grid",
+    columnStyles,
     headStyles: {
       fillColor: [39, 69, 121],
       textColor: [255, 255, 255],
@@ -133,11 +146,12 @@ export async function generateQuotePdf(
     bodyStyles: {
       fontSize: 8,
       textColor: [51, 65, 85],
+      overflow: "linebreak",
     },
     alternateRowStyles: {
       fillColor: [248, 250, 252],
     },
-    didParseCell: (hookData: { row: { index: number }; cell: { styles: { fontStyle: string; fontSize: number } } }) => {
+    didParseCell: (hookData: { row: { index: number }; cell: { styles: { fontStyle: string; fontSize: number; halign: string } }; column: { index: number } }) => {
       if (
         config.showGrandTotal &&
         selectedItems.length > 0 &&
@@ -145,6 +159,10 @@ export async function generateQuotePdf(
       ) {
         hookData.cell.styles.fontStyle = "bold";
         hookData.cell.styles.fontSize = 9;
+      }
+      // Right-align price cells in the grand total row too
+      if (columnStyles[hookData.column.index]?.halign === "right") {
+        hookData.cell.styles.halign = "right";
       }
     },
   });
