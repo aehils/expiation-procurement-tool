@@ -11,7 +11,7 @@ export async function generateQuotePdf(
   config: ExportConfig,
 ): Promise<void> {
   const { default: jsPDF } = await import("jspdf");
-  await import("jspdf-autotable");
+  const { default: autoTable } = await import("jspdf-autotable");
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -118,8 +118,7 @@ export async function generateQuotePdf(
     body.push(totalRow);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (doc as any).autoTable({
+  autoTable(doc, {
     head,
     body,
     startY: y,
