@@ -9,7 +9,6 @@ import {
   createRfqSchema,
   updateItemSchema,
   updateRfqEntryDataSchema,
-  findMissingDetailFields,
   type CreateRfqInput,
   type UpdateItemInput,
   type UpdateRfqEntryDataInput,
