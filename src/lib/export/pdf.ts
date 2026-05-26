@@ -118,7 +118,7 @@ export async function generateQuotePdf(
 
   // Pin price columns to a fixed width so "NGN 1,077,462.69" never gets compressed.
   // Column layout: 0=#, 1=Item Name, 2..N=visibleCols
-  const columnStyles: Record<number, { cellWidth: number; halign?: string }> = {
+  const columnStyles: Record<string, { cellWidth: number; halign?: "right" | "left" | "center" | "justify" }> = {
     0: { cellWidth: 8 },
   };
   visibleCols.forEach((col, i) => {
