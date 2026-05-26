@@ -47,6 +47,7 @@ export type DetailsItemPayload = {
   intlShippingNaira: number | null;
   brand: string | null;
   markedComplete: boolean;
+  selectedForQuote: boolean;
 };
 
 type FieldKey = Exclude<

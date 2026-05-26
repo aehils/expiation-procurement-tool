@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { categoryLabel } from "@/lib/constants";
+import { saveQuoteConfig } from "@/lib/actions";
 import type { DetailsItemPayload } from "./item-detail-form";
 
 type ColKey =
@@ -68,6 +69,7 @@ type Rfq = {
   rfqNumber: string;
   requester: string;
   status: string;
+  markup: number;
 };
 
 function formatNaira(v: number | null | undefined): string {
@@ -174,12 +176,15 @@ export function QuoteView({
   const quoteNumber = rfq.rfqNumber.replace("RFQ-", "QU-");
 
   const [selectedItems, setSelectedItems] = React.useState<Set<string>>(
-    () => new Set(items.map((i) => i.id)),
+    () => new Set(items.filter((i) => i.selectedForQuote).map((i) => i.id)),
   );
   const [enabledCols, setEnabledCols] = React.useState<Set<ColKey>>(
     () => new Set(COLUMNS.filter((c) => c.defaultOn).map((c) => c.key)),
   );
-  const [globalMarkup, setGlobalMarkup] = React.useState("");
+  const [globalMarkup, setGlobalMarkup] = React.useState(
+    rfq.markup > 0 ? String(rfq.markup) : "",
+  );
+  const [saving, setSaving] = React.useState(false);
   const [hoveredItemId, setHoveredItemId] = React.useState<string | null>(null);
   const [menuOpenItemId, setMenuOpenItemId] = React.useState<string | null>(null);
 
@@ -326,14 +331,39 @@ export function QuoteView({
               </span>
             </div>
           </div>
-          <Button
-            size="sm"
-            style={{ backgroundColor: "#274579" }}
-            className="text-white hover:opacity-90 gap-1.5"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Export Quote
-          </Button>
+          <div className="flex flex-col gap-1.5 items-end">
+            <Button
+              size="sm"
+              disabled={saving}
+              style={{ backgroundColor: "#276E79" }}
+              className="text-white hover:opacity-90 w-full"
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  await saveQuoteConfig(
+                    rfq.id,
+                    parseFloat(globalMarkup) || 0,
+                    Array.from(selectedItems),
+                  );
+                  toast.success("Quote saved");
+                } catch {
+                  toast.error("Failed to save");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              {saving ? "Saving…" : "Save Changes"}
+            </Button>
+            <Button
+              size="sm"
+              style={{ backgroundColor: "#274579" }}
+              className="text-white hover:opacity-90 gap-1.5 w-full"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export Quote
+            </Button>
+          </div>
         </div>
       </div>
 
