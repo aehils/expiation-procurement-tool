@@ -364,7 +364,6 @@ export function QuoteView({
             <Download className="h-3.5 w-3.5" />
             Export Quote
           </Button>
-          </div>
         </div>
       </div>
 
