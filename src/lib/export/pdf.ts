@@ -1,5 +1,10 @@
 import type { ExportConfig, ExportQuoteData } from "./types";
-import { COLUMNS, cellValueRaw, formatNaira, lineTotalNaira } from "./types";
+import { COLUMNS, cellValueRaw, lineTotalNaira } from "./types";
+
+function formatNairaPdf(v: number | null | undefined): string {
+  if (v == null) return "—";
+  return `NGN ${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 export async function generateQuotePdf(
   data: ExportQuoteData,
@@ -90,7 +95,7 @@ export async function generateQuotePdf(
     for (const col of visibleCols) {
       const raw = cellValueRaw(item, col.key, data.markupFactor);
       if (col.key === "nairaUnitPrice" || col.key === "totalPrice") {
-        row.push(raw != null ? formatNaira(raw as number) : "—");
+        row.push(raw != null ? formatNairaPdf(raw as number) : "—");
       } else {
         row.push(raw != null ? String(raw) : "—");
       }
@@ -106,9 +111,9 @@ export async function generateQuotePdf(
     totalRow[1] = "GRAND TOTAL";
     const totalPriceIdx = visibleCols.findIndex((c) => c.key === "totalPrice");
     if (totalPriceIdx >= 0) {
-      totalRow[2 + totalPriceIdx] = formatNaira(grandTotal);
+      totalRow[2 + totalPriceIdx] = formatNairaPdf(grandTotal);
     } else {
-      totalRow[2] = formatNaira(grandTotal);
+      totalRow[2] = formatNairaPdf(grandTotal);
     }
     body.push(totalRow);
   }
