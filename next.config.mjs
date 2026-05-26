@@ -7,7 +7,7 @@ const nextConfig = {
     });
     config.module.rules.push({
       test: /\.node$/,
-      use: "node-loader",
+      loader: "node-loader",
     });
     if (!isServer) {
       config.resolve.fallback = {
@@ -17,10 +17,8 @@ const nextConfig = {
         tls: false,
       };
     }
-    config.externals = [...(config.externals || []), "@libsql/darwin-arm64", "@libsql/darwin-x64", "@libsql/linux-arm64-gnu", "@libsql/linux-x64-gnu", "@libsql/win32-x64-msvc"];
     return config;
   },
-  serverExternalPackages: ["@libsql/client", "@prisma/adapter-libsql"],
 };
 
 export default nextConfig;
