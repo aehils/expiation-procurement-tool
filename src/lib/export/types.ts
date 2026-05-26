@@ -94,8 +94,6 @@ export function cellValueRaw(
 }
 
 export type ExportConfig = {
-  companyName: string;
-  logoDataUrl: string | null;
   headerText: string;
   footerText: string;
   termsAndConditions: string;

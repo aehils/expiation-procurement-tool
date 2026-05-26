@@ -22,20 +22,6 @@ export function ExportConfigDialog({
     if (open) setConfig(loadExportConfig());
   }, [open]);
 
-  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 512_000) {
-      toast.error("Logo must be under 500 KB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setConfig((prev) => ({ ...prev, logoDataUrl: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
-  }
-
   function handleSave() {
     saveExportConfig(config);
     toast.success("Export settings saved");
@@ -61,54 +47,6 @@ export function ExportConfigDialog({
         </div>
 
         <div className="px-6 py-4 space-y-4">
-          <div>
-            <Label htmlFor="companyName" className="text-xs font-medium">
-              Company Name
-            </Label>
-            <Input
-              id="companyName"
-              value={config.companyName}
-              onChange={(e) =>
-                setConfig((p) => ({ ...p, companyName: e.target.value }))
-              }
-              placeholder="Your Company Ltd."
-              className="mt-1 h-8 text-xs"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="logo" className="text-xs font-medium">
-              Logo
-            </Label>
-            <div className="mt-1 flex items-center gap-3">
-              {config.logoDataUrl && (
-                <img
-                  src={config.logoDataUrl}
-                  alt="Logo preview"
-                  className="h-10 w-10 object-contain rounded border border-slate-200"
-                />
-              )}
-              <Input
-                id="logo"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handleLogoChange}
-                className="h-8 text-xs flex-1"
-              />
-              {config.logoDataUrl && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setConfig((p) => ({ ...p, logoDataUrl: null }))
-                  }
-                  className="text-xs text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
-
           <div>
             <Label htmlFor="headerText" className="text-xs font-medium">
               Header Text
