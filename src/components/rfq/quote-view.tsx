@@ -261,29 +261,54 @@ export function QuoteView({
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-3 mb-4">
         <Link
           href={`/rfq/${rfq.id}/details`}
-          className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
+          className="inline-flex items-center gap-1.5 h-10 px-4 text-base font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className="h-4 w-4" />
           Back
         </Link>
-        <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
+        <h2 className="text-xl font-semibold text-slate-800 tracking-tight">
           Quote
         </h2>
         <button
           type="button"
           onClick={copyQuoteId}
           title="Copy Quote ID"
-          className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
+          className="group inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
         >
           <span>#{quoteNumber}</span>
           <CopyIcon />
         </button>
-        <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+        <span className="px-2 py-0.5 text-xs font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
           Draft
         </span>
+        <div className="ml-auto">
+          <Button
+            size="default"
+            disabled={saving}
+            style={{ backgroundColor: "#276E79" }}
+            className="text-white hover:opacity-90 h-10 px-5"
+            onClick={async () => {
+              setSaving(true);
+              try {
+                await saveQuoteConfig(
+                  rfq.id,
+                  parseFloat(globalMarkup) || 0,
+                  Array.from(selectedItems),
+                );
+                toast.success("Quote saved");
+              } catch {
+                toast.error("Failed to save");
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            {saving ? "Saving…" : "Save Changes"}
+          </Button>
+        </div>
       </div>
 
       {/* Requester + actions row */}
@@ -331,38 +356,14 @@ export function QuoteView({
               </span>
             </div>
           </div>
-          <div className="flex flex-col gap-1.5 items-end">
-            <Button
-              size="sm"
-              disabled={saving}
-              style={{ backgroundColor: "#276E79" }}
-              className="text-white hover:opacity-90 w-full"
-              onClick={async () => {
-                setSaving(true);
-                try {
-                  await saveQuoteConfig(
-                    rfq.id,
-                    parseFloat(globalMarkup) || 0,
-                    Array.from(selectedItems),
-                  );
-                  toast.success("Quote saved");
-                } catch {
-                  toast.error("Failed to save");
-                } finally {
-                  setSaving(false);
-                }
-              }}
-            >
-              {saving ? "Saving…" : "Save Changes"}
-            </Button>
-            <Button
-              size="sm"
-              style={{ backgroundColor: "#274579" }}
-              className="text-white hover:opacity-90 gap-1.5 w-full"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export Quote
-            </Button>
+          <Button
+            size="sm"
+            style={{ backgroundColor: "#274579" }}
+            className="text-white hover:opacity-90 gap-1.5"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export Quote
+          </Button>
           </div>
         </div>
       </div>
