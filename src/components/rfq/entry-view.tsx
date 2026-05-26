@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,19 +96,7 @@ export function EntryView({
     );
     return target?.requestQuantity ? String(target.requestQuantity) : "";
   });
-  const [menuOpen, setMenuOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
-  const menuRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
 
   function patchForm<K extends keyof EntryItem>(key: K, value: EntryItem[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -257,6 +247,13 @@ export function EntryView({
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
       <div className="flex items-center gap-2 mb-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back
+        </Link>
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
           Request for Quote
         </h2>
@@ -286,30 +283,6 @@ export function EntryView({
         <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
           Draft
         </span>
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            aria-label="RFQ options"
-            onClick={() => setMenuOpen((o) => !o)}
-            className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-200 text-slate-900 text-xl leading-none font-black"
-          >
-            ⋮
-          </button>
-          {menuOpen && (
-            <div className="absolute left-0 mt-1 w-40 bg-white border border-slate-200 rounded-md shadow-lg z-10 py-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  clearAllItems();
-                }}
-                className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
-              >
-                Clear all items
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
