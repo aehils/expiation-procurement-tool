@@ -257,6 +257,13 @@ export function QuoteView({
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
+        <Link
+          href={`/rfq/${rfq.id}/details`}
+          className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back
+        </Link>
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
           Quote
         </h2>
@@ -272,24 +279,6 @@ export function QuoteView({
         <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
           Draft
         </span>
-        <div className="relative">
-          <button
-            type="button"
-            aria-label="Quote options"
-            className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-200 text-slate-900 text-xl leading-none font-black"
-          >
-            ⋮
-          </button>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Link
-            href={`/rfq/${rfq.id}/details`}
-            className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back
-          </Link>
-        </div>
       </div>
 
       {/* Requester + actions row */}
