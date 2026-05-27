@@ -286,10 +286,10 @@ export function QuoteView({
         </span>
         <div className="ml-auto">
           <Button
-            size="default"
+            size="sm"
             disabled={saving}
             style={{ backgroundColor: "#276E79" }}
-            className="text-white hover:opacity-90 h-10 px-5"
+            className="text-white hover:opacity-90"
             onClick={async () => {
               setSaving(true);
               try {
