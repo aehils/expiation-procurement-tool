@@ -5,13 +5,13 @@
 @layer base {
   :root {
     --background: 210 20% 92%; /* slate-200 vibe to mirror legacy prototype */
-    --foreground: 215 25% 27%;
+    --foreground: 215 30% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card-foreground: 215 30% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
+    --popover-foreground: 215 30% 16%;
 
     --primary: 216 52% 38%; /* #274579 navy */
     --primary-foreground: 0 0% 100%;
@@ -20,7 +20,7 @@
     --secondary-foreground: 215 25% 27%;
 
     --muted: 210 16% 93%;
-    --muted-foreground: 215 16% 47%;
+    --muted-foreground: 215 18% 38%;
 
     --accent: 216 52% 93%;
     --accent-foreground: 216 52% 28%;
@@ -36,10 +36,10 @@
   }
 
   .dark {
-    --background: 222 22% 10%;
+    --background: 222 20% 14%;
     --foreground: 210 20% 88%;
 
-    --card: 222 20% 14%;
+    --card: 222 18% 18%;
     --card-foreground: 210 20% 88%;
 
     --popover: 222 20% 14%;

@@ -9,11 +9,12 @@ import {
   Package,
   User,
   Settings,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Sun,
   Moon,
   Monitor,
+  SunMoon,
   X,
 } from "lucide-react";
 import { useTheme, type Theme } from "./theme-provider";
@@ -34,7 +35,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [collapsed, setCollapsed] = React.useState(false);
-  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [themeOpen, setThemeOpen] = React.useState(false);
 
   React.useEffect(() => {
     const stored = localStorage.getItem("sidebar-collapsed");
@@ -52,10 +53,11 @@ export function Sidebar() {
     return pathname.startsWith(href);
   };
 
+
   return (
     <aside
-      className={`flex flex-col h-screen shrink-0 bg-[#1a1f2e] text-slate-400 transition-all duration-300 ease-in-out ${
-        collapsed ? "w-16" : "w-60"
+      className={`flex flex-col h-screen shrink-0 bg-[#273042] dark:bg-[#0f1219] text-slate-300 transition-all duration-300 ease-in-out ${
+        collapsed ? "w-16" : "w-48"
       }`}
     >
       {/* Header */}
@@ -71,7 +73,7 @@ export function Sidebar() {
             collapsed ? "mx-auto" : ""
           }`}
         >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>
       </div>
 
@@ -85,7 +87,7 @@ export function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 active
-                  ? "bg-[#274579] text-white"
+                  ? "bg-blue-600/[0.20] text-slate-100"
                   : "hover:bg-white/[0.06] hover:text-white"
               } ${collapsed ? "justify-center" : ""}`}
               title={collapsed ? item.label : undefined}
@@ -98,76 +100,88 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom Section */}
-      <div className="px-2 pb-4 space-y-1 border-t border-white/[0.06] pt-4">
-        {/* User Account */}
-        <div
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${
-            collapsed ? "justify-center" : ""
-          }`}
-        >
-          <div className="w-8 h-8 rounded-full bg-[#274579] flex items-center justify-center shrink-0">
-            <User size={16} className="text-white" />
-          </div>
-          {!collapsed && (
-            <span className="text-slate-300 truncate text-sm">Account</span>
-          )}
-        </div>
+      <div className="px-2 pb-3 border-t border-white/[0.06] pt-2.5 space-y-0.5">
 
-        {/* Settings */}
-        <div className="relative">
+        {/* Settings + Theme row */}
+        <div className={`flex gap-1 ${collapsed ? "flex-col" : "flex-row items-center"}`}>
           <button
-            onClick={() => setSettingsOpen(!settingsOpen)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full hover:bg-white/[0.06] hover:text-white transition-colors ${
-              collapsed ? "justify-center" : ""
-            } ${settingsOpen ? "bg-white/[0.06] text-white" : ""}`}
+            className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm hover:text-blue-400 transition-colors ${
+              collapsed ? "w-full justify-center" : "flex-1 min-w-0"
+            }`}
             title={collapsed ? "Settings" : undefined}
           >
-            <Settings size={20} className="shrink-0" />
-            {!collapsed && <span className="truncate">Settings</span>}
+            <div className="w-8 h-8 flex items-center justify-center shrink-0">
+              <Settings size={18} />
+            </div>
+            {!collapsed && <span className="truncate uppercase text-xs tracking-wider">Settings</span>}
           </button>
 
-          {settingsOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setSettingsOpen(false)}
-              />
-              <div
-                className={`absolute bottom-full mb-2 z-50 w-56 rounded-xl bg-[#252b3d] border border-white/10 shadow-xl p-3 ${
-                  collapsed ? "left-full ml-2 bottom-0 mb-0" : "left-0"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Theme
-                  </span>
-                  <button
-                    onClick={() => setSettingsOpen(false)}
-                    className="p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-white"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-                <div className="space-y-1">
-                  {THEME_OPTIONS.map((opt) => (
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setThemeOpen(!themeOpen)}
+              className={`p-2 rounded-lg hover:bg-white/[0.06] hover:text-white transition-colors ${
+                collapsed ? "w-full flex justify-center" : ""
+              } ${themeOpen ? "bg-white/[0.06] text-white" : ""}`}
+              title="Theme"
+            >
+              <SunMoon size={24} />
+            </button>
+
+            {themeOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setThemeOpen(false)} />
+                <div
+                  className={`absolute bottom-full mb-2 z-50 w-48 rounded-xl bg-slate-800 border border-white/10 shadow-xl p-3 ${
+                    collapsed ? "left-full ml-2 bottom-0 mb-0" : "right-0"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Theme
+                    </span>
                     <button
-                      key={opt.value}
-                      onClick={() => setTheme(opt.value)}
-                      className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${
-                        theme === opt.value
-                          ? "bg-[#274579] text-white"
-                          : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
-                      }`}
+                      onClick={() => setThemeOpen(false)}
+                      className="p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-white"
                     >
-                      <opt.icon size={16} />
-                      <span>{opt.label}</span>
+                      <X size={14} />
                     </button>
-                  ))}
+                  </div>
+                  <div className="space-y-1">
+                    {THEME_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => { setTheme(opt.value); setThemeOpen(false); }}
+                        className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                          theme === opt.value
+                            ? "bg-blue-600/[0.20] text-slate-100"
+                            : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                        }`}
+                      >
+                        <opt.icon size={16} />
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
+
+        {/* User Account */}
+        <button
+          className={`flex items-center gap-2 px-2 py-1.5 rounded-lg w-full hover:bg-white/[0.06] hover:text-white transition-colors ${
+            collapsed ? "justify-center" : ""
+          }`}
+          title={collapsed ? "Account" : undefined}
+        >
+          <div className="w-8 h-8 rounded-lg bg-slate-500/30 flex items-center justify-center shrink-0">
+            <User size={15} className="text-white" />
+          </div>
+          {!collapsed && (
+            <span className="text-slate-300 truncate uppercase text-xs tracking-wider">Account</span>
+          )}
+        </button>
       </div>
     </aside>
   );

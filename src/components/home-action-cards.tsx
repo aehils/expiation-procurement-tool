@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { FileText, Package, FilePlus } from "lucide-react";
+import { FileText, Package, Plus } from "lucide-react";
 import { QuoteSelectDialog } from "./po/quote-select-dialog";
 
 type QuoteOption = {
@@ -18,52 +18,30 @@ export function HomeActionCards({ quotes }: { quotes: QuoteOption[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link
           href="/rfq/new"
-          className="group flex flex-col items-center justify-center gap-4 p-8 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-200 text-center"
+          className="group flex flex-col items-center justify-center gap-3 p-5 rounded-xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 text-center"
         >
-          <div className="w-16 h-16 rounded-2xl bg-[#274579] flex items-center justify-center group-hover:scale-105 transition-transform">
-            <FileText size={28} className="text-white" />
+          <div className="w-10 h-10 rounded-lg bg-slate-300 dark:bg-slate-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <FileText size={18} className="text-slate-600 dark:text-slate-200" />
           </div>
-          <div>
-            <div className="font-semibold text-card-foreground text-lg">
-              Start New RFQ
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">
-              Create a request for quotation
-            </div>
-          </div>
+          <span className="font-medium text-card-foreground text-sm">Start New RFQ</span>
         </Link>
 
         <button
           onClick={() => setPoDialogOpen(true)}
-          className="group flex flex-col items-center justify-center gap-4 p-8 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-200 text-center"
+          className="group flex flex-col items-center justify-center gap-3 p-5 rounded-xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 text-center"
         >
-          <div className="w-16 h-16 rounded-2xl bg-[#274579] flex items-center justify-center group-hover:scale-105 transition-transform">
-            <Package size={28} className="text-white" />
+          <div className="w-10 h-10 rounded-lg bg-slate-300 dark:bg-slate-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Package size={18} className="text-slate-600 dark:text-slate-200" />
           </div>
-          <div>
-            <div className="font-semibold text-card-foreground text-lg">
-              Create Purchase Order
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">
-              Generate a PO from a quoted RFQ
-            </div>
-          </div>
+          <span className="font-medium text-card-foreground text-sm">Create Purchase Order</span>
         </button>
 
-        <div className="flex flex-col items-center justify-center gap-4 p-8 rounded-2xl bg-card border border-border opacity-40 cursor-not-allowed text-center select-none">
-          <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
-            <FilePlus size={28} className="text-muted-foreground" />
-          </div>
-          <div>
-            <div className="font-semibold text-muted-foreground text-lg">
-              Coming Soon
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">
-              New document type
-            </div>
+        <div className="flex flex-col items-center justify-center gap-3 p-5 rounded-xl bg-card border border-border opacity-40 cursor-not-allowed text-center select-none">
+          <div className="w-10 h-10 rounded-lg bg-slate-300 dark:bg-slate-600 flex items-center justify-center">
+            <Plus size={18} className="text-slate-500 dark:text-slate-300" />
           </div>
         </div>
       </div>
