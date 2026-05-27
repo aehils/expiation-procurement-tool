@@ -114,45 +114,46 @@ export function Sidebar() {
           </div>
         </button>
 
-        <button
-          onClick={() => setThemeOpen(!themeOpen)}
-          className={`flex items-center px-2 py-1.5 rounded-lg w-full hover:bg-white/[0.06] hover:text-white transition-colors ${
-            themeOpen ? "bg-white/[0.06] text-white" : ""
-          }`}
-          title="Theme"
-        >
-          <div className="w-8 h-8 flex items-center justify-center shrink-0">
-            <SunMoon size={18} />
-          </div>
-          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
-            <span className="whitespace-nowrap uppercase text-xs tracking-wider pl-2">Theme</span>
-          </div>
-        </button>
-
-        {themeOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setThemeOpen(false)} />
-            <div className="relative z-50 space-y-0.5 pt-1">
-              {THEME_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => { setTheme(opt.value); setThemeOpen(false); }}
-                  className={`flex items-center w-full px-3 py-2 rounded-lg text-sm transition-colors ${
-                    theme === opt.value
-                      ? "bg-blue-600/[0.20] text-slate-100"
-                      : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
-                  }`}
-                  title={opt.label}
-                >
-                  <opt.icon size={16} className="shrink-0" />
-                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
-                    <span className="whitespace-nowrap pl-2.5">{opt.label}</span>
-                  </div>
-                </button>
-              ))}
+        <div className="relative">
+          <button
+            onClick={() => setThemeOpen(!themeOpen)}
+            className={`flex items-center px-2 py-1.5 rounded-lg w-full hover:bg-white/[0.06] hover:text-white transition-colors ${
+              themeOpen ? "bg-white/[0.06] text-white" : ""
+            }`}
+            title="Theme"
+          >
+            <div className="w-8 h-8 flex items-center justify-center shrink-0">
+              <SunMoon size={18} />
             </div>
-          </>
-        )}
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
+              <span className="whitespace-nowrap uppercase text-xs tracking-wider pl-2">Theme</span>
+            </div>
+          </button>
+
+          {themeOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setThemeOpen(false)} />
+              <div className="absolute bottom-full left-0 right-0 mb-1 z-50 rounded-lg bg-[#1e2a3a] dark:bg-[#161d2a] border border-white/[0.08] shadow-lg p-1.5 space-y-0.5">
+                {THEME_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { setTheme(opt.value); setThemeOpen(false); }}
+                    className={`flex items-center w-full px-2.5 py-2 rounded-md text-sm transition-colors ${
+                      theme === opt.value
+                        ? "bg-blue-600/[0.20] text-slate-100"
+                        : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                    }`}
+                  >
+                    <opt.icon size={16} className="shrink-0" />
+                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
+                      <span className="whitespace-nowrap pl-2.5">{opt.label}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
         <button
           className="flex items-center px-2 py-1.5 rounded-lg w-full hover:bg-white/[0.06] hover:text-white transition-colors"
