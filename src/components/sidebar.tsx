@@ -15,7 +15,6 @@ import {
   Moon,
   Monitor,
   SunMoon,
-  X,
 } from "lucide-react";
 import { useTheme, type Theme } from "./theme-provider";
 
@@ -116,57 +115,41 @@ export function Sidebar() {
             {!collapsed && <span className="truncate uppercase text-xs tracking-wider">Settings</span>}
           </button>
 
-          <div className="relative shrink-0">
-            <button
-              onClick={() => setThemeOpen(!themeOpen)}
-              className={`p-2 rounded-lg hover:bg-white/[0.06] hover:text-white transition-colors ${
-                collapsed ? "w-full flex justify-center" : ""
-              } ${themeOpen ? "bg-white/[0.06] text-white" : ""}`}
-              title="Theme"
-            >
-              <SunMoon size={24} />
-            </button>
-
-            {themeOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setThemeOpen(false)} />
-                <div
-                  className={`absolute bottom-full mb-2 z-50 w-48 rounded-xl bg-slate-800 border border-white/10 shadow-xl p-3 ${
-                    collapsed ? "left-full ml-2 bottom-0 mb-0" : "right-0"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      Theme
-                    </span>
-                    <button
-                      onClick={() => setThemeOpen(false)}
-                      className="p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-white"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                  <div className="space-y-1">
-                    {THEME_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => { setTheme(opt.value); setThemeOpen(false); }}
-                        className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${
-                          theme === opt.value
-                            ? "bg-blue-600/[0.20] text-slate-100"
-                            : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
-                        }`}
-                      >
-                        <opt.icon size={16} />
-                        <span>{opt.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <button
+            onClick={() => setThemeOpen(!themeOpen)}
+            className={`p-2 rounded-lg hover:bg-white/[0.06] hover:text-white transition-colors shrink-0 ${
+              collapsed ? "w-full flex justify-center" : ""
+            } ${themeOpen ? "bg-white/[0.06] text-white" : ""}`}
+            title="Theme"
+          >
+            <SunMoon size={24} />
+          </button>
         </div>
+
+        {themeOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setThemeOpen(false)} />
+            <div className="relative z-50 space-y-0.5 pt-1">
+              {THEME_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setTheme(opt.value); setThemeOpen(false); }}
+                  className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                    collapsed ? "justify-center" : ""
+                  } ${
+                    theme === opt.value
+                      ? "bg-blue-600/[0.20] text-slate-100"
+                      : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                  }`}
+                  title={collapsed ? opt.label : undefined}
+                >
+                  <opt.icon size={16} className="shrink-0" />
+                  {!collapsed && <span>{opt.label}</span>}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* User Account */}
         <button
