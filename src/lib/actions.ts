@@ -9,19 +9,22 @@ import {
   createRfqSchema,
   updateItemSchema,
   updateRfqEntryDataSchema,
+  createPoSchema,
+  updatePoItemQuantitySchema,
   type CreateRfqInput,
   type UpdateItemInput,
   type UpdateRfqEntryDataInput,
+  type CreatePoInput,
 } from "./schemas";
 
-const rfqSuffix = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 4);
+const docSuffix = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 4);
 
-function generateRfqNumber(): string {
+function generateDocNumber(prefix: string): string {
   const today = new Date();
   const yyyy = today.getUTCFullYear();
   const mm = String(today.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(today.getUTCDate()).padStart(2, "0");
-  return `RFQ-${yyyy}${mm}${dd}-${rfqSuffix()}`;
+  return `${prefix}-${yyyy}${mm}${dd}-${docSuffix()}`;
 }
 
 function isUniqueViolation(err: unknown): boolean {
@@ -38,7 +41,7 @@ function isUniqueViolation(err: unknown): boolean {
 // requester + items and flips the status to "details".
 export async function createDraftRfq(): Promise<{ id: string; rfqNumber: string }> {
   for (let attempt = 0; attempt < 5; attempt++) {
-    const rfqNumber = generateRfqNumber();
+    const rfqNumber = generateDocNumber("RFQ");
     try {
       const created = await prisma.rfq.create({
         data: {
@@ -254,4 +257,205 @@ export async function proceedToQuote(rfqId: string): Promise<void> {
     data: { status: "quoted" },
   });
   revalidatePath(`/rfq/${rfqId}/details`);
+}
+
+// ---------------------------------------------------------------------------
+// Purchase Order actions
+// ---------------------------------------------------------------------------
+
+export async function createPurchaseOrder(
+  input: CreatePoInput,
+): Promise<{ id: string; poNumber: string }> {
+  const parsed = createPoSchema.parse(input);
+
+  const rfq = await prisma.rfq.findUnique({
+    where: { id: parsed.rfqId },
+    include: { items: true, purchaseOrders: { select: { id: true } } },
+  });
+  if (!rfq) throw new Error("RFQ not found");
+  if (rfq.status !== "quoted") {
+    throw new Error("RFQ is not in quoted status");
+  }
+  if (rfq.purchaseOrders.length > 0) {
+    throw new Error("A purchase order already exists for this quote");
+  }
+
+  const selectedIds = new Set(parsed.selectedItemIds);
+  const selectedItems = rfq.items.filter((it) => selectedIds.has(it.id));
+  if (selectedItems.length === 0) {
+    throw new Error("None of the selected item IDs belong to this RFQ");
+  }
+
+  const overrides = parsed.quantityOverrides ?? {};
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const poNumber = generateDocNumber("PO");
+    try {
+      const po = await prisma.$transaction(async (tx) => {
+        const created = await tx.purchaseOrder.create({
+          data: {
+            poNumber,
+            rfqId: parsed.rfqId,
+            status: "draft",
+            notes: parsed.notes ?? null,
+            markupFactor: parsed.markupFactor,
+            items: {
+              create: selectedItems.map((src) => {
+                const qty = overrides[src.id] ?? src.requestQuantity;
+                const unitPrice = src.nairaUnitPrice ?? 0;
+                const taxAmt =
+                  src.tax == null
+                    ? null
+                    : src.taxMode === "percent"
+                      ? unitPrice * (src.tax / 100)
+                      : src.tax;
+                const srcQty = src.requestQuantity || 1;
+                const domPerUnit =
+                  src.domesticShippingNaira != null
+                    ? src.domesticShippingNaira / srcQty
+                    : 0;
+                const intlPerUnit =
+                  src.intlShippingNaira != null
+                    ? src.intlShippingNaira / srcQty
+                    : 0;
+                const totalPerUnit =
+                  unitPrice + (taxAmt ?? 0) + domPerUnit + intlPerUnit;
+                const lineTotal = totalPerUnit * qty * parsed.markupFactor;
+
+                return {
+                  rfqItemId: src.id,
+                  itemName: src.itemName,
+                  itemCategory: src.itemCategory,
+                  department: src.department,
+                  vendor: src.vendor ?? "",
+                  vendorLocation: src.vendorLocation,
+                  brand: src.brand,
+                  mProductCode: src.mProductCode,
+                  manufacturerName: src.manufacturerName,
+                  uom: src.uom,
+                  countryOfOrigin: src.countryOfOrigin,
+                  vendorDeliveryTimeline: src.vendorDeliveryTimeline,
+                  quantity: qty,
+                  nairaUnitPrice: unitPrice,
+                  taxAmount: taxAmt,
+                  domesticShippingNaira: src.domesticShippingNaira,
+                  intlShippingNaira: src.intlShippingNaira,
+                  totalPerUnit,
+                  lineTotal,
+                };
+              }),
+            },
+          },
+        });
+
+        await tx.rfq.update({
+          where: { id: parsed.rfqId },
+          data: { status: "ordered" },
+        });
+
+        return created;
+      });
+
+      revalidatePath("/");
+      return { id: po.id, poNumber: po.poNumber };
+    } catch (err) {
+      if (isUniqueViolation(err)) continue;
+      throw err;
+    }
+  }
+  throw new Error("Failed to allocate a unique PO number after 5 attempts");
+}
+
+export async function updatePoItemQuantity(
+  poItemId: string,
+  quantity: number,
+): Promise<void> {
+  const parsed = updatePoItemQuantitySchema.parse({ quantity });
+
+  const poItem = await prisma.poItem.findUnique({
+    where: { id: poItemId },
+    include: { po: { select: { status: true, markupFactor: true } } },
+  });
+  if (!poItem) throw new Error("PO item not found");
+  if (poItem.po.status !== "draft") {
+    throw new Error("Cannot edit an issued or closed PO");
+  }
+
+  const lineTotal = poItem.totalPerUnit * parsed.quantity * poItem.po.markupFactor;
+  await prisma.poItem.update({
+    where: { id: poItemId },
+    data: { quantity: parsed.quantity, lineTotal },
+  });
+}
+
+export async function updatePoNotes(
+  poId: string,
+  notes: string,
+): Promise<void> {
+  const po = await prisma.purchaseOrder.findUnique({
+    where: { id: poId },
+    select: { status: true },
+  });
+  if (!po) throw new Error("PO not found");
+  if (po.status !== "draft") {
+    throw new Error("Cannot edit an issued or closed PO");
+  }
+  await prisma.purchaseOrder.update({
+    where: { id: poId },
+    data: { notes },
+  });
+}
+
+export async function issuePo(poId: string): Promise<void> {
+  const po = await prisma.purchaseOrder.findUnique({
+    where: { id: poId },
+    select: { status: true },
+  });
+  if (!po) throw new Error("PO not found");
+  if (po.status !== "draft") {
+    throw new Error("Only draft POs can be issued");
+  }
+  await prisma.purchaseOrder.update({
+    where: { id: poId },
+    data: { status: "issued" },
+  });
+  revalidatePath(`/po/${poId}`);
+}
+
+export async function closePo(poId: string): Promise<void> {
+  const po = await prisma.purchaseOrder.findUnique({
+    where: { id: poId },
+    select: { status: true },
+  });
+  if (!po) throw new Error("PO not found");
+  if (po.status !== "issued") {
+    throw new Error("Only issued POs can be closed");
+  }
+  await prisma.purchaseOrder.update({
+    where: { id: poId },
+    data: { status: "closed" },
+  });
+  revalidatePath(`/po/${poId}`);
+}
+
+export async function deleteDraftPo(poId: string): Promise<string> {
+  const po = await prisma.purchaseOrder.findUnique({
+    where: { id: poId },
+    select: { status: true, rfqId: true },
+  });
+  if (!po) throw new Error("PO not found");
+  if (po.status !== "draft") {
+    throw new Error("Only draft POs can be deleted");
+  }
+
+  await prisma.$transaction([
+    prisma.purchaseOrder.delete({ where: { id: poId } }),
+    prisma.rfq.update({
+      where: { id: po.rfqId },
+      data: { status: "quoted" },
+    }),
+  ]);
+
+  revalidatePath("/");
+  return po.rfqId;
 }
