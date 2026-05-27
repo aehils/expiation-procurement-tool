@@ -20,11 +20,12 @@ model Rfq {
   id        String   @id @default(cuid())
   rfqNumber String   @unique
   requester String
-  status    String   @default("draft") // draft | details | quoted
+  status    String   @default("draft") // draft | details | quoted | ordered
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items RfqItem[]
+  items          RfqItem[]
+  purchaseOrders PurchaseOrder[]
 }
 
 model RfqItem {
@@ -65,6 +66,54 @@ model RfqItem {
   intlShippingCost       Float?
   intlShippingNaira      Float?
   markedComplete         Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  poItems PoItem[]
+}
+
+model PurchaseOrder {
+  id           String   @id @default(cuid())
+  poNumber     String   @unique
+  rfqId        String
+  rfq          Rfq      @relation(fields: [rfqId], references: [id])
+  status       String   @default("draft") // draft | issued | closed
+  notes        String?
+  markupFactor Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items PoItem[]
+}
+
+model PoItem {
+  id        String        @id @default(cuid())
+  poId      String
+  po        PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  rfqItemId String
+  rfqItem   RfqItem       @relation(fields: [rfqItemId], references: [id])
+
+  itemName              String
+  itemCategory          String
+  department            String
+  vendor                String
+  vendorLocation        String?
+  brand                 String?
+  mProductCode          String?
+  manufacturerName      String?
+  uom                   String?
+  countryOfOrigin       String?
+  vendorDeliveryTimeline String?
+
+  quantity              Float
+
+  nairaUnitPrice        Float
+  taxAmount             Float?
+  domesticShippingNaira Float?
+  intlShippingNaira     Float?
+  totalPerUnit          Float
+  lineTotal             Float
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -271,7 +271,11 @@ export function DetailsView({
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
           </svg>
         </button>
-        {rfq.status === "quoted" ? (
+        {rfq.status === "ordered" ? (
+          <span className="px-1.5 py-px text-[10px] font-medium bg-emerald-100 text-emerald-700 rounded uppercase tracking-wide">
+            Ordered
+          </span>
+        ) : rfq.status === "quoted" ? (
           <span className="px-1.5 py-px text-[10px] font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
             Quoted
           </span>
@@ -425,22 +429,24 @@ export function DetailsView({
         })}
       </Accordion>
 
-      <div className="mt-6 flex items-center justify-end gap-3">
-        {showCompleteWarning && !anyComplete && (
-          <p className="text-xs text-orange-600 font-medium">
-            Mark at least one item as complete before proceeding.
-          </p>
-        )}
-        <Button
-          onClick={handleSubmit}
-          disabled={submitting}
-          size="sm"
-          style={{ backgroundColor: "#274579" }}
-          className="text-white hover:opacity-90"
-        >
-          {submitting ? "Submitting…" : "Proceed to Quote"}
-        </Button>
-      </div>
+      {rfq.status !== "quoted" && rfq.status !== "ordered" && (
+        <div className="mt-6 flex items-center justify-end gap-3">
+          {showCompleteWarning && !anyComplete && (
+            <p className="text-xs text-orange-600 font-medium">
+              Mark at least one item as complete before proceeding.
+            </p>
+          )}
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting}
+            size="sm"
+            style={{ backgroundColor: "#274579" }}
+            className="text-white hover:opacity-90"
+          >
+            {submitting ? "Submitting…" : "Proceed to Quote"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
