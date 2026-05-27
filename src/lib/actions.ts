@@ -251,6 +251,24 @@ export async function refreshBannerCurrencyRates(): Promise<
   return results;
 }
 
+export async function saveQuoteConfig(
+  rfqId: string,
+  markup: number,
+  selectedItemIds: string[],
+): Promise<void> {
+  const allItems = await prisma.rfqItem.findMany({ where: { rfqId }, select: { id: true } });
+  await prisma.rfq.update({ where: { id: rfqId }, data: { markup } });
+  await Promise.all(
+    allItems.map((item) =>
+      prisma.rfqItem.update({
+        where: { id: item.id },
+        data: { selectedForQuote: selectedItemIds.includes(item.id) },
+      }),
+    ),
+  );
+  revalidatePath(`/rfq/${rfqId}/quote`);
+}
+
 export async function proceedToQuote(rfqId: string): Promise<void> {
   await prisma.rfq.update({
     where: { id: rfqId },

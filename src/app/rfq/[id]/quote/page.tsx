@@ -45,6 +45,7 @@ export default async function QuotePage({
     intlShippingNaira: it.intlShippingNaira,
     brand: it.brand,
     markedComplete: it.markedComplete,
+    selectedForQuote: it.selectedForQuote,
   }));
 
   return (
@@ -54,6 +55,7 @@ export default async function QuotePage({
         rfqNumber: rfq.rfqNumber,
         requester: rfq.requester,
         status: rfq.status,
+        markup: rfq.markup,
       }}
       items={items}
     />
