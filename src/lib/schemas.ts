@@ -59,6 +59,19 @@ export const updateItemSchema = z.object({
 });
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 
+export const createPoSchema = z.object({
+  rfqId: z.string().min(1),
+  selectedItemIds: z.array(z.string().min(1)).min(1, "Select at least one item"),
+  markupFactor: z.number().positive(),
+  quantityOverrides: z.record(z.string(), z.number().positive()).optional(),
+  notes: z.string().optional(),
+});
+export type CreatePoInput = z.infer<typeof createPoSchema>;
+
+export const updatePoItemQuantitySchema = z.object({
+  quantity: z.number().positive("Quantity must be > 0"),
+});
+
 // Used by submitRfq to confirm every required detail field is filled per item.
 export function findMissingDetailFields(
   item: Record<string, unknown>,
