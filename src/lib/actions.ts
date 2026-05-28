@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { customAlphabet } from "nanoid";
 import { prisma } from "./db";
+import { type DocRef, rfqHref } from "./docs";
 import { BANNER_CURRENCIES } from "./constants";
 import { fetchRate } from "./rates";
 import {
@@ -436,6 +437,78 @@ export async function closePo(poId: string): Promise<void> {
     data: { status: "closed" },
   });
   revalidatePath(`/po/${poId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar navigation: recent documents + global search
+// ---------------------------------------------------------------------------
+
+type RfqRow = { id: string; rfqNumber: string; requester: string; status: string };
+type PoRow = { id: string; poNumber: string; status: string };
+
+function toRfqRef(r: RfqRow): DocRef {
+  return {
+    type: "rfq",
+    id: r.id,
+    label: r.rfqNumber,
+    sublabel: r.requester,
+    href: rfqHref(r.id, r.status),
+  };
+}
+
+function toPoRef(p: PoRow): DocRef {
+  return {
+    type: "po",
+    id: p.id,
+    label: p.poNumber,
+    sublabel: p.status,
+    href: `/po/${p.id}`,
+  };
+}
+
+export async function getRecentDocuments(): Promise<{
+  rfqs: DocRef[];
+  pos: DocRef[];
+}> {
+  const [rfqs, pos] = await Promise.all([
+    prisma.rfq.findMany({
+      where: { status: { not: "draft" } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.purchaseOrder.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+  ]);
+  return { rfqs: rfqs.map(toRfqRef), pos: pos.map(toPoRef) };
+}
+
+export async function searchDocuments(query: string): Promise<{
+  rfqs: DocRef[];
+  pos: DocRef[];
+}> {
+  const q = query.trim();
+  if (!q) return { rfqs: [], pos: [] };
+  // SQLite `contains` is case-sensitive; doc numbers are uppercase, so match the
+  // number fields against the uppercased query and free text against it as typed.
+  const upper = q.toUpperCase();
+  const [rfqs, pos] = await Promise.all([
+    prisma.rfq.findMany({
+      where: {
+        status: { not: "draft" },
+        OR: [{ rfqNumber: { contains: upper } }, { requester: { contains: q } }],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    prisma.purchaseOrder.findMany({
+      where: { poNumber: { contains: upper } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
+  return { rfqs: rfqs.map(toRfqRef), pos: pos.map(toPoRef) };
 }
 
 export async function deleteDraftPo(poId: string): Promise<string> {

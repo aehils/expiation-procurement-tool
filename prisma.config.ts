@@ -1,6 +1,6 @@
 import path from "node:path";
 import { defineConfig } from "prisma/config";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
 import "dotenv/config";
 
 export default defineConfig({
@@ -8,7 +8,7 @@ export default defineConfig({
   schema: path.join("prisma", "schema.prisma"),
   engine: "js",
   adapter: async () =>
-    new PrismaLibSql({
+    new PrismaLibSQL({
       url: process.env.TURSO_DATABASE_URL!,
       authToken: process.env.TURSO_AUTH_TOKEN!,
     }),
