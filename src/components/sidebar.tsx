@@ -26,13 +26,12 @@ import { getRecentDocuments } from "@/lib/actions";
 import type { DocRef } from "@/lib/docs";
 import { usePinnedDocs, togglePin, isPinned } from "@/lib/pinned-docs";
 
-type RecentDocs = { rfqs: DocRef[]; quotes: DocRef[]; pos: DocRef[] };
-
-const SECTIONS = [
-  { key: "rfqs", href: "/rfq", label: "RFQs", icon: FileText },
-  { key: "quotes", href: "/quotes", label: "Quotes", icon: ReceiptText },
-  { key: "pos", href: "/po", label: "Purchase Orders", icon: Package },
-] as const;
+const NAV_ITEMS = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/rfq", label: "RFQs", icon: FileText },
+  { href: "/quotes", label: "Quotes", icon: ReceiptText },
+  { href: "/po", label: "Purchase Orders", icon: Package },
+];
 
 const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
   { value: "system", label: "Match System", icon: Monitor },
@@ -239,8 +238,8 @@ export function Sidebar() {
             }`}
             title="Settings"
           >
-            <div className="w-7 h-7 flex items-center justify-center shrink-0">
-              <Settings size={15} />
+            <div className="w-8 h-8 flex items-center justify-center shrink-0">
+              <Settings size={21} />
             </div>
             <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[160px] opacity-100"}`}>
               <span className="whitespace-nowrap uppercase text-xs tracking-wider pl-2">Settings</span>

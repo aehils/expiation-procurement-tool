@@ -19,9 +19,8 @@ import {
   type CreatePoInput,
   type QuoteConfig,
 } from "./schemas";
-import { encodeQuoteConfig, parseQuoteConfig } from "./quote-config";
-import { toDetailsPayload } from "./rfq-item";
-import type { ExportQuoteData, ColKey } from "./export/types";
+import { encodeQuoteConfig } from "./quote-config";
+import { COLUMNS } from "./export/types";
 
 const docSuffix = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 4);
 
@@ -259,12 +258,77 @@ export async function refreshBannerCurrencyRates(): Promise<
 }
 
 export async function proceedToQuote(rfqId: string): Promise<void> {
+  const rfq = await prisma.rfq.findUnique({
+    where: { id: rfqId },
+    select: { rfqNumber: true, items: { select: { id: true } } },
+  });
+  if (!rfq) throw new Error("RFQ not found");
+
   await prisma.rfq.update({
     where: { id: rfqId },
     data: { status: "quoted" },
   });
-  revalidateTag("rfqs");
+
+  // Materialise a quote row so the RFQ appears under Quotes the moment it's
+  // marked quoted — otherwise status "quoted" and the Quotes list (which reads
+  // the Quote table) disagree. Seeds the same defaults the quote view shows,
+  // and leaves an already-saved quote untouched. Tolerate the Quote table not
+  // existing yet (migration not applied), matching the quote pages' guard.
+  try {
+    const quoteNumber = rfq.rfqNumber.replace(/^RFQ-/, "QU-");
+    const config = encodeQuoteConfig({
+      columns: COLUMNS.filter((c) => c.defaultOn).map((c) => c.key),
+      items: rfq.items.map((i) => i.id),
+      markup: 0,
+    });
+    await prisma.quote.upsert({
+      where: { rfqId },
+      create: { rfqId, quoteNumber, config },
+      update: {},
+    });
+  } catch {
+    // Quote row will be created on the first explicit save instead.
+  }
+
   revalidatePath(`/rfq/${rfqId}/details`);
+  revalidatePath("/quotes");
+}
+
+// ---------------------------------------------------------------------------
+// Quote actions
+// ---------------------------------------------------------------------------
+
+// Persists (or updates) the saved quote for an RFQ. One quote per RFQ — the
+// quoteNumber is derived from the RFQ number (RFQ-… → QU-…) so it stays stable
+// across saves. Only the field selection is stored, not item data.
+export async function saveQuote(
+  rfqId: string,
+  config: QuoteConfig,
+): Promise<{ id: string; quoteNumber: string }> {
+  const parsed = quoteConfigSchema.parse(config);
+
+  const rfq = await prisma.rfq.findUnique({
+    where: { id: rfqId },
+    select: { rfqNumber: true },
+  });
+  if (!rfq) throw new Error("RFQ not found");
+
+  const quoteNumber = rfq.rfqNumber.replace(/^RFQ-/, "QU-");
+  const encoded = encodeQuoteConfig(parsed);
+
+  const quote = await prisma.quote.upsert({
+    where: { rfqId },
+    create: { rfqId, quoteNumber, config: encoded },
+    update: { config: encoded },
+  });
+
+  revalidatePath("/quotes");
+  return { id: quote.id, quoteNumber: quote.quoteNumber };
+}
+
+export async function deleteQuote(quoteId: string): Promise<void> {
+  await prisma.quote.delete({ where: { id: quoteId } });
+  revalidatePath("/quotes");
 }
 
 // ---------------------------------------------------------------------------

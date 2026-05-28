@@ -29,6 +29,10 @@ model Rfq {
   quote          Quote?
 }
 
+// A saved, configurable view of an RFQ's items. Kept deliberately light: we
+// persist only the field selection (which columns, which items, the markup),
+// not a copy of the item data. The live RfqItem rows are the source of truth;
+// `config` just records how to present them when viewing or exporting.
 model Quote {
   id          String   @id @default(cuid())
   quoteNumber String   @unique // human-facing ref, derived from rfqNumber (QU-…)

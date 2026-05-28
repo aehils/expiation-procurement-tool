@@ -1,5 +1,7 @@
 import { quoteConfigSchema, type QuoteConfig } from "./schemas";
 
+// Safely decode the JSON `config` string stored on a Quote row. Returns null
+// for missing/garbage data so callers can fall back to defaults.
 export function parseQuoteConfig(raw: string | null | undefined): QuoteConfig | null {
   if (!raw) return null;
   try {

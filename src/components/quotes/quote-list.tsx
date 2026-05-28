@@ -7,7 +7,9 @@ import { toast } from "sonner";
 import { MoreVertical, ShoppingCart, Trash2 } from "lucide-react";
 import { ExportMenu } from "@/components/rfq/export-menu";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { deleteQuote, getQuoteExportData } from "@/lib/actions";
+import { deleteQuote } from "@/lib/actions";
+import type { DetailsItemPayload } from "@/components/rfq/item-detail-form";
+import type { ColKey } from "@/lib/export/types";
 
 export type QuoteRow = {
   id: string;
@@ -15,7 +17,10 @@ export type QuoteRow = {
   rfqId: string;
   rfqNumber: string;
   requester: string;
+  items: DetailsItemPayload[];
   selectedItemIds: string[];
+  enabledColumns: string[];
+  markup: number;
   hasPo: boolean;
 };
 
@@ -69,7 +74,17 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
             </Link>
 
             <div className="flex items-center gap-2 pl-3">
-              <ExportMenu fetchData={() => getQuoteExportData(q.id)} />
+              <ExportMenu
+                data={{
+                  quoteNumber: q.quoteNumber,
+                  rfqNumber: q.rfqNumber,
+                  requester: q.requester,
+                  items: q.items,
+                  selectedItemIds: new Set(q.selectedItemIds),
+                  enabledColumns: q.enabledColumns as ColKey[],
+                  markupFactor: 1 + q.markup / 100,
+                }}
+              />
 
               <div className="relative">
                 <button

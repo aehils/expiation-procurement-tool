@@ -95,12 +95,14 @@ export function QuoteView({
   rfq,
   items,
   backHref,
+  backLabel = "Back to RFQ",
   hasSavedQuote = false,
   initialConfig = null,
 }: {
   rfq: Rfq;
   items: DetailsItemPayload[];
   backHref?: string;
+  backLabel?: string;
   hasSavedQuote?: boolean;
   initialConfig?: QuoteConfig | null;
 }) {
@@ -218,7 +220,7 @@ export function QuoteView({
   }
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-6 py-4">
+    <div className="max-w-screen-2xl mx-auto px-4 py-4">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <Link
@@ -226,7 +228,7 @@ export function QuoteView({
           className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back
+          {backLabel}
         </Link>
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
           Quote
@@ -355,7 +357,7 @@ export function QuoteView({
       </div>
 
       {/* Items table — outer div is the positioning anchor; overflow lives one level in */}
-      <div ref={outerRef} className="relative rounded-md border border-[#274579]/35">
+      <div ref={outerRef} className="relative rounded-md border border-[#274579]/35 ml-1 mr-5">
         <div className="overflow-x-auto overflow-y-hidden rounded-md">
           <div className="w-max min-w-full">
             <table className="text-xs w-full">

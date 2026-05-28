@@ -33,6 +33,7 @@ export default async function QuotePage({
       }}
       items={items}
       backHref="/quotes"
+      backLabel="Back to Quotes"
       hasSavedQuote
       initialConfig={parseQuoteConfig(quote.config)}
     />
