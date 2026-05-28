@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   FileText,
+  ReceiptText,
   Package,
   User,
   Settings,
@@ -21,6 +22,7 @@ import { useTheme, type Theme } from "./theme-provider";
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/rfq", label: "RFQs", icon: FileText },
+  { href: "/quotes", label: "Quotes", icon: ReceiptText },
   { href: "/po", label: "Purchase Orders", icon: Package },
 ];
 

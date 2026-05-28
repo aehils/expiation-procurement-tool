@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { QuoteView } from "@/components/rfq/quote-view";
-import type { DetailsItemPayload } from "@/components/rfq/item-detail-form";
+import { toDetailsPayload } from "@/lib/rfq-item";
+import { parseQuoteConfig } from "@/lib/quote-config";
 
 export const dynamic = "force-dynamic";
 
@@ -18,34 +19,20 @@ export default async function QuotePage({
 
   if (!rfq) notFound();
 
-  const items: DetailsItemPayload[] = rfq.items.map((it) => ({
-    id: it.id,
-    itemCategory: it.itemCategory,
-    department: it.department,
-    itemName: it.itemName,
-    requestQuantity: it.requestQuantity,
-    mProductCode: it.mProductCode,
-    unitQuantity: it.unitQuantity,
-    uom: it.uom,
-    manufacturerName: it.manufacturerName,
-    vendor: it.vendor,
-    vendorLocation: it.vendorLocation,
-    productLink: it.productLink,
-    countryOfOrigin: it.countryOfOrigin,
-    vendorDeliveryTimeline: it.vendorDeliveryTimeline,
-    originalCurrency: it.originalCurrency,
-    ogUnitPrice: it.ogUnitPrice,
-    nairaUnitPrice: it.nairaUnitPrice,
-    nairaOverridden: it.nairaOverridden,
-    tax: it.tax,
-    taxMode: (it.taxMode as "amount" | "percent" | null) ?? null,
-    domesticShippingCost: it.domesticShippingCost,
-    domesticShippingNaira: it.domesticShippingNaira,
-    intlShippingCost: it.intlShippingCost,
-    intlShippingNaira: it.intlShippingNaira,
-    brand: it.brand,
-    markedComplete: it.markedComplete,
-  }));
+  // Read any saved quote separately and tolerate the Quote table not existing
+  // yet (migration not applied) — mirrors readPersistedBannerRates' guard so
+  // this page keeps working even before the Quotes migration is deployed.
+  let savedQuote: { config: string } | null = null;
+  try {
+    savedQuote = await prisma.quote.findUnique({
+      where: { rfqId: rfq.id },
+      select: { config: true },
+    });
+  } catch {
+    savedQuote = null;
+  }
+
+  const items = rfq.items.map(toDetailsPayload);
 
   return (
     <QuoteView
@@ -56,6 +43,9 @@ export default async function QuotePage({
         status: rfq.status,
       }}
       items={items}
+      backHref={`/rfq/${rfq.id}/details`}
+      hasSavedQuote={savedQuote != null}
+      initialConfig={parseQuoteConfig(savedQuote?.config)}
     />
   );
 }

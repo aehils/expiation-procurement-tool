@@ -3,17 +3,22 @@
 import * as React from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, MoreVertical } from "lucide-react";
+import { ArrowLeft, MoreVertical, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { DetailsItemPayload } from "./item-detail-form";
 import { ExportMenu } from "./export-menu";
+import { saveQuote } from "@/lib/actions";
+import type { QuoteConfig } from "@/lib/schemas";
 import {
   COLUMNS,
   type ColKey,
   formatNaira,
   cellValueRaw,
 } from "@/lib/export/types";
+
+const COLUMN_KEYS = new Set<string>(COLUMNS.map((c) => c.key));
 
 type Rfq = {
   id: string;
@@ -89,19 +94,40 @@ function CopyIcon() {
 export function QuoteView({
   rfq,
   items,
+  backHref,
+  backLabel = "Back to RFQ",
+  hasSavedQuote = false,
+  initialConfig = null,
 }: {
   rfq: Rfq;
   items: DetailsItemPayload[];
+  backHref?: string;
+  backLabel?: string;
+  hasSavedQuote?: boolean;
+  initialConfig?: QuoteConfig | null;
 }) {
   const quoteNumber = rfq.rfqNumber.replace("RFQ-", "QU-");
 
-  const [selectedItems, setSelectedItems] = React.useState<Set<string>>(
-    () => new Set(items.map((i) => i.id)),
+  const [selectedItems, setSelectedItems] = React.useState<Set<string>>(() => {
+    const itemIds = new Set(items.map((i) => i.id));
+    if (initialConfig) {
+      return new Set(initialConfig.items.filter((id) => itemIds.has(id)));
+    }
+    return itemIds;
+  });
+  const [enabledCols, setEnabledCols] = React.useState<Set<ColKey>>(() => {
+    if (initialConfig) {
+      return new Set(
+        initialConfig.columns.filter((c): c is ColKey => COLUMN_KEYS.has(c)),
+      );
+    }
+    return new Set(COLUMNS.filter((c) => c.defaultOn).map((c) => c.key));
+  });
+  const [globalMarkup, setGlobalMarkup] = React.useState(
+    initialConfig && initialConfig.markup > 0 ? String(initialConfig.markup) : "",
   );
-  const [enabledCols, setEnabledCols] = React.useState<Set<ColKey>>(
-    () => new Set(COLUMNS.filter((c) => c.defaultOn).map((c) => c.key)),
-  );
-  const [globalMarkup, setGlobalMarkup] = React.useState("");
+  const [saved, setSaved] = React.useState(hasSavedQuote);
+  const [saving, setSaving] = React.useState(false);
   const [hoveredItemId, setHoveredItemId] = React.useState<string | null>(null);
   const [menuOpenItemId, setMenuOpenItemId] = React.useState<string | null>(null);
 
@@ -166,6 +192,24 @@ export function QuoteView({
     });
   }
 
+  async function handleSaveQuote() {
+    setSaving(true);
+    try {
+      await saveQuote(rfq.id, {
+        columns: visibleCols.map((c) => c.key),
+        items: [...selectedItems],
+        markup: parseFloat(globalMarkup) || 0,
+      });
+      setSaved(true);
+      toast.success("Quote saved");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not save quote");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function copyQuoteId() {
     try {
       await navigator.clipboard.writeText(quoteNumber);
@@ -180,11 +224,11 @@ export function QuoteView({
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <Link
-          href={`/rfq/${rfq.id}/details`}
+          href={backHref ?? `/rfq/${rfq.id}/details`}
           className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to RFQ
+          {backLabel}
         </Link>
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
           Quote
@@ -198,8 +242,14 @@ export function QuoteView({
           <span>#{quoteNumber}</span>
           <CopyIcon />
         </button>
-        <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
-          Draft
+        <span
+          className={`px-1.5 py-px text-[10px] font-medium rounded uppercase tracking-wide ${
+            saved
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-slate-200 text-slate-600"
+          }`}
+        >
+          {saved ? "Saved" : "Draft"}
         </span>
       </div>
 
@@ -249,6 +299,16 @@ export function QuoteView({
               </span>
             </div>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSaveQuote}
+            disabled={saving}
+            className="gap-1.5"
+          >
+            <Save className="h-3.5 w-3.5" />
+            {saving ? "Saving…" : saved ? "Update Quote" : "Save Quote"}
+          </Button>
           <ExportMenu
             data={{
               quoteNumber,
