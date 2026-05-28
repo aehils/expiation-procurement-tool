@@ -8,10 +8,23 @@ import { loadExportConfig } from "@/lib/export/format-config";
 import type { ExportQuoteData } from "@/lib/export/types";
 import { ExportConfigDialog } from "./export-config-dialog";
 
-export function ExportMenu({ data }: { data: ExportQuoteData }) {
+type Props =
+  | { data: ExportQuoteData; fetchData?: never }
+  | { fetchData: () => Promise<ExportQuoteData | null>; data?: never };
+
+export function ExportMenu({ data, fetchData }: Props) {
   const [open, setOpen] = React.useState(false);
   const [configOpen, setConfigOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
+  const cachedRef = React.useRef<ExportQuoteData | null>(null);
+
+  async function resolveData(): Promise<ExportQuoteData | null> {
+    if (data) return data;
+    if (cachedRef.current) return cachedRef.current;
+    const result = await fetchData!();
+    cachedRef.current = result;
+    return result;
+  }
 
   React.useEffect(() => {
     if (!open) return;
@@ -26,14 +39,15 @@ export function ExportMenu({ data }: { data: ExportQuoteData }) {
 
   async function handleExportXlsx() {
     setOpen(false);
-    if (data.selectedItemIds.size === 0) {
+    const resolved = await resolveData();
+    if (!resolved || resolved.selectedItemIds.size === 0) {
       toast.error("No items selected for export");
       return;
     }
     try {
       const { generateQuoteXlsx } = await import("@/lib/export/xlsx");
       const config = loadExportConfig();
-      await generateQuoteXlsx(data, config);
+      await generateQuoteXlsx(resolved, config);
       toast.success("XLSX exported");
     } catch (err) {
       console.error(err);
@@ -43,14 +57,15 @@ export function ExportMenu({ data }: { data: ExportQuoteData }) {
 
   async function handleExportPdf() {
     setOpen(false);
-    if (data.selectedItemIds.size === 0) {
+    const resolved = await resolveData();
+    if (!resolved || resolved.selectedItemIds.size === 0) {
       toast.error("No items selected for export");
       return;
     }
     try {
       const { generateQuotePdf } = await import("@/lib/export/pdf");
       const config = loadExportConfig();
-      await generateQuotePdf(data, config);
+      await generateQuotePdf(resolved, config);
       toast.success("PDF exported");
     } catch (err) {
       console.error(err);

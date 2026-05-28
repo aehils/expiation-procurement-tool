@@ -1,7 +1,6 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
-
-export const dynamic = "force-dynamic";
 
 const STATUS_LABEL: Record<string, string> = {
   details: "In Progress",
@@ -14,12 +13,20 @@ const STATUS_STYLE: Record<string, string> = {
   ordered: "bg-emerald-100 text-emerald-700",
 };
 
+const getRfqs = unstable_cache(
+  async () => {
+    return prisma.rfq.findMany({
+      where: { status: { not: "draft" } },
+      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { items: true } } },
+    });
+  },
+  ["rfq-list"],
+  { tags: ["rfqs"] },
+);
+
 export default async function RfqListPage() {
-  const rfqs = await prisma.rfq.findMany({
-    where: { status: { not: "draft" } },
-    orderBy: { createdAt: "desc" },
-    include: { _count: { select: { items: true } } },
-  });
+  const rfqs = await getRfqs();
 
   return (
     <div className="max-w-4xl mx-auto px-8 py-12">

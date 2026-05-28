@@ -14,7 +14,7 @@ export default async function QuotePage({
   const { id } = await params;
   const rfq = await prisma.rfq.findUnique({
     where: { id },
-    include: { items: { orderBy: { createdAt: "asc" } } },
+    include: { items: { orderBy: { createdAt: "asc" } }, quote: true },
   });
 
   if (!rfq) notFound();

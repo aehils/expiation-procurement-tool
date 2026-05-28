@@ -1,7 +1,6 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
-
-export const dynamic = "force-dynamic";
 
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-amber-100 text-amber-700",
@@ -9,14 +8,22 @@ const STATUS_STYLE: Record<string, string> = {
   closed: "bg-muted text-muted-foreground",
 };
 
+const getPos = unstable_cache(
+  async () => {
+    return prisma.purchaseOrder.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { items: true } },
+        rfq: { select: { requester: true } },
+      },
+    });
+  },
+  ["po-list"],
+  { tags: ["purchase-orders"] },
+);
+
 export default async function PoListPage() {
-  const pos = await prisma.purchaseOrder.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: { select: { items: true } },
-      rfq: { select: { requester: true } },
-    },
-  });
+  const pos = await getPos();
 
   return (
     <div className="max-w-4xl mx-auto px-8 py-12">

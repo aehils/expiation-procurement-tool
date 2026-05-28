@@ -1,54 +1,55 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
-import { toDetailsPayload } from "@/lib/rfq-item";
 import { parseQuoteConfig } from "@/lib/quote-config";
 import { QuoteList, type QuoteRow } from "@/components/quotes/quote-list";
 
-export const dynamic = "force-dynamic";
-
-function loadQuotes() {
-  return prisma.quote.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      rfq: {
-        include: {
-          items: { orderBy: { createdAt: "asc" } },
-          purchaseOrders: { select: { id: true } },
+const getQuoteRows = unstable_cache(
+  async (): Promise<QuoteRow[]> => {
+    try {
+      const quotes = await prisma.quote.findMany({
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          quoteNumber: true,
+          rfqId: true,
+          config: true,
+          rfq: {
+            select: {
+              rfqNumber: true,
+              requester: true,
+              items: { select: { id: true }, orderBy: { createdAt: "asc" } },
+              purchaseOrders: { select: { id: true } },
+            },
+          },
         },
-      },
-    },
-  });
-}
+      });
+      return quotes.map((q) => {
+        const config = parseQuoteConfig(q.config);
+        const itemIds = q.rfq.items.map((i) => i.id);
+        const itemIdSet = new Set(itemIds);
+        const selectedItemIds = config
+          ? config.items.filter((id) => itemIdSet.has(id))
+          : itemIds;
+        return {
+          id: q.id,
+          quoteNumber: q.quoteNumber,
+          rfqId: q.rfqId,
+          rfqNumber: q.rfq.rfqNumber,
+          requester: q.rfq.requester,
+          selectedItemIds,
+          hasPo: q.rfq.purchaseOrders.length > 0,
+        };
+      });
+    } catch {
+      return [];
+    }
+  },
+  ["quotes-list"],
+  { tags: ["quotes"] },
+);
 
 export default async function QuotesListPage() {
-  // Tolerate the Quote table not existing yet (migration not applied) so the
-  // tab shows the empty state instead of crashing before the migration runs.
-  let quotes: Awaited<ReturnType<typeof loadQuotes>> = [];
-  try {
-    quotes = await loadQuotes();
-  } catch {
-    quotes = [];
-  }
-
-  const rows: QuoteRow[] = quotes.map((q) => {
-    const config = parseQuoteConfig(q.config);
-    const items = q.rfq.items.map(toDetailsPayload);
-    const itemIds = new Set(items.map((i) => i.id));
-    const selectedItemIds = config
-      ? config.items.filter((id) => itemIds.has(id))
-      : items.map((i) => i.id);
-    return {
-      id: q.id,
-      quoteNumber: q.quoteNumber,
-      rfqId: q.rfqId,
-      rfqNumber: q.rfq.rfqNumber,
-      requester: q.rfq.requester,
-      items,
-      selectedItemIds,
-      enabledColumns: config?.columns ?? [],
-      markup: config?.markup ?? 0,
-      hasPo: q.rfq.purchaseOrders.length > 0,
-    };
-  });
+  const rows = await getQuoteRows();
 
   return (
     <div className="max-w-4xl mx-auto px-8 py-12">

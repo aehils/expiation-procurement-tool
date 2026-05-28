@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { customAlphabet } from "nanoid";
 import { prisma } from "./db";
+import { type DocRef, rfqHref } from "./docs";
 import { BANNER_CURRENCIES } from "./constants";
 import { fetchRate } from "./rates";
 import {
@@ -18,8 +19,10 @@ import {
   type CreatePoInput,
   type QuoteConfig,
 } from "./schemas";
-import { encodeQuoteConfig } from "./quote-config";
+import { encodeQuoteConfig, parseQuoteConfig } from "./quote-config";
+import { toDetailsPayload } from "./rfq-item";
 import { COLUMNS } from "./export/types";
+import type { ExportQuoteData, ColKey } from "./export/types";
 
 const docSuffix = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 4);
 
@@ -96,6 +99,7 @@ export async function finalizeDraftRfq(
       },
     },
   });
+  revalidateTag("rfqs");
   revalidatePath("/");
   return { id: updated.id, rfqNumber: updated.rfqNumber };
 }
@@ -288,44 +292,8 @@ export async function proceedToQuote(rfqId: string): Promise<void> {
     // Quote row will be created on the first explicit save instead.
   }
 
+  revalidateTag("rfqs");
   revalidatePath(`/rfq/${rfqId}/details`);
-  revalidatePath("/quotes");
-}
-
-// ---------------------------------------------------------------------------
-// Quote actions
-// ---------------------------------------------------------------------------
-
-// Persists (or updates) the saved quote for an RFQ. One quote per RFQ — the
-// quoteNumber is derived from the RFQ number (RFQ-… → QU-…) so it stays stable
-// across saves. Only the field selection is stored, not item data.
-export async function saveQuote(
-  rfqId: string,
-  config: QuoteConfig,
-): Promise<{ id: string; quoteNumber: string }> {
-  const parsed = quoteConfigSchema.parse(config);
-
-  const rfq = await prisma.rfq.findUnique({
-    where: { id: rfqId },
-    select: { rfqNumber: true },
-  });
-  if (!rfq) throw new Error("RFQ not found");
-
-  const quoteNumber = rfq.rfqNumber.replace(/^RFQ-/, "QU-");
-  const encoded = encodeQuoteConfig(parsed);
-
-  const quote = await prisma.quote.upsert({
-    where: { rfqId },
-    create: { rfqId, quoteNumber, config: encoded },
-    update: { config: encoded },
-  });
-
-  revalidatePath("/quotes");
-  return { id: quote.id, quoteNumber: quote.quoteNumber };
-}
-
-export async function deleteQuote(quoteId: string): Promise<void> {
-  await prisma.quote.delete({ where: { id: quoteId } });
   revalidatePath("/quotes");
 }
 
@@ -426,6 +394,8 @@ export async function createPurchaseOrder(
         return created;
       });
 
+      revalidateTag("rfqs");
+      revalidateTag("purchase-orders");
       revalidatePath("/");
       return { id: po.id, poNumber: po.poNumber };
     } catch (err) {
@@ -489,6 +459,7 @@ export async function issuePo(poId: string): Promise<void> {
     where: { id: poId },
     data: { status: "issued" },
   });
+  revalidateTag("purchase-orders");
   revalidatePath(`/po/${poId}`);
 }
 
@@ -505,7 +476,170 @@ export async function closePo(poId: string): Promise<void> {
     where: { id: poId },
     data: { status: "closed" },
   });
+  revalidateTag("purchase-orders");
   revalidatePath(`/po/${poId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar navigation: recent documents + global search
+// ---------------------------------------------------------------------------
+
+type RfqRow = { id: string; rfqNumber: string; requester: string; status: string };
+type PoRow = { id: string; poNumber: string; status: string };
+type QuoteRow = { id: string; quoteNumber: string; rfq: { requester: string } };
+
+function toRfqRef(r: RfqRow): DocRef {
+  return {
+    type: "rfq",
+    id: r.id,
+    label: r.rfqNumber,
+    sublabel: r.requester,
+    href: rfqHref(r.id, r.status),
+  };
+}
+
+function toPoRef(p: PoRow): DocRef {
+  return {
+    type: "po",
+    id: p.id,
+    label: p.poNumber,
+    sublabel: p.status,
+    href: `/po/${p.id}`,
+  };
+}
+
+function toQuoteRef(q: QuoteRow): DocRef {
+  return {
+    type: "quote",
+    id: q.id,
+    label: q.quoteNumber,
+    sublabel: q.rfq.requester,
+    href: `/quotes/${q.id}`,
+  };
+}
+
+export async function getRecentDocuments(): Promise<{
+  rfqs: DocRef[];
+  quotes: DocRef[];
+  pos: DocRef[];
+}> {
+  const [rfqs, quotes, pos] = await Promise.all([
+    prisma.rfq.findMany({
+      where: { status: { not: "draft" } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.quote.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: { rfq: { select: { requester: true } } },
+    }),
+    prisma.purchaseOrder.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+  ]);
+  return { rfqs: rfqs.map(toRfqRef), quotes: quotes.map(toQuoteRef), pos: pos.map(toPoRef) };
+}
+
+export async function searchDocuments(query: string): Promise<{
+  rfqs: DocRef[];
+  quotes: DocRef[];
+  pos: DocRef[];
+}> {
+  const q = query.trim();
+  if (!q) return { rfqs: [], quotes: [], pos: [] };
+  // SQLite `contains` is case-sensitive; doc numbers are uppercase, so match the
+  // number fields against the uppercased query and free text against it as typed.
+  const upper = q.toUpperCase();
+  const [rfqs, quotes, pos] = await Promise.all([
+    prisma.rfq.findMany({
+      where: {
+        status: { not: "draft" },
+        OR: [{ rfqNumber: { contains: upper } }, { requester: { contains: q } }],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    prisma.quote.findMany({
+      where: { quoteNumber: { contains: upper } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: { rfq: { select: { requester: true } } },
+    }),
+    prisma.purchaseOrder.findMany({
+      where: { poNumber: { contains: upper } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
+  return { rfqs: rfqs.map(toRfqRef), quotes: quotes.map(toQuoteRef), pos: pos.map(toPoRef) };
+}
+
+export async function saveQuote(
+  rfqId: string,
+  config: QuoteConfig,
+): Promise<{ id: string; quoteNumber: string }> {
+  const parsed = quoteConfigSchema.parse(config);
+
+  const rfq = await prisma.rfq.findUnique({
+    where: { id: rfqId },
+    select: { rfqNumber: true },
+  });
+  if (!rfq) throw new Error("RFQ not found");
+
+  const quoteNumber = rfq.rfqNumber.replace(/^RFQ-/, "QU-");
+  const encoded = encodeQuoteConfig(parsed);
+
+  const quote = await prisma.quote.upsert({
+    where: { rfqId },
+    create: { rfqId, quoteNumber, config: encoded },
+    update: { config: encoded },
+  });
+
+  revalidateTag("quotes");
+  revalidatePath("/quotes");
+  revalidatePath(`/quotes/${quote.id}`);
+  return { id: quote.id, quoteNumber: quote.quoteNumber };
+}
+
+export async function deleteQuote(quoteId: string): Promise<void> {
+  await prisma.quote.delete({ where: { id: quoteId } });
+  revalidateTag("quotes");
+  revalidatePath("/quotes");
+}
+
+export async function getQuoteExportData(quoteId: string): Promise<ExportQuoteData | null> {
+  const quote = await prisma.quote.findUnique({
+    where: { id: quoteId },
+    select: {
+      quoteNumber: true,
+      config: true,
+      rfq: {
+        select: {
+          rfqNumber: true,
+          requester: true,
+          items: { orderBy: { createdAt: "asc" } },
+        },
+      },
+    },
+  });
+  if (!quote) return null;
+  const config = parseQuoteConfig(quote.config);
+  const items = quote.rfq.items.map(toDetailsPayload);
+  const itemIdSet = new Set(items.map((i) => i.id));
+  const selectedItemIds = config
+    ? new Set(config.items.filter((id) => itemIdSet.has(id)))
+    : itemIdSet;
+  return {
+    quoteNumber: quote.quoteNumber,
+    rfqNumber: quote.rfq.rfqNumber,
+    requester: quote.rfq.requester,
+    items,
+    selectedItemIds,
+    enabledColumns: (config?.columns ?? []) as ColKey[],
+    markupFactor: 1 + (config?.markup ?? 0) / 100,
+  };
 }
 
 export async function deleteDraftPo(poId: string): Promise<string> {
@@ -526,6 +660,8 @@ export async function deleteDraftPo(poId: string): Promise<string> {
     }),
   ]);
 
+  revalidateTag("rfqs");
+  revalidateTag("purchase-orders");
   revalidatePath("/");
   return po.rfqId;
 }
