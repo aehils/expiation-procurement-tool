@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home,
+  Plus,
   FileText,
   ReceiptText,
   Package,
@@ -20,7 +20,6 @@ import {
 import { useTheme, type Theme } from "./theme-provider";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: Home },
   { href: "/rfq", label: "RFQs", icon: FileText },
   { href: "/quotes", label: "Quotes", icon: ReceiptText },
   { href: "/po", label: "Purchase Orders", icon: Package },
@@ -62,17 +61,27 @@ export function Sidebar() {
       }`}
     >
       {/* Header */}
-      <div className="flex items-center px-3 h-16 border-b border-white/[0.06]">
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
-          <span className="whitespace-nowrap text-sm font-semibold text-white tracking-wide pl-1 pr-2">
-            Expiation
-          </span>
-        </div>
+      <div
+        className={`flex gap-2 px-2 py-3 border-b border-white/[0.06] ${
+          collapsed ? "flex-col items-center" : "flex-row items-center"
+        }`}
+      >
+        <Link
+          href="/"
+          className={`flex items-center justify-center h-10 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm transition-colors ${
+            collapsed ? "w-10" : "flex-1"
+          }`}
+          title="New"
+        >
+          <Plus size={20} className="shrink-0" />
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[100px] opacity-100"}`}>
+            <span className="whitespace-nowrap pl-1.5">New</span>
+          </div>
+        </Link>
         <button
           onClick={toggleCollapsed}
-          className={`p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors ${
-            collapsed ? "mx-auto" : "ml-auto"
-          }`}
+          className="flex items-center justify-center h-10 w-10 shrink-0 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>

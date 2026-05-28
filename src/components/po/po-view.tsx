@@ -201,7 +201,7 @@ export function PoView({ po }: { po: PoData }) {
           className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Home
+          New
         </Link>
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
           Purchase Order
