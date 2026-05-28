@@ -52,20 +52,16 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
 
   return (
     <>
-      <ul className="bg-card border border-border rounded-lg divide-y divide-border shadow-sm">
+      <ul className="rounded-lg overflow-hidden border border-border border-l-[3px] border-l-slate-400 dark:border-l-slate-500 bg-card shadow-sm divide-y divide-border">
         {quotes.map((q) => (
           <li
             key={q.id}
-            className="flex items-center justify-between px-5 py-4 hover:bg-accent/50 transition-colors"
+            className="flex items-center justify-between pl-4 pr-5 py-3.5 hover:bg-accent/50 transition-colors"
           >
             <Link href={`/quotes/${q.id}`} className="min-w-0 flex-1">
-              <div className="font-medium text-card-foreground">
+              <span className="font-medium text-card-foreground text-sm">
                 {q.quoteNumber}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {q.requester} &middot; {q.selectedItemIds.length} item
-                {q.selectedItemIds.length === 1 ? "" : "s"}
-              </div>
+              </span>
             </Link>
 
             <div className="flex items-center gap-2 pl-3">

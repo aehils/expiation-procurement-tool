@@ -79,19 +79,16 @@ export function Sidebar() {
     });
   };
 
-  const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
-  };
+  const isActive = (href: string) => pathname === href;
 
   return (
     <aside className="flex flex-col h-screen w-56 shrink-0 bg-[#273042] dark:bg-[#0f1219] text-slate-300">
       {/* Header */}
-      <div className="flex flex-row items-center h-16 px-2 gap-2 border-b border-white/[0.06]">
+      <div className="flex flex-row items-end h-16 px-2 gap-2 border-b border-white/[0.06] pb-2">
         <Link
           href="/new"
           title="New"
-          className="flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors flex-1 h-9 px-3"
+          className="flex items-center justify-center rounded-lg bg-[#2d5fbd] hover:bg-white/[0.92] text-white hover:text-blue-600 font-medium transition-colors flex-1 h-9 px-3"
         >
           <Plus size={16} strokeWidth={3} className="shrink-0" />
           <span className="whitespace-nowrap text-sm font-semibold uppercase pl-3">New</span>
@@ -162,7 +159,7 @@ export function Sidebar() {
                 </div>
 
                 {isOpen && (
-                  <div className="mt-0.5 ml-3 pl-3 border-l border-white/[0.08] space-y-0.5">
+                  <div className="mt-0.5 ml-4 pl-2.5 border-l-2 border-white/[0.15] space-y-0.5">
                     {docs.length === 0 ? (
                       <p className="px-2 py-1.5 text-xs text-slate-500">Nothing recent</p>
                     ) : (
@@ -266,9 +263,6 @@ function DocRow({
     >
       <Link href={doc.href} className="flex-1 min-w-0 px-2 py-1.5" title={doc.label}>
         <div className="truncate text-xs font-medium">{doc.label}</div>
-        {doc.sublabel && (
-          <div className="truncate text-[10px] text-slate-500">{doc.sublabel}</div>
-        )}
       </Link>
       <button
         onClick={() => togglePin(doc)}

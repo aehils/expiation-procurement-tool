@@ -57,7 +57,7 @@ export default async function RfqListPage() {
           </Link>
         </div>
       ) : (
-        <ul className="bg-card border border-border rounded-lg divide-y divide-border shadow-sm">
+        <ul className="rounded-lg overflow-hidden border border-border border-l-[3px] border-l-slate-400 dark:border-l-slate-500 bg-card shadow-sm divide-y divide-border">
           {rfqs.map((rfq) => (
             <li key={rfq.id}>
               <Link
@@ -66,17 +66,11 @@ export default async function RfqListPage() {
                     ? `/rfq/${rfq.id}/quote`
                     : `/rfq/${rfq.id}/details`
                 }
-                className="flex items-center justify-between px-5 py-4 hover:bg-accent/50 transition-colors"
+                className="flex items-center justify-between pl-4 pr-5 py-3.5 hover:bg-accent/50 transition-colors"
               >
-                <div>
-                  <div className="font-medium text-card-foreground">
-                    {rfq.rfqNumber}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {rfq.requester} &middot; {rfq._count.items} item
-                    {rfq._count.items === 1 ? "" : "s"}
-                  </div>
-                </div>
+                <span className="font-medium text-card-foreground text-sm">
+                  {rfq.rfqNumber}
+                </span>
                 <span
                   className={`text-xs font-medium px-2 py-1 rounded uppercase ${
                     STATUS_STYLE[rfq.status] ?? "bg-muted text-muted-foreground"
