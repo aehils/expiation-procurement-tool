@@ -256,7 +256,7 @@ export function QuoteView({
       {/* Requester + actions row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
         <div className="lg:col-span-7">
-          <div className="flex items-center gap-3 px-1 max-w-[70%]">
+          <div className="flex items-center gap-3 px-1 max-w-[70%] ml-auto">
             <Label
               htmlFor="requester"
               className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"

@@ -298,7 +298,7 @@ export function DetailsView({
       {/* Requester row (mirrors step 1 exactly) with the currency banner inline beside it */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
         <div className="lg:col-span-7">
-          <div className="flex items-center gap-3 px-1 max-w-[70%]">
+          <div className="flex items-center gap-3 px-1 max-w-[70%] ml-auto">
             <Label
               htmlFor="requester"
               className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
@@ -314,7 +314,7 @@ export function DetailsView({
             />
           </div>
         </div>
-        <div className="lg:col-span-5 flex items-center justify-end">
+        <div className="lg:col-span-5 flex items-center justify-start">
           <CurrencyBanner
             rates={rates}
             freshness={bannerFreshness}
@@ -508,7 +508,7 @@ function CurrencyBanner({
       : "Not yet updated";
 
   return (
-    <div className="flex w-fit flex-nowrap items-center gap-x-4 rounded-md bg-slate-50/50 px-2.5 py-1.5 whitespace-nowrap">
+    <div className="flex h-8 w-fit flex-nowrap items-center gap-x-4 rounded-md bg-slate-50/50 px-2.5 whitespace-nowrap">
       <button
         type="button"
         onClick={onRefresh}
