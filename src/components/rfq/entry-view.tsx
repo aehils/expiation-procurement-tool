@@ -289,7 +289,7 @@ export function EntryView({
         {/* Left column: Requester + Form */}
         <div className="lg:col-span-7 space-y-4">
           {/* Requester input — belongs to the RFQ as a whole, not per-item */}
-          <div className="flex items-center gap-3 px-1 max-w-[70%]">
+          <div className="flex items-center gap-3 px-1 max-w-[70%] ml-auto">
             <Label
               htmlFor="requester"
               className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
