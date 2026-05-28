@@ -101,59 +101,59 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom Section */}
-      <div className="px-2 pb-3 border-t border-white/[0.06] pt-2.5 space-y-0.5">
-        <button
-          className="flex items-center px-2 py-1.5 rounded-lg w-full hover:bg-white/[0.06] hover:text-blue-400 transition-colors"
-          title="Settings"
-        >
-          <div className="w-8 h-8 flex items-center justify-center shrink-0">
-            <Settings size={18} />
-          </div>
-          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
-            <span className="whitespace-nowrap uppercase text-xs tracking-wider pl-2">Settings</span>
-          </div>
-        </button>
+      <div className="relative px-2 pb-3 border-t border-white/[0.06] pt-2.5 space-y-0.5">
 
-        <div className="relative">
+        {/* Settings + Theme row */}
+        <div className={`flex gap-1 ${collapsed ? "flex-col" : "flex-row items-center"}`}>
           <button
-            onClick={() => setThemeOpen(!themeOpen)}
-            className={`flex items-center px-2 py-1.5 rounded-lg w-full hover:bg-white/[0.06] hover:text-white transition-colors ${
-              themeOpen ? "bg-white/[0.06] text-white" : ""
+            className={`flex items-center px-2 py-1.5 rounded-lg hover:text-blue-400 transition-colors ${
+              collapsed ? "w-full justify-center" : "flex-1 min-w-0"
             }`}
-            title="Theme"
+            title="Settings"
           >
             <div className="w-8 h-8 flex items-center justify-center shrink-0">
-              <SunMoon size={18} />
+              <Settings size={18} />
             </div>
             <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
-              <span className="whitespace-nowrap uppercase text-xs tracking-wider pl-2">Theme</span>
+              <span className="whitespace-nowrap uppercase text-xs tracking-wider pl-2">Settings</span>
             </div>
           </button>
 
-          {themeOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setThemeOpen(false)} />
-              <div className="absolute bottom-full left-0 right-0 mb-1 z-50 rounded-lg bg-[#1e2a3a] dark:bg-[#161d2a] border border-white/[0.08] shadow-lg p-1.5 space-y-0.5">
-                {THEME_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => { setTheme(opt.value); setThemeOpen(false); }}
-                    className={`flex items-center w-full px-2.5 py-2 rounded-md text-sm transition-colors ${
-                      theme === opt.value
-                        ? "bg-blue-600/[0.20] text-slate-100"
-                        : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
-                    }`}
-                  >
-                    <opt.icon size={16} className="shrink-0" />
-                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
-                      <span className="whitespace-nowrap pl-2.5">{opt.label}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+          <button
+            onClick={() => setThemeOpen(!themeOpen)}
+            className={`p-2 rounded-lg hover:bg-white/[0.06] hover:text-white transition-colors shrink-0 ${
+              collapsed ? "w-full flex justify-center" : ""
+            } ${themeOpen ? "bg-white/[0.06] text-white" : ""}`}
+            title="Theme"
+          >
+            <SunMoon size={24} />
+          </button>
         </div>
+
+        {themeOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setThemeOpen(false)} />
+            <div className="absolute bottom-full left-2 right-2 mb-1 z-50 rounded-lg bg-[#1e2a3a] dark:bg-[#161d2a] border border-white/[0.08] shadow-lg p-1.5 space-y-0.5">
+              {THEME_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setTheme(opt.value); setThemeOpen(false); }}
+                  className={`flex items-center w-full px-2.5 py-2 rounded-md text-sm transition-colors ${
+                    collapsed ? "justify-center" : ""
+                  } ${
+                    theme === opt.value
+                      ? "bg-blue-600/[0.20] text-slate-100"
+                      : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                  }`}
+                  title={collapsed ? opt.label : undefined}
+                >
+                  <opt.icon size={16} className="shrink-0" />
+                  {!collapsed && <span className="whitespace-nowrap pl-2.5">{opt.label}</span>}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <button
           className="flex items-center px-2 py-1.5 rounded-lg w-full hover:bg-white/[0.06] hover:text-white transition-colors"
