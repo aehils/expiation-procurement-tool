@@ -111,9 +111,9 @@ export function Sidebar() {
             title={collapsed ? "Settings" : undefined}
           >
             <div className="w-8 h-8 flex items-center justify-center shrink-0">
-              <Settings size={18} />
+              <Settings size={21} />
             </div>
-            {!collapsed && <span className="truncate uppercase text-xs tracking-wider">Settings</span>}
+            {!collapsed && <span className="truncate uppercase text-xs tracking-wider translate-x-1">Settings</span>}
           </button>
 
           <div className="relative shrink-0">
@@ -179,7 +179,7 @@ export function Sidebar() {
             <User size={15} className="text-white" />
           </div>
           {!collapsed && (
-            <span className="text-slate-300 truncate uppercase text-xs tracking-wider">Account</span>
+            <span className="text-slate-300 truncate uppercase text-xs tracking-wider -translate-y-px translate-x-1">Account</span>
           )}
         </button>
       </div>
