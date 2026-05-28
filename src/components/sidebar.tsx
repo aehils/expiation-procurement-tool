@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   FileText,
+  ReceiptText,
   Package,
   User,
   Settings,
@@ -25,10 +26,11 @@ import { getRecentDocuments } from "@/lib/actions";
 import type { DocRef } from "@/lib/docs";
 import { usePinnedDocs, togglePin, isPinned } from "@/lib/pinned-docs";
 
-type RecentDocs = { rfqs: DocRef[]; pos: DocRef[] };
+type RecentDocs = { rfqs: DocRef[]; quotes: DocRef[]; pos: DocRef[] };
 
 const SECTIONS = [
   { key: "rfqs", href: "/rfq", label: "RFQs", icon: FileText },
+  { key: "quotes", href: "/quotes", label: "Quotes", icon: ReceiptText },
   { key: "pos", href: "/po", label: "Purchase Orders", icon: Package },
 ] as const;
 
@@ -49,7 +51,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = React.useState(false);
   const [themeOpen, setThemeOpen] = React.useState(false);
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
-  const [recent, setRecent] = React.useState<RecentDocs>({ rfqs: [], pos: [] });
+  const [recent, setRecent] = React.useState<RecentDocs>({ rfqs: [], quotes: [], pos: [] });
 
   React.useEffect(() => {
     const stored = localStorage.getItem("sidebar-collapsed");
@@ -97,12 +99,12 @@ export function Sidebar() {
   return (
     <aside
       className={`flex flex-col h-screen shrink-0 bg-[#273042] dark:bg-[#0f1219] text-slate-300 transition-all duration-300 ease-in-out ${
-        collapsed ? "w-16" : "w-48"
+        collapsed ? "w-16" : "w-56"
       }`}
     >
       {/* Header */}
       <div className="flex items-center px-3 h-16 border-b border-white/[0.06]">
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[160px] opacity-100"}`}>
           <span className="whitespace-nowrap text-sm font-semibold text-white tracking-wide pl-1 pr-2">
             Expiation
           </span>
@@ -122,11 +124,11 @@ export function Sidebar() {
         {/* Search */}
         <button
           onClick={openPalette}
-          className="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/[0.06] hover:text-white transition-colors"
+          className="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium bg-white/[0.05] border border-white/[0.12] hover:bg-white/[0.09] hover:text-white transition-colors"
           title="Search (Ctrl/Cmd + K)"
         >
-          <Search size={20} className="shrink-0" />
-          <div className={`flex-1 overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
+          <Search size={16} className="shrink-0 text-slate-400" />
+          <div className={`flex-1 overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}`}>
             <span className="whitespace-nowrap pl-3">Search</span>
           </div>
           {!collapsed && (
@@ -145,7 +147,7 @@ export function Sidebar() {
           title="Home"
         >
           <Home size={20} className="shrink-0" />
-          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}`}>
             <span className="whitespace-nowrap pl-3">Home</span>
           </div>
         </Link>
@@ -185,7 +187,7 @@ export function Sidebar() {
                     title={section.label}
                   >
                     <section.icon size={20} className="shrink-0" />
-                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[140px] opacity-100"}`}>
+                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}`}>
                       <span className="whitespace-nowrap pl-3">{section.label}</span>
                     </div>
                   </Link>
@@ -237,10 +239,10 @@ export function Sidebar() {
             }`}
             title="Settings"
           >
-            <div className="w-8 h-8 flex items-center justify-center shrink-0">
-              <Settings size={18} />
+            <div className="w-7 h-7 flex items-center justify-center shrink-0">
+              <Settings size={15} />
             </div>
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[160px] opacity-100"}`}>
               <span className="whitespace-nowrap uppercase text-xs tracking-wider pl-2">Settings</span>
             </div>
           </button>
@@ -252,7 +254,7 @@ export function Sidebar() {
             } ${themeOpen ? "bg-white/[0.06] text-white" : ""}`}
             title="Theme"
           >
-            <SunMoon size={24} />
+            <SunMoon size={18} />
           </button>
         </div>
 
@@ -285,10 +287,10 @@ export function Sidebar() {
           className="flex items-center px-2 py-1.5 rounded-lg w-full hover:bg-white/[0.06] hover:text-white transition-colors"
           title="Account"
         >
-          <div className="w-8 h-8 rounded-lg bg-slate-500/30 flex items-center justify-center shrink-0">
-            <User size={15} className="text-white" />
+          <div className="w-7 h-7 rounded-lg bg-slate-500/30 flex items-center justify-center shrink-0">
+            <User size={13} className="text-white" />
           </div>
-          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[160px] opacity-100"}`}>
             <span className="whitespace-nowrap text-slate-300 text-xs uppercase tracking-wider pl-2">Account</span>
           </div>
         </button>

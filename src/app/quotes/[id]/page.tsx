@@ -12,27 +12,29 @@ export default async function QuotePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const rfq = await prisma.rfq.findUnique({
+  const quote = await prisma.quote.findUnique({
     where: { id },
-    include: { items: { orderBy: { createdAt: "asc" } }, quote: true },
+    include: {
+      rfq: { include: { items: { orderBy: { createdAt: "asc" } } } },
+    },
   });
 
-  if (!rfq) notFound();
+  if (!quote) notFound();
 
-  const items = rfq.items.map(toDetailsPayload);
+  const items = quote.rfq.items.map(toDetailsPayload);
 
   return (
     <QuoteView
       rfq={{
-        id: rfq.id,
-        rfqNumber: rfq.rfqNumber,
-        requester: rfq.requester,
-        status: rfq.status,
+        id: quote.rfq.id,
+        rfqNumber: quote.rfq.rfqNumber,
+        requester: quote.rfq.requester,
+        status: quote.rfq.status,
       }}
       items={items}
-      backHref={`/rfq/${rfq.id}/details`}
-      hasSavedQuote={rfq.quote != null}
-      initialConfig={parseQuoteConfig(rfq.quote?.config)}
+      backHref="/quotes"
+      hasSavedQuote
+      initialConfig={parseQuoteConfig(quote.config)}
     />
   );
 }

@@ -1,4 +1,4 @@
-export type DocType = "rfq" | "po";
+export type DocType = "rfq" | "quote" | "po";
 
 export type DocRef = {
   type: DocType;

@@ -60,6 +60,8 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
+const EMPTY_DOCS: DocRef[] = [];
+
 export function usePinnedDocs(): DocRef[] {
-  return React.useSyncExternalStore(subscribe, read, () => []);
+  return React.useSyncExternalStore(subscribe, read, () => EMPTY_DOCS);
 }

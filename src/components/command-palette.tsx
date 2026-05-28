@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Search, FileText, Package } from "lucide-react";
+import { Search, FileText, ReceiptText, Package } from "lucide-react";
 import { searchDocuments } from "@/lib/actions";
 import type { DocRef } from "@/lib/docs";
 
@@ -44,9 +44,9 @@ export function CommandPalette({
     let cancelled = false;
     const t = setTimeout(async () => {
       try {
-        const { rfqs, pos } = await searchDocuments(q);
+        const { rfqs, quotes, pos } = await searchDocuments(q);
         if (!cancelled) {
-          setResults([...rfqs, ...pos]);
+          setResults([...rfqs, ...quotes, ...pos]);
           setActive(0);
         }
       } finally {
@@ -107,7 +107,7 @@ export function CommandPalette({
         <div className="max-h-80 overflow-y-auto py-1">
           {query.trim() === "" ? (
             <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-              Type an RFQ/PO number or requester name to jump straight there.
+              Type an RFQ, quote, or PO number to jump straight there.
             </p>
           ) : loading && results.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-muted-foreground">
@@ -120,7 +120,7 @@ export function CommandPalette({
           ) : (
             <ul>
               {results.map((doc, i) => {
-                const Icon = doc.type === "rfq" ? FileText : Package;
+                const Icon = doc.type === "rfq" ? FileText : doc.type === "quote" ? ReceiptText : Package;
                 return (
                   <li key={`${doc.type}-${doc.id}`}>
                     <button

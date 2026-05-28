@@ -59,6 +59,13 @@ export const updateItemSchema = z.object({
 });
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 
+export const quoteConfigSchema = z.object({
+  columns: z.array(z.string().min(1)),
+  items: z.array(z.string().min(1)),
+  markup: z.number().min(0).max(999),
+});
+export type QuoteConfig = z.infer<typeof quoteConfigSchema>;
+
 export const createPoSchema = z.object({
   rfqId: z.string().min(1),
   selectedItemIds: z.array(z.string().min(1)).min(1, "Select at least one item"),
