@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home,
   FileText,
   ReceiptText,
   Package,
@@ -12,6 +11,7 @@ import {
   Settings,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   Sun,
   Moon,
   Monitor,
@@ -20,7 +20,6 @@ import {
 import { useTheme, type Theme } from "./theme-provider";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: Home },
   { href: "/rfq", label: "RFQs", icon: FileText },
   { href: "/quotes", label: "Quotes", icon: ReceiptText },
   { href: "/po", label: "Purchase Orders", icon: Package },
@@ -62,19 +61,31 @@ export function Sidebar() {
       }`}
     >
       {/* Header */}
-      <div className="flex items-center px-3 h-16 border-b border-white/[0.06]">
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
-          <span className="whitespace-nowrap text-sm font-semibold text-white tracking-wide pl-1 pr-2">
-            Expiation
-          </span>
-        </div>
-        <button
-          onClick={toggleCollapsed}
-          className={`p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors ${
-            collapsed ? "mx-auto" : "ml-auto"
+      <div
+        className={`flex h-16 px-2 border-b border-white/[0.06] ${
+          collapsed ? "flex-col items-center justify-center gap-1" : "flex-row items-center gap-2"
+        }`}
+      >
+        <Link
+          href="/new"
+          title="New"
+          className={`flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors ${
+            collapsed ? "w-7 h-7" : "flex-1 h-9 px-3"
           }`}
         >
-          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          <Plus size={16} className="shrink-0" />
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[80px] opacity-100"}`}>
+            <span className="whitespace-nowrap text-sm pl-1.5">New</span>
+          </div>
+        </Link>
+        <button
+          onClick={toggleCollapsed}
+          className={`flex items-center justify-center shrink-0 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors ${
+            collapsed ? "w-7 h-7" : "w-9 h-9"
+          }`}
+          title={collapsed ? "Expand" : "Collapse"}
+        >
+          {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={18} />}
         </button>
       </div>
 
