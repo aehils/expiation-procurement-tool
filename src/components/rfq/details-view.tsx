@@ -296,32 +296,28 @@ export function DetailsView({
       </div>
 
       {/* Requester row (mirrors step 1 exactly) with the currency banner inline beside it */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
-        <div className="lg:col-span-7">
-          <div className="flex items-center gap-3 px-1 max-w-[70%] ml-auto">
-            <Label
-              htmlFor="requester"
-              className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
-              style={{ color: "#274579" }}
-            >
-              Requester
-            </Label>
-            <Input
-              id="requester"
-              value={rfq.requester}
-              readOnly
-              className="h-8 text-xs flex-1 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
-            />
-          </div>
-        </div>
-        <div className="lg:col-span-5 flex items-center justify-start">
-          <CurrencyBanner
-            rates={rates}
-            freshness={bannerFreshness}
-            refreshing={refreshing}
-            onRefresh={refreshBannerRates}
+      <div className="flex items-center justify-end gap-4 mb-4 px-1">
+        <div className="flex items-center gap-3">
+          <Label
+            htmlFor="requester"
+            className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+            style={{ color: "#274579" }}
+          >
+            Requester
+          </Label>
+          <Input
+            id="requester"
+            value={rfq.requester}
+            readOnly
+            className="h-8 text-xs w-64 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
           />
         </div>
+        <CurrencyBanner
+          rates={rates}
+          freshness={bannerFreshness}
+          refreshing={refreshing}
+          onRefresh={refreshBannerRates}
+        />
       </div>
 
       {rfq.purchaseOrders.length > 0 && (

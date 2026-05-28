@@ -254,26 +254,23 @@ export function QuoteView({
       </div>
 
       {/* Requester + actions row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
-        <div className="lg:col-span-7">
-          <div className="flex items-center gap-3 px-1 max-w-[70%] ml-auto">
-            <Label
-              htmlFor="requester"
-              className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
-              style={{ color: "#274579" }}
-            >
-              Requester
-            </Label>
-            <Input
-              id="requester"
-              value={rfq.requester}
-              readOnly
-              className="h-8 text-xs flex-1 bg-slate-100 border border-slate-300 cursor-default"
-            />
-          </div>
+      <div className="flex items-center justify-end gap-3 mb-6 px-1">
+        <div className="flex items-center gap-2">
+          <Label
+            htmlFor="requester"
+            className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+            style={{ color: "#274579" }}
+          >
+            Requester
+          </Label>
+          <Input
+            id="requester"
+            value={rfq.requester}
+            readOnly
+            className="h-8 text-xs w-64 bg-slate-100 border border-slate-300 cursor-default"
+          />
         </div>
-        <div className="lg:col-span-5 flex items-center justify-end gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             <Label
               htmlFor="globalMarkup"
               className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
@@ -301,10 +298,10 @@ export function QuoteView({
           </div>
           <Button
             size="sm"
-            variant="outline"
             onClick={handleSaveQuote}
             disabled={saving}
-            className="gap-1.5"
+            className="gap-1.5 text-white"
+            style={{ backgroundColor: "#276E79" }}
           >
             <Save className="h-3.5 w-3.5" />
             {saving ? "Saving…" : saved ? "Update Quote" : "Save Quote"}
@@ -320,7 +317,6 @@ export function QuoteView({
               markupFactor,
             }}
           />
-        </div>
       </div>
 
       {/* Section header */}
