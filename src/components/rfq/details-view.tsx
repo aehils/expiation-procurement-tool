@@ -36,6 +36,7 @@ type Rfq = {
   requester: string;
   status: string;
   createdAt: string;
+  purchaseOrders: { id: string; poNumber: string; status: string }[];
 };
 
 const DETAIL_KEYS: (keyof DetailsItemPayload)[] = [
@@ -214,7 +215,15 @@ export function DetailsView({
 
   const anyComplete = items.some(isComplete);
 
+  const alreadyQuoted = rfq.status === "quoted" || rfq.status === "ordered";
+
   async function handleSubmit() {
+    // Once an RFQ has been quoted (or ordered), the button just reopens the
+    // quote page for export — no need to re-run the status transition.
+    if (alreadyQuoted) {
+      router.push(`/rfq/${rfq.id}/quote`);
+      return;
+    }
     if (!anyComplete) {
       setShowCompleteWarning(true);
       return;
@@ -314,6 +323,27 @@ export function DetailsView({
           />
         </div>
       </div>
+
+      {rfq.purchaseOrders.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
+          <span className="text-xs text-emerald-800">
+            {rfq.purchaseOrders.length === 1
+              ? "A purchase order has been created for this quote."
+              : `${rfq.purchaseOrders.length} purchase orders have been created for this quote.`}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {rfq.purchaseOrders.map((po) => (
+              <Link
+                key={po.id}
+                href={`/po/${po.id}`}
+                className="inline-flex items-center rounded border border-emerald-300 bg-white px-2 py-0.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+              >
+                View PO #{po.poNumber}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <h3 className="mb-4 pl-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
         Items
@@ -429,24 +459,22 @@ export function DetailsView({
         })}
       </Accordion>
 
-      {rfq.status !== "quoted" && rfq.status !== "ordered" && (
-        <div className="mt-6 flex items-center justify-end gap-3">
-          {showCompleteWarning && !anyComplete && (
-            <p className="text-xs text-orange-600 font-medium">
-              Mark at least one item as complete before proceeding.
-            </p>
-          )}
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting}
-            size="sm"
-            style={{ backgroundColor: "#274579" }}
-            className="text-white hover:opacity-90"
-          >
-            {submitting ? "Submitting…" : "Proceed to Quote"}
-          </Button>
-        </div>
-      )}
+      <div className="mt-6 flex items-center justify-end gap-3">
+        {showCompleteWarning && !anyComplete && (
+          <p className="text-xs text-orange-600 font-medium">
+            Mark at least one item as complete before proceeding.
+          </p>
+        )}
+        <Button
+          onClick={handleSubmit}
+          disabled={submitting}
+          size="sm"
+          style={{ backgroundColor: "#274579" }}
+          className="text-white hover:opacity-90"
+        >
+          {submitting ? "Submitting…" : "Proceed to Quote"}
+        </Button>
+      </div>
     </div>
   );
 }
