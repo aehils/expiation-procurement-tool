@@ -26,6 +26,14 @@ import { getRecentDocuments } from "@/lib/actions";
 import type { DocRef } from "@/lib/docs";
 import { usePinnedDocs, togglePin, isPinned } from "@/lib/pinned-docs";
 
+type RecentDocs = { rfqs: DocRef[]; quotes: DocRef[]; pos: DocRef[] };
+
+const SECTIONS = [
+  { key: "rfqs", href: "/rfq", label: "RFQs", icon: FileText },
+  { key: "quotes", href: "/quotes", label: "Quotes", icon: ReceiptText },
+  { key: "pos", href: "/po", label: "Purchase Orders", icon: Package },
+] as const;
+
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/rfq", label: "RFQs", icon: FileText },

@@ -79,16 +79,6 @@ export const updatePoItemQuantitySchema = z.object({
   quantity: z.number().positive("Quantity must be > 0"),
 });
 
-// The light "encoding" of a saved quote: which columns are shown, which item
-// rows are included, and the global markup percentage. No item data is stored
-// here — the live RfqItem rows remain the source of truth.
-export const quoteConfigSchema = z.object({
-  columns: z.array(z.string().min(1)),
-  items: z.array(z.string().min(1)),
-  markup: z.number().min(0).max(999),
-});
-export type QuoteConfig = z.infer<typeof quoteConfigSchema>;
-
 // Used by submitRfq to confirm every required detail field is filled per item.
 export function findMissingDetailFields(
   item: Record<string, unknown>,
