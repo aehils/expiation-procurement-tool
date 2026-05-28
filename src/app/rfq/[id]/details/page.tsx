@@ -15,7 +15,13 @@ export default async function RfqDetailsPage({
   const [rfq, persistedRates] = await Promise.all([
     prisma.rfq.findUnique({
       where: { id },
-      include: { items: { orderBy: { createdAt: "asc" } } },
+      include: {
+        items: { orderBy: { createdAt: "asc" } },
+        purchaseOrders: {
+          orderBy: { createdAt: "asc" },
+          select: { id: true, poNumber: true, status: true },
+        },
+      },
     }),
     readPersistedBannerRates(),
   ]);
@@ -59,6 +65,7 @@ export default async function RfqDetailsPage({
         requester: rfq.requester,
         status: rfq.status,
         createdAt: rfq.createdAt.toISOString(),
+        purchaseOrders: rfq.purchaseOrders,
       }}
       initialItems={items}
       initialBannerRates={persistedRates}

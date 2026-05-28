@@ -114,7 +114,7 @@ export function Sidebar() {
             title="Settings"
           >
             <div className="w-8 h-8 flex items-center justify-center shrink-0">
-              <Settings size={18} />
+              <Settings size={21} />
             </div>
             <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[120px] opacity-100"}`}>
               <span className="whitespace-nowrap uppercase text-xs tracking-wider pl-2">Settings</span>

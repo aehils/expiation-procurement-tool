@@ -5,8 +5,8 @@ import { QuoteList, type QuoteRow } from "@/components/quotes/quote-list";
 
 export const dynamic = "force-dynamic";
 
-export default async function QuotesListPage() {
-  const quotes = await prisma.quote.findMany({
+function loadQuotes() {
+  return prisma.quote.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       rfq: {
@@ -17,6 +17,17 @@ export default async function QuotesListPage() {
       },
     },
   });
+}
+
+export default async function QuotesListPage() {
+  // Tolerate the Quote table not existing yet (migration not applied) so the
+  // tab shows the empty state instead of crashing before the migration runs.
+  let quotes: Awaited<ReturnType<typeof loadQuotes>> = [];
+  try {
+    quotes = await loadQuotes();
+  } catch {
+    quotes = [];
+  }
 
   const rows: QuoteRow[] = quotes.map((q) => {
     const config = parseQuoteConfig(q.config);
