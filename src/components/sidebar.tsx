@@ -73,9 +73,9 @@ export function Sidebar() {
             collapsed ? "w-7 h-7" : "flex-1 h-9 px-3"
           }`}
         >
-          <Plus size={16} className="shrink-0" />
-          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[80px] opacity-100"}`}>
-            <span className="whitespace-nowrap text-sm pl-1.5">New</span>
+          <Plus size={16} strokeWidth={3} className="shrink-0" />
+          <div className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-[80px] opacity-100"}`}>
+            <span className="whitespace-nowrap text-sm font-semibold uppercase pl-3">New</span>
           </div>
         </Link>
         <button
@@ -85,7 +85,7 @@ export function Sidebar() {
           }`}
           title={collapsed ? "Expand" : "Collapse"}
         >
-          {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={18} />}
+          {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={22} />}
         </button>
       </div>
 
