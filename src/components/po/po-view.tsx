@@ -16,6 +16,7 @@ import {
   updatePoItemQuantity,
   updatePoNotes,
 } from "@/lib/actions";
+import { quoteNumberFromRfq } from "@/lib/docs";
 import { formatNaira } from "@/lib/export/types";
 
 type PoItemData = {
@@ -83,7 +84,7 @@ export function PoView({ po }: { po: PoData }) {
   const router = useRouter();
   const isDraft = po.status === "draft";
   const isIssued = po.status === "issued";
-  const quoteNumber = po.rfq.rfqNumber.replace("RFQ-", "QU-");
+  const quoteNumber = quoteNumberFromRfq(po.rfq.rfqNumber);
 
   const [quantities, setQuantities] = React.useState<Record<string, string>>(
     () =>

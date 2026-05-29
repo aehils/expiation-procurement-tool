@@ -47,7 +47,7 @@ export default async function EditRfqPage({
 
   return (
     <EntryView
-      draftId={rfq.id}
+      rfqId={rfq.id}
       rfqNumber={rfq.rfqNumber}
       initialRequester={rfq.requester}
       initialItems={initialItems}

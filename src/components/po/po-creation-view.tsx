@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createPurchaseOrder } from "@/lib/actions";
+import { quoteNumberFromRfq } from "@/lib/docs";
 import { formatNaira } from "@/lib/export/types";
 
 type RfqItemForPo = {
@@ -77,7 +78,7 @@ export function PoCreationView({
   items: RfqItemForPo[];
 }) {
   const router = useRouter();
-  const quoteNumber = rfq.rfqNumber.replace("RFQ-", "QU-");
+  const quoteNumber = quoteNumberFromRfq(rfq.rfqNumber);
 
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [quantities, setQuantities] = React.useState<Record<string, string>>(
