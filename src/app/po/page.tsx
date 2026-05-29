@@ -3,9 +3,9 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 
 const STATUS_STYLE: Record<string, string> = {
-  draft: "bg-amber-100 text-amber-700",
-  issued: "bg-emerald-100 text-emerald-700",
-  closed: "bg-muted text-muted-foreground",
+  draft: "bg-[#274579]/10 text-[#274579]",
+  issued: "bg-[#274579]/10 text-[#274579]",
+  closed: "bg-[#274579]/10 text-[#274579]",
 };
 
 const getPos = unstable_cache(
@@ -56,7 +56,7 @@ export default async function PoListPage() {
                 </span>
                 <span
                   className={`text-xs font-medium px-2 py-1 rounded uppercase ${
-                    STATUS_STYLE[po.status] ?? "bg-muted text-muted-foreground"
+                    STATUS_STYLE[po.status] ?? "bg-[#274579]/10 text-[#274579]"
                   }`}
                 >
                   {po.status}

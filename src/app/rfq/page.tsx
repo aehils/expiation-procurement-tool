@@ -10,7 +10,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   quoted: "bg-[#274579]/10 text-[#274579]",
-  ordered: "bg-emerald-100 text-emerald-700",
+  ordered: "bg-[#274579]/10 text-[#274579]",
 };
 
 const getRfqs = unstable_cache(
@@ -73,7 +73,7 @@ export default async function RfqListPage() {
                 </span>
                 <span
                   className={`text-xs font-medium px-2 py-1 rounded uppercase ${
-                    STATUS_STYLE[rfq.status] ?? "bg-muted text-muted-foreground"
+                    STATUS_STYLE[rfq.status] ?? "bg-[#274579]/10 text-[#274579]"
                   }`}
                 >
                   {STATUS_LABEL[rfq.status] ?? rfq.status}

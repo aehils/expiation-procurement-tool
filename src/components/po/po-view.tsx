@@ -74,9 +74,9 @@ function CopyIcon() {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: "bg-amber-100 text-amber-700",
-  issued: "bg-emerald-100 text-emerald-700",
-  closed: "bg-slate-200 text-slate-600",
+  draft: "bg-[#274579]/10 text-[#274579]",
+  issued: "bg-[#274579]/10 text-[#274579]",
+  closed: "bg-[#274579]/10 text-[#274579]",
 };
 
 export function PoView({ po }: { po: PoData }) {

@@ -66,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <CommandPaletteContext.Provider value={open}>
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-auto bg-background rounded-l-md shadow-[-8px_0_24px_-4px_rgba(0,0,0,0.18)] relative z-10">
+        <main className="flex-1 overflow-auto bg-background rounded-l-md shadow-[-8px_0_24px_-4px_rgba(0,0,0,0.18)] relative z-10 pt-3">
           {navigating ? (
             <div className="flex items-center justify-center h-full min-h-screen">
               <Spinner />

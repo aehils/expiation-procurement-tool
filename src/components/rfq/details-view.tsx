@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ChevronLeft, RefreshCw } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -246,53 +246,55 @@ export function DetailsView({
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
       {/* Top area — matches step 1 (entry view) so moving between pages feels static */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center justify-between gap-2 mb-6">
         <Link
           href="/"
-          className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
+          className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ChevronLeft className="h-4 w-4" />
           Back
         </Link>
-        <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
+        <h2 className="text-3xl font-semibold text-slate-800 tracking-tight">
           Request for Quote
         </h2>
-        <button
-          type="button"
-          onClick={copyRfqId}
-          title="Copy RFQ ID"
-          className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
-        >
-          <span>#{rfq.rfqNumber}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="11"
-            height="11"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-slate-400 group-hover:text-slate-600"
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={copyRfqId}
+            title="Copy RFQ ID"
+            className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
           >
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-        </button>
-        {rfq.status === "ordered" ? (
-          <span className="px-1.5 py-px text-[10px] font-medium bg-emerald-100 text-emerald-700 rounded uppercase tracking-wide">
-            Ordered
-          </span>
-        ) : rfq.status === "quoted" ? (
-          <span className="px-1.5 py-px text-[10px] font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
-            Quoted
-          </span>
-        ) : (
-          <span className="px-1.5 py-px text-[10px] font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
-            Draft
-          </span>
-        )}
+            <span>#{rfq.rfqNumber}</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-slate-400 group-hover:text-slate-600"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
+          {rfq.status === "ordered" ? (
+            <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
+              Ordered
+            </span>
+          ) : rfq.status === "quoted" ? (
+            <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
+              Quoted
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
+              Draft
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Requester row (mirrors step 1 exactly) with the currency banner inline beside it */}
@@ -341,7 +343,7 @@ export function DetailsView({
         </div>
       )}
 
-      <h3 className="mb-4 pl-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      <h3 className="mt-6 mb-4 pl-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
         Items
       </h3>
 
@@ -363,7 +365,7 @@ export function DetailsView({
                   <div className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 w-5 text-center">
                     {index + 1}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 ml-3">
                     <div className="font-semibold text-sm text-slate-800 truncate">
                       {item.itemName}
                     </div>
