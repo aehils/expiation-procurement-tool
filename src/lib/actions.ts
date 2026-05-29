@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { customAlphabet } from "nanoid";
-import { prisma } from "./db";
+import { prisma, withDbRetry } from "./db";
 import { type DocRef, rfqHref } from "./docs";
 import { BANNER_CURRENCIES } from "./constants";
 import { fetchRate } from "./rates";
@@ -47,23 +47,25 @@ function isUniqueViolation(err: unknown): boolean {
 // the moment they open the entry view. finalizeDraftRfq later fills in the
 // requester + items and flips the status to "details".
 export async function createDraftRfq(): Promise<{ id: string; rfqNumber: string }> {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const rfqNumber = generateDocNumber("RFQ");
-    try {
-      const created = await prisma.rfq.create({
-        data: {
-          rfqNumber,
-          requester: "",
-          status: "draft",
-        },
-      });
-      return { id: created.id, rfqNumber: created.rfqNumber };
-    } catch (err) {
-      if (isUniqueViolation(err)) continue;
-      throw err;
+  return withDbRetry(async () => {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const rfqNumber = generateDocNumber("RFQ");
+      try {
+        const created = await prisma.rfq.create({
+          data: {
+            rfqNumber,
+            requester: "",
+            status: "draft",
+          },
+        });
+        return { id: created.id, rfqNumber: created.rfqNumber };
+      } catch (err) {
+        if (isUniqueViolation(err)) continue;
+        throw err;
+      }
     }
-  }
-  throw new Error("Failed to allocate a unique RFQ number after 5 attempts");
+    throw new Error("Failed to allocate a unique RFQ number after 5 attempts");
+  });
 }
 
 export async function finalizeDraftRfq(
@@ -72,32 +74,34 @@ export async function finalizeDraftRfq(
 ): Promise<{ id: string; rfqNumber: string }> {
   const parsed = createRfqSchema.parse(input);
 
-  const existing = await prisma.rfq.findUnique({ where: { id: rfqId } });
-  if (!existing) throw new Error("Draft RFQ not found");
-  if (existing.status !== "draft") {
-    throw new Error("RFQ has already been finalized");
-  }
+  const updated = await withDbRetry(async () => {
+    const existing = await prisma.rfq.findUnique({ where: { id: rfqId } });
+    if (!existing) throw new Error("Draft RFQ not found");
+    if (existing.status !== "draft") {
+      throw new Error("RFQ has already been finalized");
+    }
 
-  const updated = await prisma.rfq.update({
-    where: { id: rfqId },
-    data: {
-      requester: parsed.requester,
-      status: "details",
-      items: {
-        create: parsed.items.map((item) => ({
-          itemCategory: item.itemCategory,
-          department: item.department,
-          itemName: item.itemName,
-          itemDescription: item.itemDescription || null,
-          requestQuantity: item.requestQuantity,
-          size: item.size || null,
-          specification: item.specification || null,
-          brand: item.brand || null,
-          model: item.model || null,
-          additionalNotes: item.additionalNotes || null,
-        })),
+    return prisma.rfq.update({
+      where: { id: rfqId },
+      data: {
+        requester: parsed.requester,
+        status: "details",
+        items: {
+          create: parsed.items.map((item) => ({
+            itemCategory: item.itemCategory,
+            department: item.department,
+            itemName: item.itemName,
+            itemDescription: item.itemDescription || null,
+            requestQuantity: item.requestQuantity,
+            size: item.size || null,
+            specification: item.specification || null,
+            brand: item.brand || null,
+            model: item.model || null,
+            additionalNotes: item.additionalNotes || null,
+          })),
+        },
       },
-    },
+    });
   });
   revalidateTag("rfqs");
   revalidatePath("/");
