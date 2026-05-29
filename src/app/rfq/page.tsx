@@ -23,7 +23,7 @@ export default async function RfqListPage() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="text-3xl font-semibold text-slate-800 tracking-tight">
           Requests for Quotation
         </h1>
         <Link
