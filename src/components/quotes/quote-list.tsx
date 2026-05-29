@@ -3,11 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { MoreVertical, ShoppingCart, Trash2 } from "lucide-react";
-import { ExportMenu } from "@/components/rfq/export-menu";
+import { deleteQuote } from "@/lib/actions";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { deleteQuote, getQuoteExportData } from "@/lib/actions";
 
 export type QuoteRow = {
   id: string;
@@ -17,22 +16,22 @@ export type QuoteRow = {
   requester: string;
   selectedItemIds: string[];
   hasPo: boolean;
+  createdAt: Date | string;
 };
 
+function formatDate(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
-  const [menuOpenId, setMenuOpenId] = React.useState<string | null>(null);
+  const router = useRouter();
   const [pendingDelete, setPendingDelete] = React.useState<QuoteRow | null>(null);
   const [deleting, setDeleting] = React.useState(false);
-  const router = useRouter();
-
-  React.useEffect(() => {
-    if (!menuOpenId) return;
-    function onDocClick() {
-      setMenuOpenId(null);
-    }
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, [menuOpenId]);
 
   async function handleDelete() {
     if (!pendingDelete) return;
@@ -50,74 +49,82 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
     }
   }
 
+  if (quotes.length === 0) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <p>No quotes yet.</p>
+        <p className="text-sm mt-1">
+          Open an RFQ&apos;s quote view, configure it, then save it to see it here.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
-      <ul className="rounded-lg overflow-hidden border border-border border-l-[3px] border-l-slate-400 dark:border-l-slate-500 bg-card shadow-sm divide-y divide-border">
-        {quotes.map((q) => (
-          <li
-            key={q.id}
-            className="flex items-center justify-between pl-4 pr-5 py-3.5 hover:bg-accent/50 transition-colors"
-          >
-            <Link href={`/quotes/${q.id}`} className="min-w-0 flex-1">
-              <span className="font-medium text-card-foreground text-sm">
-                {q.quoteNumber}
+      <div>
+        {/* Column headers */}
+        <div className="flex items-center gap-3 mb-1.5">
+          <span className="w-5 shrink-0" />
+          <div className="flex-1 flex items-center pl-4 pr-0">
+            <span className="flex-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+              Requester
+            </span>
+            <span className="w-32 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+              Code
+            </span>
+            <span className="w-32 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+              RFQ
+            </span>
+            <span className="w-28 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+              Date
+            </span>
+            <span className="w-28 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+              Status
+            </span>
+            <span className="w-10 shrink-0" />
+          </div>
+        </div>
+
+        <ol className="space-y-1.5">
+          {quotes.map((q, i) => (
+            <li key={q.id} className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground/50 w-5 text-right shrink-0 select-none tabular-nums">
+                {i + 1}
               </span>
-            </Link>
-
-            <div className="flex items-center gap-2 pl-3">
-              <ExportMenu fetchData={() => getQuoteExportData(q.id)} />
-
-              <div className="relative">
-                <button
-                  type="button"
-                  aria-label="Quote actions"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpenId(menuOpenId === q.id ? null : q.id);
-                  }}
-                  className="w-8 h-8 flex items-center justify-center rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              <div className="flex-1 flex items-center bg-card border border-border rounded-md overflow-hidden hover:bg-accent/30 transition-colors">
+                <Link
+                  href={`/quotes/${q.id}`}
+                  className="flex-1 flex items-center pl-4 pr-0 py-3"
                 >
-                  <MoreVertical className="h-4 w-4" />
+                  <span className="flex-1 text-sm text-card-foreground truncate pr-4">
+                    {q.requester}
+                  </span>
+                  <span className="w-32 text-sm font-medium text-card-foreground shrink-0">
+                    {q.quoteNumber}
+                  </span>
+                  <span className="w-32 text-sm text-muted-foreground shrink-0">
+                    {q.rfqNumber}
+                  </span>
+                  <span className="w-28 text-sm text-muted-foreground shrink-0">
+                    {formatDate(q.createdAt)}
+                  </span>
+                  <span className="w-28 text-xs font-medium uppercase text-[#274579] shrink-0">
+                    {q.hasPo ? "PO Created" : "Quoted"}
+                  </span>
+                </Link>
+                <button
+                  onClick={() => setPendingDelete(q)}
+                  className="flex items-center justify-center w-10 h-full px-0 py-3 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/5 transition-colors border-l border-border shrink-0"
+                  aria-label={`Delete ${q.quoteNumber}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
-
-                {menuOpenId === q.id && (
-                  <div
-                    className="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-md shadow-lg py-1 min-w-[200px]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {q.hasPo ? (
-                      <div className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-400 cursor-default">
-                        <ShoppingCart className="h-3.5 w-3.5" />
-                        Purchase order created
-                      </div>
-                    ) : (
-                      <Link
-                        href={`/po/new?rfqId=${q.rfqId}`}
-                        className="flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
-                      >
-                        <ShoppingCart className="h-3.5 w-3.5" />
-                        Create Purchase Order
-                      </Link>
-                    )}
-                    <div className="my-1 border-t border-slate-100" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpenId(null);
-                        setPendingDelete(q);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete Quote
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ol>
+      </div>
 
       <ConfirmDialog
         open={pendingDelete != null}
