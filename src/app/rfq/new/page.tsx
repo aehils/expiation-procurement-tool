@@ -1,14 +1,15 @@
 import { EntryView } from "@/components/rfq/entry-view";
-import { createDraftRfq } from "@/lib/actions";
+import { previewRfqNumber } from "@/lib/actions";
 
 export const metadata = {
   title: "New RFQ • Expiation",
 };
 
-// Render as dynamic so each visit reserves a fresh draft RFQ number.
+// Render as dynamic so each visit reserves a fresh candidate RFQ number.
+// No DB row is created here — createRfq commits on submit.
 export const dynamic = "force-dynamic";
 
 export default async function NewRfqPage() {
-  const draft = await createDraftRfq();
-  return <EntryView draftId={draft.id} rfqNumber={draft.rfqNumber} />;
+  const { rfqNumber } = await previewRfqNumber();
+  return <EntryView rfqNumber={rfqNumber} />;
 }

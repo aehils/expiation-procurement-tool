@@ -3,7 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { customAlphabet } from "nanoid";
 import { prisma, withDbRetry } from "./db";
-import { type DocRef, rfqHref } from "./docs";
+import { type DocRef, rfqHref, hashDateToBase32, quoteNumberFromRfq } from "./docs";
 import { BANNER_CURRENCIES } from "./constants";
 import { fetchRate } from "./rates";
 import {
@@ -26,12 +26,9 @@ import type { ExportQuoteData, ColKey } from "./export/types";
 
 const docSuffix = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 4);
 
+// 10-char doc number: 2-char type prefix + 4-char date hash + 4-char random.
 function generateDocNumber(prefix: string): string {
-  const today = new Date();
-  const yyyy = today.getUTCFullYear();
-  const mm = String(today.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(today.getUTCDate()).padStart(2, "0");
-  return `${prefix}-${yyyy}${mm}${dd}-${docSuffix()}`;
+  return `${prefix}${hashDateToBase32(new Date())}${docSuffix()}`;
 }
 
 function isUniqueViolation(err: unknown): boolean {
@@ -43,22 +40,50 @@ function isUniqueViolation(err: unknown): boolean {
   );
 }
 
-// Creates an empty draft RFQ so we can show the user the allocated rfqNumber
-// the moment they open the entry view. finalizeDraftRfq later fills in the
-// requester + items and flips the status to "details".
-export async function createDraftRfq(): Promise<{ id: string; rfqNumber: string }> {
-  return withDbRetry(async () => {
+// Returns a candidate rfqNumber for the entry view to display while the user
+// fills in the form. Pure: no DB row is created, so abandoned form sessions
+// don't leave orphan rows behind. The actual INSERT happens in createRfq when
+// the user submits.
+export async function previewRfqNumber(): Promise<{ rfqNumber: string }> {
+  return { rfqNumber: generateDocNumber("RQ") };
+}
+
+// Persists the entry form to a new RFQ row in a single INSERT. The candidate
+// rfqNumber from previewRfqNumber is reused if available, falling back to a
+// fresh one on the rare (~1-in-1M same-day) unique-violation.
+export async function createRfq(
+  input: CreateRfqInput & { rfqNumber?: string },
+): Promise<{ id: string; rfqNumber: string }> {
+  const parsed = createRfqSchema.parse(input);
+
+  const created = await withDbRetry(async () => {
     for (let attempt = 0; attempt < 5; attempt++) {
-      const rfqNumber = generateDocNumber("RFQ");
+      const rfqNumber =
+        attempt === 0 && input.rfqNumber
+          ? input.rfqNumber
+          : generateDocNumber("RQ");
       try {
-        const created = await prisma.rfq.create({
+        return await prisma.rfq.create({
           data: {
             rfqNumber,
-            requester: "",
-            status: "draft",
+            requester: parsed.requester,
+            status: "details",
+            items: {
+              create: parsed.items.map((item) => ({
+                itemCategory: item.itemCategory,
+                department: item.department,
+                itemName: item.itemName,
+                itemDescription: item.itemDescription || null,
+                requestQuantity: item.requestQuantity,
+                size: item.size || null,
+                specification: item.specification || null,
+                brand: item.brand || null,
+                model: item.model || null,
+                additionalNotes: item.additionalNotes || null,
+              })),
+            },
           },
         });
-        return { id: created.id, rfqNumber: created.rfqNumber };
       } catch (err) {
         if (isUniqueViolation(err)) continue;
         throw err;
@@ -66,46 +91,10 @@ export async function createDraftRfq(): Promise<{ id: string; rfqNumber: string 
     }
     throw new Error("Failed to allocate a unique RFQ number after 5 attempts");
   });
-}
 
-export async function finalizeDraftRfq(
-  rfqId: string,
-  input: CreateRfqInput,
-): Promise<{ id: string; rfqNumber: string }> {
-  const parsed = createRfqSchema.parse(input);
-
-  const updated = await withDbRetry(async () => {
-    const existing = await prisma.rfq.findUnique({ where: { id: rfqId } });
-    if (!existing) throw new Error("Draft RFQ not found");
-    if (existing.status !== "draft") {
-      throw new Error("RFQ has already been finalized");
-    }
-
-    return prisma.rfq.update({
-      where: { id: rfqId },
-      data: {
-        requester: parsed.requester,
-        status: "details",
-        items: {
-          create: parsed.items.map((item) => ({
-            itemCategory: item.itemCategory,
-            department: item.department,
-            itemName: item.itemName,
-            itemDescription: item.itemDescription || null,
-            requestQuantity: item.requestQuantity,
-            size: item.size || null,
-            specification: item.specification || null,
-            brand: item.brand || null,
-            model: item.model || null,
-            additionalNotes: item.additionalNotes || null,
-          })),
-        },
-      },
-    });
-  });
   revalidateTag("rfqs");
   revalidatePath("/");
-  return { id: updated.id, rfqNumber: updated.rfqNumber };
+  return { id: created.id, rfqNumber: created.rfqNumber };
 }
 
 // Called when a user navigates Back from the details view to edit the first-
@@ -281,7 +270,7 @@ export async function proceedToQuote(rfqId: string): Promise<void> {
   // and leaves an already-saved quote untouched. Tolerate the Quote table not
   // existing yet (migration not applied), matching the quote pages' guard.
   try {
-    const quoteNumber = rfq.rfqNumber.replace(/^RFQ-/, "QU-");
+    const quoteNumber = quoteNumberFromRfq(rfq.rfqNumber);
     const config = encodeQuoteConfig({
       columns: COLUMNS.filter((c) => c.defaultOn).map((c) => c.key),
       items: rfq.items.map((i) => i.id),
@@ -529,7 +518,6 @@ export async function getRecentDocuments(): Promise<{
 }> {
   const [rfqs, quotes, pos] = await Promise.all([
     prisma.rfq.findMany({
-      where: { status: { not: "draft" } },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
@@ -559,7 +547,6 @@ export async function searchDocuments(query: string): Promise<{
   const [rfqs, quotes, pos] = await Promise.all([
     prisma.rfq.findMany({
       where: {
-        status: { not: "draft" },
         OR: [{ rfqNumber: { contains: upper } }, { requester: { contains: q } }],
       },
       orderBy: { createdAt: "desc" },
@@ -592,7 +579,7 @@ export async function saveQuote(
   });
   if (!rfq) throw new Error("RFQ not found");
 
-  const quoteNumber = rfq.rfqNumber.replace(/^RFQ-/, "QU-");
+  const quoteNumber = quoteNumberFromRfq(rfq.rfqNumber);
   const encoded = encodeQuoteConfig(parsed);
 
   const quote = await prisma.quote.upsert({

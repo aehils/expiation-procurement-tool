@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { quoteNumberFromRfq } from "@/lib/docs";
 
 type QuoteOption = {
   id: string;
@@ -60,7 +61,7 @@ export function QuoteSelectDialog({
           ) : (
             <ul className="divide-y divide-slate-100">
               {quotes.map((q) => {
-                const quoteNumber = q.rfqNumber.replace("RFQ-", "QU-");
+                const quoteNumber = quoteNumberFromRfq(q.rfqNumber);
                 return (
                   <li key={q.id}>
                     <button

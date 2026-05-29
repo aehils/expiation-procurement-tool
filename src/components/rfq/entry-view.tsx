@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CATEGORIES, DEPARTMENTS, categoryLabel, departmentLabel } from "@/lib/constants";
-import { finalizeDraftRfq, updateRfqEntryData } from "@/lib/actions";
+import { createRfq, updateRfqEntryData } from "@/lib/actions";
 import type { EntryItem } from "@/lib/schemas";
 
 // `id` is only present on items already persisted to the DB (edit mode). New
@@ -40,8 +40,10 @@ const emptyForm: EntryItem = {
 };
 
 type EntryViewProps = {
-  draftId: string;
   rfqNumber: string;
+  // Required in edit mode: the persisted RFQ's id. Absent in new mode — no
+  // row exists until createRfq runs on submit.
+  rfqId?: string;
   // When present, the view operates in edit mode: it pre-fills requester and
   // items, and "Proceed" updates the existing RFQ instead of creating one.
   initialRequester?: string;
@@ -53,8 +55,8 @@ type EntryViewProps = {
 };
 
 export function EntryView({
-  draftId,
   rfqNumber,
+  rfqId,
   initialRequester,
   initialItems,
   mode = "new",
@@ -212,7 +214,8 @@ export function EntryView({
     setSubmitting(true);
     try {
       if (mode === "edit") {
-        const { id } = await updateRfqEntryData(draftId, {
+        if (!rfqId) throw new Error("rfqId is required in edit mode");
+        const { id } = await updateRfqEntryData(rfqId, {
           requester: requester.trim(),
           items: items.map((it) => {
             const { tempId, ...rest } = it;
@@ -222,7 +225,8 @@ export function EntryView({
         });
         router.push(`/rfq/${id}/details`);
       } else {
-        const { id } = await finalizeDraftRfq(draftId, {
+        const { id } = await createRfq({
+          rfqNumber,
           requester: requester.trim(),
           items: items.map((it) => {
             const { tempId, id: _existingId, ...rest } = it;
@@ -442,7 +446,7 @@ export function EntryView({
               <Button
                 type="submit"
                 size="sm"
-                style={{ backgroundColor: "#4a6aa5" }}
+                style={{ backgroundColor: "#276E79" }}
                 className="flex-1 hover:opacity-90 text-white"
               >
                 {editingItemId || editingTempId ? "Update Item" : "Add Item"}

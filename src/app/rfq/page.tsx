@@ -16,7 +16,6 @@ const STATUS_STYLE: Record<string, string> = {
 const getRfqs = unstable_cache(
   async () => {
     return prisma.rfq.findMany({
-      where: { status: { not: "draft" } },
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { items: true } } },
     });

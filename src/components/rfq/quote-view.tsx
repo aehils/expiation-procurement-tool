@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import type { DetailsItemPayload } from "./item-detail-form";
 import { ExportMenu } from "./export-menu";
 import { saveQuote } from "@/lib/actions";
+import { quoteNumberFromRfq } from "@/lib/docs";
 import type { QuoteConfig } from "@/lib/schemas";
 import {
   COLUMNS,
@@ -106,7 +107,7 @@ export function QuoteView({
   hasSavedQuote?: boolean;
   initialConfig?: QuoteConfig | null;
 }) {
-  const quoteNumber = rfq.rfqNumber.replace("RFQ-", "QU-");
+  const quoteNumber = quoteNumberFromRfq(rfq.rfqNumber);
 
   const [selectedItems, setSelectedItems] = React.useState<Set<string>>(() => {
     const itemIds = new Set(items.map((i) => i.id));
