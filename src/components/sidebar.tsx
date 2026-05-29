@@ -146,15 +146,17 @@ export function Sidebar() {
             return (
               <div key={section.key}>
                 <div
-                  className={`flex items-center rounded-lg text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-[#497DE2]/20 text-slate-100"
-                      : "hover:bg-white/[0.06] hover:text-white"
+                  className={`flex items-center rounded-lg text-sm font-medium ${
+                    active ? "bg-[#497DE2]/20 text-slate-100" : ""
                   }`}
                 >
                   <Link
                     href={section.href}
-                    className="flex items-center flex-1 min-w-0 px-3 py-2.5"
+                    className={`flex items-center flex-1 min-w-0 px-3 py-2.5 transition-colors ${
+                      active
+                        ? ""
+                        : "hover:text-blue-300 hover:[text-shadow:0.3px_0_0_currentColor,-0.3px_0_0_currentColor]"
+                    }`}
                     title={section.label}
                   >
                     <section.icon size={20} className="shrink-0" />
