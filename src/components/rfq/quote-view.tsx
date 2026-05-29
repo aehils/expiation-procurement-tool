@@ -243,13 +243,7 @@ export function QuoteView({
             <span>#{quoteNumber}</span>
             <CopyIcon />
           </button>
-          <span
-            className={`px-2 py-0.5 text-xs font-medium rounded uppercase tracking-wide ${
-              saved
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-slate-200 text-slate-600"
-            }`}
-          >
+          <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
             {saved ? "Saved" : "Draft"}
           </span>
         </div>

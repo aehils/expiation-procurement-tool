@@ -281,7 +281,7 @@ export function EntryView({
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
           </button>
-          <span className="px-2 py-0.5 text-xs font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+          <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
             Draft
           </span>
         </div>

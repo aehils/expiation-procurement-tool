@@ -282,7 +282,7 @@ export function DetailsView({
             </svg>
           </button>
           {rfq.status === "ordered" ? (
-            <span className="px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded uppercase tracking-wide">
+            <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
               Ordered
             </span>
           ) : rfq.status === "quoted" ? (
@@ -290,7 +290,7 @@ export function DetailsView({
               Quoted
             </span>
           ) : (
-            <span className="px-2 py-0.5 text-xs font-medium bg-slate-200 text-slate-600 rounded uppercase tracking-wide">
+            <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
               Draft
             </span>
           )}
