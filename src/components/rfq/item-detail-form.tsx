@@ -486,13 +486,19 @@ export function ItemDetailForm({
             onBlur={handleOgPriceBlur}
           />
         </Field>
-        <Field label="Naira Unit Price (₦)" required>
-          <CurrencyInput
-            className="h-8 text-xs"
-            value={draft.nairaUnitPrice}
-            onChange={(e) => setField("nairaUnitPrice", e.target.value)}
-            onBlur={handleNairaUnitBlur}
-          />
+        <Field label="Naira Unit Price">
+          <div className="relative">
+            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500">
+              ₦
+            </span>
+            <CurrencyInput
+              className="h-8 text-xs pl-6 placeholder:text-slate-300 placeholder:italic"
+              value={draft.nairaUnitPrice}
+              onChange={(e) => setField("nairaUnitPrice", e.target.value)}
+              onBlur={handleNairaUnitBlur}
+              placeholder="Auto"
+            />
+          </div>
         </Field>
 
         {overridden && (
@@ -666,12 +672,14 @@ function Field({
   label,
   full,
   required,
+  hint,
   className,
   children,
 }: {
   label: string;
   full?: boolean;
   required?: boolean;
+  hint?: string;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -682,8 +690,12 @@ function Field({
     <div className={classes}>
       <Label className="mb-1 block text-xs">
         {label}
-        {required && (
-          <span className="text-slate-400 font-normal"> (Required)</span>
+        {hint ? (
+          <span className="italic text-slate-400 font-normal"> {hint}</span>
+        ) : (
+          required && (
+            <span className="text-slate-400 font-normal"> (Required)</span>
+          )
         )}
       </Label>
       {children}
