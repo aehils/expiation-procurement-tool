@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
-import { prisma } from "@/lib/db";
+import { prisma, withDbRetry } from "@/lib/db";
 
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-[#274579]/10 text-[#274579]",
@@ -10,13 +10,15 @@ const STATUS_STYLE: Record<string, string> = {
 
 const getPos = unstable_cache(
   async () => {
-    return prisma.purchaseOrder.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        _count: { select: { items: true } },
-        rfq: { select: { requester: true } },
-      },
-    });
+    return withDbRetry(() =>
+      prisma.purchaseOrder.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+          _count: { select: { items: true } },
+          rfq: { select: { requester: true } },
+        },
+      }),
+    );
   },
   ["po-list"],
   { tags: ["purchase-orders"] },

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma, withDbRetry } from "@/lib/db";
 import { EntryView, type InitialEntryItem } from "@/components/rfq/entry-view";
 
 export const metadata = {
@@ -19,10 +19,12 @@ export default async function EditRfqPage({
 }) {
   const { id } = await params;
   const { itemId } = await searchParams;
-  const rfq = await prisma.rfq.findUnique({
-    where: { id },
-    include: { items: { orderBy: { createdAt: "asc" } } },
-  });
+  const rfq = await withDbRetry(() =>
+    prisma.rfq.findUnique({
+      where: { id },
+      include: { items: { orderBy: { createdAt: "asc" } } },
+    }),
+  );
 
   if (!rfq) notFound();
 

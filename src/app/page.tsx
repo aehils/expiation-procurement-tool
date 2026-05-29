@@ -1,17 +1,19 @@
 import { unstable_cache } from "next/cache";
-import { prisma } from "@/lib/db";
+import { prisma, withDbRetry } from "@/lib/db";
 import { HomeActionCards } from "@/components/home-action-cards";
 
 const getAvailableQuotes = unstable_cache(
   async () => {
-    const rfqs = await prisma.rfq.findMany({
-      where: {
-        status: "quoted",
-        purchaseOrders: { none: {} },
-      },
-      orderBy: { createdAt: "desc" },
-      include: { _count: { select: { items: true } } },
-    });
+    const rfqs = await withDbRetry(() =>
+      prisma.rfq.findMany({
+        where: {
+          status: "quoted",
+          purchaseOrders: { none: {} },
+        },
+        orderBy: { createdAt: "desc" },
+        include: { _count: { select: { items: true } } },
+      }),
+    );
     return rfqs.map((q) => ({
       id: q.id,
       rfqNumber: q.rfqNumber,
