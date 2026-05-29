@@ -503,72 +503,58 @@ export function EntryView({
                           {item.itemName}
                         </div>
                       </div>
-                      <div className="mt-0.5">
-                        <span className="inline-block px-1.5 py-px text-[10px] font-medium bg-teal-100 text-teal-700 rounded uppercase tracking-wide">
-                          {categoryLabel(item.itemCategory)}
-                        </span>
-                      </div>
-                      <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                      <dl className="mt-3 grid grid-cols-3 gap-x-3 text-xs">
                         <div>
-                          <dt className="text-slate-400">Department</dt>
-                          <dd className="text-slate-700">
+                          <dt className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                            Department
+                          </dt>
+                          <dd className="text-slate-700 truncate">
                             {departmentLabel(item.department)}
                           </dd>
                         </div>
-                        <div>
-                          <dt className="text-slate-400">Quantity</dt>
+                        <div className="text-center">
+                          <dt className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                            Quantity
+                          </dt>
                           <dd className="text-slate-700">
                             {item.requestQuantity}
                           </dd>
                         </div>
-                        {item.size && (
-                          <div>
-                            <dt className="text-slate-400">Size</dt>
-                            <dd className="text-slate-700">{item.size}</dd>
-                          </div>
-                        )}
-                        {item.brand && (
-                          <div>
-                            <dt className="text-slate-400">Brand</dt>
-                            <dd className="text-slate-700">{item.brand}</dd>
-                          </div>
-                        )}
-                        {item.model && (
-                          <div>
-                            <dt className="text-slate-400">Model</dt>
-                            <dd className="text-slate-700">{item.model}</dd>
-                          </div>
-                        )}
-                        {item.specification && (
-                          <div className="col-span-2">
-                            <dt className="text-slate-400">Spec</dt>
-                            <dd className="text-slate-700 line-clamp-1">
-                              {item.specification}
-                            </dd>
-                          </div>
-                        )}
+                        <div className="text-right">
+                          <dt className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                            Size
+                          </dt>
+                          <dd className="text-slate-700 truncate">
+                            {item.size || "—"}
+                          </dd>
+                        </div>
                       </dl>
-                      <div className="mt-1.5 pt-1.5 border-t border-slate-200 flex justify-end gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!beingEdited) handleEdit(item.tempId);
-                          }}
-                          className={`text-xs ${
-                            beingEdited
-                              ? "text-blue-500 font-medium cursor-default"
-                              : "text-slate-500 hover:text-slate-800"
-                          }`}
-                        >
-                          {beingEdited ? "Editing" : "Edit"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(item.tempId)}
-                          className="text-xs text-slate-500 hover:text-red-600"
-                        >
-                          Remove
-                        </button>
+                      <div className="mt-3 pt-1.5 border-t border-slate-200 flex items-center justify-between gap-3">
+                        <span className="inline-block px-1.5 py-px text-[10px] font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
+                          {categoryLabel(item.itemCategory)}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!beingEdited) handleEdit(item.tempId);
+                            }}
+                            className={`text-xs ${
+                              beingEdited
+                                ? "text-blue-500 font-medium cursor-default"
+                                : "text-slate-500 hover:text-slate-800"
+                            }`}
+                          >
+                            {beingEdited ? "Editing" : "Edit"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(item.tempId)}
+                            className="text-xs text-slate-500 hover:text-red-600"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     </div>
                     );
