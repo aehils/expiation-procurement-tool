@@ -39,6 +39,8 @@ const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
 ];
 
 const EXPANDED_KEY = "sidebar-expanded";
+const RECENT_CACHE_KEY = "sidebar-recent-cache";
+const EMPTY_RECENT: RecentDocs = { rfqs: [], quotes: [], pos: [] };
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -47,22 +49,35 @@ export function Sidebar() {
   const pinned = usePinnedDocs();
   const [themeOpen, setThemeOpen] = React.useState(false);
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
-  const [recent, setRecent] = React.useState<RecentDocs>({ rfqs: [], quotes: [], pos: [] });
+  const [recent, setRecent] = React.useState<RecentDocs>(EMPTY_RECENT);
 
+  // Seed from cached values after hydration so the previous list (and which
+  // sections were open) appear instantly instead of flashing empty for ~1.5s
+  // while the server fetch resolves.
   React.useEffect(() => {
     try {
-      const raw = localStorage.getItem(EXPANDED_KEY);
-      if (raw) setExpanded(new Set(JSON.parse(raw) as string[]));
+      const rawExpanded = localStorage.getItem(EXPANDED_KEY);
+      if (rawExpanded) setExpanded(new Set(JSON.parse(rawExpanded) as string[]));
+      const rawRecent = localStorage.getItem(RECENT_CACHE_KEY);
+      if (rawRecent) setRecent(JSON.parse(rawRecent) as RecentDocs);
     } catch {
-      // ignore malformed value
+      // ignore malformed values
     }
   }, []);
 
   // Refresh recents on every navigation so newly created/edited docs surface.
+  // Don't clear `recent` while the fetch is in flight — keep showing the
+  // cached list, then swap in the fresh result once it arrives.
   React.useEffect(() => {
     let cancelled = false;
     getRecentDocuments().then((r) => {
-      if (!cancelled) setRecent(r);
+      if (cancelled) return;
+      setRecent(r);
+      try {
+        localStorage.setItem(RECENT_CACHE_KEY, JSON.stringify(r));
+      } catch {
+        // ignore quota errors — cache is a convenience
+      }
     });
     return () => {
       cancelled = true;
@@ -202,7 +217,7 @@ export function Sidebar() {
             }`}
             title="Theme"
           >
-            <SunMoon size={18} />
+            <SunMoon size={21} />
           </button>
         </div>
 
@@ -236,8 +251,8 @@ export function Sidebar() {
           className="flex items-center px-2 py-1.5 rounded-lg w-full hover:bg-white/[0.06] hover:text-white transition-colors"
           title="Account"
         >
-          <div className="w-7 h-7 rounded-lg bg-slate-500/30 flex items-center justify-center shrink-0">
-            <User size={13} className="text-white" />
+          <div className="w-8 h-8 rounded-lg bg-slate-500/30 flex items-center justify-center shrink-0">
+            <User size={14} className="text-white" />
           </div>
           <span className="whitespace-nowrap text-slate-300 text-xs uppercase tracking-wider pl-2">Account</span>
         </button>
