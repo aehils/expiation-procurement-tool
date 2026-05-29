@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
-import { prisma } from "@/lib/db";
+import { prisma, withDbRetry } from "@/lib/db";
 
 const STATUS_LABEL: Record<string, string> = {
   details: "In Progress",
@@ -15,10 +15,12 @@ const STATUS_STYLE: Record<string, string> = {
 
 const getRfqs = unstable_cache(
   async () => {
-    return prisma.rfq.findMany({
-      orderBy: { createdAt: "desc" },
-      include: { _count: { select: { items: true } } },
-    });
+    return withDbRetry(() =>
+      prisma.rfq.findMany({
+        orderBy: { createdAt: "desc" },
+        include: { _count: { select: { items: true } } },
+      }),
+    );
   },
   ["rfq-list"],
   { tags: ["rfqs"] },

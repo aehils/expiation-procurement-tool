@@ -1,17 +1,19 @@
-import { prisma } from "@/lib/db";
+import { prisma, withDbRetry } from "@/lib/db";
 import { HomeActionCards } from "@/components/home-action-cards";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewPage() {
-  const availableQuotes = await prisma.rfq.findMany({
-    where: {
-      status: "quoted",
-      purchaseOrders: { none: {} },
-    },
-    orderBy: { createdAt: "desc" },
-    include: { _count: { select: { items: true } } },
-  });
+  const availableQuotes = await withDbRetry(() =>
+    prisma.rfq.findMany({
+      where: {
+        status: "quoted",
+        purchaseOrders: { none: {} },
+      },
+      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { items: true } } },
+    }),
+  );
 
   const quoteOptions = availableQuotes.map((q) => ({
     id: q.id,

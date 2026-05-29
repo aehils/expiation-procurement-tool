@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma, withDbRetry } from "@/lib/db";
 import { PoCreationView } from "@/components/po/po-creation-view";
 
 export const dynamic = "force-dynamic";
@@ -12,13 +12,15 @@ export default async function NewPoPage({
   const { rfqId } = await searchParams;
   if (!rfqId) redirect("/");
 
-  const rfq = await prisma.rfq.findUnique({
-    where: { id: rfqId },
-    include: {
-      items: { where: { markedComplete: true } },
-      purchaseOrders: { select: { id: true } },
-    },
-  });
+  const rfq = await withDbRetry(() =>
+    prisma.rfq.findUnique({
+      where: { id: rfqId },
+      include: {
+        items: { where: { markedComplete: true } },
+        purchaseOrders: { select: { id: true } },
+      },
+    }),
+  );
 
   if (!rfq || rfq.status !== "quoted") redirect("/");
   if (rfq.purchaseOrders.length > 0) redirect("/");

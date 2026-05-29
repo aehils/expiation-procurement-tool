@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma, withDbRetry } from "@/lib/db";
 import { QuoteView } from "@/components/rfq/quote-view";
 import { toDetailsPayload } from "@/lib/rfq-item";
 import { parseQuoteConfig } from "@/lib/quote-config";
@@ -12,12 +12,14 @@ export default async function QuotePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const quote = await prisma.quote.findUnique({
-    where: { id },
-    include: {
-      rfq: { include: { items: { orderBy: { createdAt: "asc" } } } },
-    },
-  });
+  const quote = await withDbRetry(() =>
+    prisma.quote.findUnique({
+      where: { id },
+      include: {
+        rfq: { include: { items: { orderBy: { createdAt: "asc" } } } },
+      },
+    }),
+  );
 
   if (!quote) notFound();
 

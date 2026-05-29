@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma, withDbRetry } from "@/lib/db";
 import { PoView } from "@/components/po/po-view";
 
 export const dynamic = "force-dynamic";
@@ -11,13 +11,15 @@ export default async function PoPage({
 }) {
   const { id } = await params;
 
-  const po = await prisma.purchaseOrder.findUnique({
-    where: { id },
-    include: {
-      items: { orderBy: { createdAt: "asc" } },
-      rfq: { select: { rfqNumber: true, requester: true } },
-    },
-  });
+  const po = await withDbRetry(() =>
+    prisma.purchaseOrder.findUnique({
+      where: { id },
+      include: {
+        items: { orderBy: { createdAt: "asc" } },
+        rfq: { select: { rfqNumber: true, requester: true } },
+      },
+    }),
+  );
 
   if (!po) notFound();
 

@@ -107,10 +107,12 @@ export async function updateRfqEntryData(
 ): Promise<{ id: string; rfqNumber: string }> {
   const parsed = updateRfqEntryDataSchema.parse(input);
 
-  const existing = await prisma.rfq.findUnique({
-    where: { id: rfqId },
-    include: { items: { select: { id: true } } },
-  });
+  const existing = await withDbRetry(() =>
+    prisma.rfq.findUnique({
+      where: { id: rfqId },
+      include: { items: { select: { id: true } } },
+    }),
+  );
   if (!existing) throw new Error("RFQ not found");
 
   const keepIds = new Set(
@@ -120,7 +122,8 @@ export async function updateRfqEntryData(
     .map((it) => it.id)
     .filter((id) => !keepIds.has(id));
 
-  await prisma.$transaction([
+  await withDbRetry(() =>
+    prisma.$transaction([
     prisma.rfq.update({
       where: { id: rfqId },
       data: { requester: parsed.requester },
@@ -155,7 +158,8 @@ export async function updateRfqEntryData(
         data: { ...entryFields, rfqId },
       });
     }),
-  ]);
+    ]),
+  );
 
   revalidatePath(`/rfq/${rfqId}/details`);
   return { id: existing.id, rfqNumber: existing.rfqNumber };
@@ -178,7 +182,7 @@ export async function updateRfqItem(
     }
   }
 
-  await prisma.rfqItem.update({ where: { id: itemId }, data });
+  await withDbRetry(() => prisma.rfqItem.update({ where: { id: itemId }, data }));
   return { ok: true };
 }
 
@@ -186,10 +190,12 @@ export async function toggleItemComplete(
   itemId: string,
   value: boolean,
 ): Promise<void> {
-  await prisma.rfqItem.update({
-    where: { id: itemId },
-    data: { markedComplete: value },
-  });
+  await withDbRetry(() =>
+    prisma.rfqItem.update({
+      where: { id: itemId },
+      data: { markedComplete: value },
+    }),
+  );
 }
 
 export type PersistedRate = {
@@ -203,9 +209,11 @@ export type PersistedRate = {
 // page still renders and the user can trigger a live pull.
 export async function readPersistedBannerRates(): Promise<PersistedRate[]> {
   try {
-    const rows = await prisma.currencyRate.findMany({
-      where: { code: { in: BANNER_CURRENCIES.map((c) => c.code) } },
-    });
+    const rows = await withDbRetry(() =>
+      prisma.currencyRate.findMany({
+        where: { code: { in: BANNER_CURRENCIES.map((c) => c.code) } },
+      }),
+    );
     return rows.map((r) => ({
       code: r.code,
       rate: r.rate,
@@ -234,11 +242,13 @@ export async function refreshBannerCurrencyRates(): Promise<
         return { code: c.code, rate: 0, fetchedAt: "", error: result.error };
       }
       try {
-        await prisma.currencyRate.upsert({
-          where: { code: c.code },
-          create: { code: c.code, rate: result.rate, fetchedAt: pulledAt },
-          update: { rate: result.rate, fetchedAt: pulledAt },
-        });
+        await withDbRetry(() =>
+          prisma.currencyRate.upsert({
+            where: { code: c.code },
+            create: { code: c.code, rate: result.rate, fetchedAt: pulledAt },
+            update: { rate: result.rate, fetchedAt: pulledAt },
+          }),
+        );
       } catch (err) {
         console.warn(`[currency] could not persist ${c.code} rate:`, err);
       }
@@ -253,16 +263,20 @@ export async function refreshBannerCurrencyRates(): Promise<
 }
 
 export async function proceedToQuote(rfqId: string): Promise<void> {
-  const rfq = await prisma.rfq.findUnique({
-    where: { id: rfqId },
-    select: { rfqNumber: true, items: { select: { id: true } } },
-  });
+  const rfq = await withDbRetry(() =>
+    prisma.rfq.findUnique({
+      where: { id: rfqId },
+      select: { rfqNumber: true, items: { select: { id: true } } },
+    }),
+  );
   if (!rfq) throw new Error("RFQ not found");
 
-  await prisma.rfq.update({
-    where: { id: rfqId },
-    data: { status: "quoted" },
-  });
+  await withDbRetry(() =>
+    prisma.rfq.update({
+      where: { id: rfqId },
+      data: { status: "quoted" },
+    }),
+  );
 
   // Materialise a quote row so the RFQ appears under Quotes the moment it's
   // marked quoted — otherwise status "quoted" and the Quotes list (which reads
@@ -276,11 +290,13 @@ export async function proceedToQuote(rfqId: string): Promise<void> {
       items: rfq.items.map((i) => i.id),
       markup: 0,
     });
-    await prisma.quote.upsert({
-      where: { rfqId },
-      create: { rfqId, quoteNumber, config },
-      update: {},
-    });
+    await withDbRetry(() =>
+      prisma.quote.upsert({
+        where: { rfqId },
+        create: { rfqId, quoteNumber, config },
+        update: {},
+      }),
+    );
   } catch {
     // Quote row will be created on the first explicit save instead.
   }
@@ -299,10 +315,12 @@ export async function createPurchaseOrder(
 ): Promise<{ id: string; poNumber: string }> {
   const parsed = createPoSchema.parse(input);
 
-  const rfq = await prisma.rfq.findUnique({
-    where: { id: parsed.rfqId },
-    include: { items: true, purchaseOrders: { select: { id: true } } },
-  });
+  const rfq = await withDbRetry(() =>
+    prisma.rfq.findUnique({
+      where: { id: parsed.rfqId },
+      include: { items: true, purchaseOrders: { select: { id: true } } },
+    }),
+  );
   if (!rfq) throw new Error("RFQ not found");
   if (rfq.status !== "quoted") {
     throw new Error("RFQ is not in quoted status");
@@ -322,7 +340,7 @@ export async function createPurchaseOrder(
   for (let attempt = 0; attempt < 5; attempt++) {
     const poNumber = generateDocNumber("PO");
     try {
-      const po = await prisma.$transaction(async (tx) => {
+      const po = await withDbRetry(() => prisma.$transaction(async (tx) => {
         const created = await tx.purchaseOrder.create({
           data: {
             poNumber,
@@ -385,7 +403,7 @@ export async function createPurchaseOrder(
         });
 
         return created;
-      });
+      }));
 
       revalidateTag("rfqs");
       revalidateTag("purchase-orders");
@@ -405,70 +423,86 @@ export async function updatePoItemQuantity(
 ): Promise<void> {
   const parsed = updatePoItemQuantitySchema.parse({ quantity });
 
-  const poItem = await prisma.poItem.findUnique({
-    where: { id: poItemId },
-    include: { po: { select: { status: true, markupFactor: true } } },
-  });
+  const poItem = await withDbRetry(() =>
+    prisma.poItem.findUnique({
+      where: { id: poItemId },
+      include: { po: { select: { status: true, markupFactor: true } } },
+    }),
+  );
   if (!poItem) throw new Error("PO item not found");
   if (poItem.po.status !== "draft") {
     throw new Error("Cannot edit an issued or closed PO");
   }
 
   const lineTotal = poItem.totalPerUnit * parsed.quantity * poItem.po.markupFactor;
-  await prisma.poItem.update({
-    where: { id: poItemId },
-    data: { quantity: parsed.quantity, lineTotal },
-  });
+  await withDbRetry(() =>
+    prisma.poItem.update({
+      where: { id: poItemId },
+      data: { quantity: parsed.quantity, lineTotal },
+    }),
+  );
 }
 
 export async function updatePoNotes(
   poId: string,
   notes: string,
 ): Promise<void> {
-  const po = await prisma.purchaseOrder.findUnique({
-    where: { id: poId },
-    select: { status: true },
-  });
+  const po = await withDbRetry(() =>
+    prisma.purchaseOrder.findUnique({
+      where: { id: poId },
+      select: { status: true },
+    }),
+  );
   if (!po) throw new Error("PO not found");
   if (po.status !== "draft") {
     throw new Error("Cannot edit an issued or closed PO");
   }
-  await prisma.purchaseOrder.update({
-    where: { id: poId },
-    data: { notes },
-  });
+  await withDbRetry(() =>
+    prisma.purchaseOrder.update({
+      where: { id: poId },
+      data: { notes },
+    }),
+  );
 }
 
 export async function issuePo(poId: string): Promise<void> {
-  const po = await prisma.purchaseOrder.findUnique({
-    where: { id: poId },
-    select: { status: true },
-  });
+  const po = await withDbRetry(() =>
+    prisma.purchaseOrder.findUnique({
+      where: { id: poId },
+      select: { status: true },
+    }),
+  );
   if (!po) throw new Error("PO not found");
   if (po.status !== "draft") {
     throw new Error("Only draft POs can be issued");
   }
-  await prisma.purchaseOrder.update({
-    where: { id: poId },
-    data: { status: "issued" },
-  });
+  await withDbRetry(() =>
+    prisma.purchaseOrder.update({
+      where: { id: poId },
+      data: { status: "issued" },
+    }),
+  );
   revalidateTag("purchase-orders");
   revalidatePath(`/po/${poId}`);
 }
 
 export async function closePo(poId: string): Promise<void> {
-  const po = await prisma.purchaseOrder.findUnique({
-    where: { id: poId },
-    select: { status: true },
-  });
+  const po = await withDbRetry(() =>
+    prisma.purchaseOrder.findUnique({
+      where: { id: poId },
+      select: { status: true },
+    }),
+  );
   if (!po) throw new Error("PO not found");
   if (po.status !== "issued") {
     throw new Error("Only issued POs can be closed");
   }
-  await prisma.purchaseOrder.update({
-    where: { id: poId },
-    data: { status: "closed" },
-  });
+  await withDbRetry(() =>
+    prisma.purchaseOrder.update({
+      where: { id: poId },
+      data: { status: "closed" },
+    }),
+  );
   revalidateTag("purchase-orders");
   revalidatePath(`/po/${poId}`);
 }
@@ -516,21 +550,23 @@ export async function getRecentDocuments(): Promise<{
   quotes: DocRef[];
   pos: DocRef[];
 }> {
-  const [rfqs, quotes, pos] = await Promise.all([
-    prisma.rfq.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-    prisma.quote.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: { rfq: { select: { requester: true } } },
-    }),
-    prisma.purchaseOrder.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-  ]);
+  const [rfqs, quotes, pos] = await withDbRetry(() =>
+    Promise.all([
+      prisma.rfq.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      prisma.quote.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: { rfq: { select: { requester: true } } },
+      }),
+      prisma.purchaseOrder.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+    ]),
+  );
   return { rfqs: rfqs.map(toRfqRef), quotes: quotes.map(toQuoteRef), pos: pos.map(toPoRef) };
 }
 
@@ -544,26 +580,28 @@ export async function searchDocuments(query: string): Promise<{
   // SQLite `contains` is case-sensitive; doc numbers are uppercase, so match the
   // number fields against the uppercased query and free text against it as typed.
   const upper = q.toUpperCase();
-  const [rfqs, quotes, pos] = await Promise.all([
-    prisma.rfq.findMany({
-      where: {
-        OR: [{ rfqNumber: { contains: upper } }, { requester: { contains: q } }],
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-    prisma.quote.findMany({
-      where: { quoteNumber: { contains: upper } },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      include: { rfq: { select: { requester: true } } },
-    }),
-    prisma.purchaseOrder.findMany({
-      where: { poNumber: { contains: upper } },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-  ]);
+  const [rfqs, quotes, pos] = await withDbRetry(() =>
+    Promise.all([
+      prisma.rfq.findMany({
+        where: {
+          OR: [{ rfqNumber: { contains: upper } }, { requester: { contains: q } }],
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+      prisma.quote.findMany({
+        where: { quoteNumber: { contains: upper } },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        include: { rfq: { select: { requester: true } } },
+      }),
+      prisma.purchaseOrder.findMany({
+        where: { poNumber: { contains: upper } },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+    ]),
+  );
   return { rfqs: rfqs.map(toRfqRef), quotes: quotes.map(toQuoteRef), pos: pos.map(toPoRef) };
 }
 
@@ -573,20 +611,24 @@ export async function saveQuote(
 ): Promise<{ id: string; quoteNumber: string }> {
   const parsed = quoteConfigSchema.parse(config);
 
-  const rfq = await prisma.rfq.findUnique({
-    where: { id: rfqId },
-    select: { rfqNumber: true },
-  });
+  const rfq = await withDbRetry(() =>
+    prisma.rfq.findUnique({
+      where: { id: rfqId },
+      select: { rfqNumber: true },
+    }),
+  );
   if (!rfq) throw new Error("RFQ not found");
 
   const quoteNumber = quoteNumberFromRfq(rfq.rfqNumber);
   const encoded = encodeQuoteConfig(parsed);
 
-  const quote = await prisma.quote.upsert({
-    where: { rfqId },
-    create: { rfqId, quoteNumber, config: encoded },
-    update: { config: encoded },
-  });
+  const quote = await withDbRetry(() =>
+    prisma.quote.upsert({
+      where: { rfqId },
+      create: { rfqId, quoteNumber, config: encoded },
+      update: { config: encoded },
+    }),
+  );
 
   revalidateTag("quotes");
   revalidatePath("/quotes");
@@ -595,26 +637,28 @@ export async function saveQuote(
 }
 
 export async function deleteQuote(quoteId: string): Promise<void> {
-  await prisma.quote.delete({ where: { id: quoteId } });
+  await withDbRetry(() => prisma.quote.delete({ where: { id: quoteId } }));
   revalidateTag("quotes");
   revalidatePath("/quotes");
 }
 
 export async function getQuoteExportData(quoteId: string): Promise<ExportQuoteData | null> {
-  const quote = await prisma.quote.findUnique({
-    where: { id: quoteId },
-    select: {
-      quoteNumber: true,
-      config: true,
-      rfq: {
-        select: {
-          rfqNumber: true,
-          requester: true,
-          items: { orderBy: { createdAt: "asc" } },
+  const quote = await withDbRetry(() =>
+    prisma.quote.findUnique({
+      where: { id: quoteId },
+      select: {
+        quoteNumber: true,
+        config: true,
+        rfq: {
+          select: {
+            rfqNumber: true,
+            requester: true,
+            items: { orderBy: { createdAt: "asc" } },
+          },
         },
       },
-    },
-  });
+    }),
+  );
   if (!quote) return null;
   const config = parseQuoteConfig(quote.config);
   const items = quote.rfq.items.map(toDetailsPayload);
@@ -634,22 +678,26 @@ export async function getQuoteExportData(quoteId: string): Promise<ExportQuoteDa
 }
 
 export async function deleteDraftPo(poId: string): Promise<string> {
-  const po = await prisma.purchaseOrder.findUnique({
-    where: { id: poId },
-    select: { status: true, rfqId: true },
-  });
+  const po = await withDbRetry(() =>
+    prisma.purchaseOrder.findUnique({
+      where: { id: poId },
+      select: { status: true, rfqId: true },
+    }),
+  );
   if (!po) throw new Error("PO not found");
   if (po.status !== "draft") {
     throw new Error("Only draft POs can be deleted");
   }
 
-  await prisma.$transaction([
-    prisma.purchaseOrder.delete({ where: { id: poId } }),
-    prisma.rfq.update({
-      where: { id: po.rfqId },
-      data: { status: "quoted" },
-    }),
-  ]);
+  await withDbRetry(() =>
+    prisma.$transaction([
+      prisma.purchaseOrder.delete({ where: { id: poId } }),
+      prisma.rfq.update({
+        where: { id: po.rfqId },
+        data: { status: "quoted" },
+      }),
+    ]),
+  );
 
   revalidateTag("rfqs");
   revalidateTag("purchase-orders");
