@@ -84,11 +84,11 @@ export function Sidebar() {
   return (
     <aside className="flex flex-col h-screen w-56 shrink-0 bg-[#273042] dark:bg-[#0f1219] text-slate-300">
       {/* Header */}
-      <div className="flex flex-row items-end h-16 px-2 gap-2 border-b border-white/[0.06] pb-2">
+      <div className="flex flex-row items-end justify-center h-20 px-2 gap-2 border-b border-white/[0.06] pb-4">
         <Link
           href="/new"
           title="New"
-          className="flex items-center justify-center rounded-lg bg-[#2d5fbd] hover:bg-white/[0.92] text-white hover:text-blue-600 font-medium transition-colors flex-1 h-9 px-3"
+          className="flex items-center justify-center rounded-lg bg-[#2d5fbd] hover:bg-white/[0.92] text-white hover:text-blue-600 font-medium transition-colors w-40 h-9 px-3"
         >
           <Plus size={16} strokeWidth={3} className="shrink-0" />
           <span className="whitespace-nowrap text-sm font-semibold uppercase pl-3">New</span>
@@ -133,7 +133,7 @@ export function Sidebar() {
                 <div
                   className={`flex items-center rounded-lg text-sm font-medium transition-colors ${
                     active
-                      ? "bg-blue-600/[0.20] text-slate-100"
+                      ? "bg-[#497DE2]/20 text-slate-100"
                       : "hover:bg-white/[0.06] hover:text-white"
                   }`}
                 >
@@ -219,7 +219,7 @@ export function Sidebar() {
                   }}
                   className={`flex items-center w-full px-2.5 py-2 rounded-md text-sm transition-colors ${
                     theme === opt.value
-                      ? "bg-blue-600/[0.20] text-slate-100"
+                      ? "bg-[#497DE2]/20 text-slate-100"
                       : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
                   }`}
                 >
@@ -258,7 +258,7 @@ function DocRow({
   return (
     <div
       className={`group flex items-center rounded-md transition-colors ${
-        active ? "bg-blue-600/[0.20] text-slate-100" : "hover:bg-white/[0.06] hover:text-white"
+        active ? "bg-[#497DE2]/20 text-slate-100" : "hover:bg-white/[0.06] hover:text-white"
       }`}
     >
       <Link href={doc.href} className="flex-1 min-w-0 px-2 py-1.5" title={doc.label}>

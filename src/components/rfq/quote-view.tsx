@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, MoreVertical, Save } from "lucide-react";
+import { ChevronLeft, MoreVertical, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -222,35 +222,37 @@ export function QuoteView({
   return (
     <div className="max-w-screen-2xl mx-auto px-4 py-4">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center justify-between gap-2 mb-6">
         <Link
           href={backHref ?? `/rfq/${rfq.id}/details`}
-          className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
+          className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ChevronLeft className="h-4 w-4" />
           {backLabel}
         </Link>
-        <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
+        <h2 className="text-3xl font-semibold text-slate-800 tracking-tight">
           Quote
         </h2>
-        <button
-          type="button"
-          onClick={copyQuoteId}
-          title="Copy Quote ID"
-          className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
-        >
-          <span>#{quoteNumber}</span>
-          <CopyIcon />
-        </button>
-        <span
-          className={`px-1.5 py-px text-[10px] font-medium rounded uppercase tracking-wide ${
-            saved
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-slate-200 text-slate-600"
-          }`}
-        >
-          {saved ? "Saved" : "Draft"}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={copyQuoteId}
+            title="Copy Quote ID"
+            className="group inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors"
+          >
+            <span>#{quoteNumber}</span>
+            <CopyIcon />
+          </button>
+          <span
+            className={`px-2 py-0.5 text-xs font-medium rounded uppercase tracking-wide ${
+              saved
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-slate-200 text-slate-600"
+            }`}
+          >
+            {saved ? "Saved" : "Draft"}
+          </span>
+        </div>
       </div>
 
       {/* Requester + actions row */}
