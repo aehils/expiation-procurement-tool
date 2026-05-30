@@ -66,19 +66,17 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
         {/* Column headers */}
         <div className="flex items-center gap-3 mb-1.5">
           <span className="w-5 shrink-0" />
-          <div className="flex-1 flex items-center">
+          <div className="flex-1 flex items-center pl-4 pr-0">
+            <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Requester
+            </span>
             <span className="w-28 shrink-0" />
-            <div className="flex-1 flex items-center pl-4 pr-0">
-              <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                Requester
-              </span>
-              <span className="w-32 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                Code
-              </span>
-              <span className="w-28 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                Date
-              </span>
-            </div>
+            <span className="w-32 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Code
+            </span>
+            <span className="w-28 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Date
+            </span>
             <span className="w-10 shrink-0" />
           </div>
         </div>
@@ -91,18 +89,23 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
               </span>
               <div className="flex-1 flex items-center bg-card border border-border rounded-md overflow-hidden hover:border-slate-300 hover:shadow-[0_2px_10px_-3px_rgba(15,23,42,0.18)] transition-[border-color,box-shadow]">
                 <Link
+                  href={`/quotes/${q.id}`}
+                  className="flex-1 flex items-center pl-4 pr-4 py-3"
+                >
+                  <span className="flex-1 text-sm text-card-foreground truncate">
+                    {q.requester}
+                  </span>
+                </Link>
+                <Link
                   href={`/rfq/${q.rfqId}/details`}
-                  className="relative flex items-center justify-center w-28 py-3 text-xs font-medium uppercase tracking-wider text-[#274579] hover:text-[#1a3258] active:text-[#1a3258] transition-colors shrink-0 after:content-[''] after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2 after:h-1/2 after:w-px after:bg-border"
+                  className="flex items-center justify-center w-28 py-3 text-xs font-medium uppercase tracking-wider text-[#274579] hover:text-[#1a3258] active:text-[#1a3258] transition-colors shrink-0"
                 >
                   View RFQ
                 </Link>
                 <Link
                   href={`/quotes/${q.id}`}
-                  className="flex-1 flex items-center pl-4 pr-0 py-3"
+                  className="flex items-center py-3"
                 >
-                  <span className="flex-1 text-sm text-card-foreground truncate pr-4">
-                    {q.requester}
-                  </span>
                   <span className="w-32 text-sm font-medium text-muted-foreground shrink-0">
                     {q.quoteNumber}
                   </span>
