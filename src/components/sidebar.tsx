@@ -178,7 +178,13 @@ export function Sidebar() {
                 {isOpen && (
                   <div className="mt-0.5 ml-[15px]">
                     {docs.length === 0 ? (
-                      <p className="pl-6 py-1.5 text-xs text-slate-500">Nothing recent</p>
+                      <div className="relative flex items-stretch">
+                        <div className="relative w-[14px] shrink-0">
+                          <div className="absolute top-0 bottom-1/2 left-[6px] w-[1.5px] -translate-x-1/2 bg-white/[0.12]" />
+                          <div className="absolute top-1/2 left-[6px] w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#273042] dark:bg-[#0f1219] ring-[1.5px] ring-white/25 z-10" />
+                        </div>
+                        <p className="py-1.5 text-xs text-slate-600">No Recents</p>
+                      </div>
                     ) : (
                       docs.map((doc, idx) => {
                         const isLast = idx === docs.length - 1;
