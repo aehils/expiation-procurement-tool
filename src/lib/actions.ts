@@ -677,6 +677,23 @@ export async function getQuoteExportData(quoteId: string): Promise<ExportQuoteDa
   };
 }
 
+export async function deleteRfq(rfqId: string): Promise<void> {
+  // PurchaseOrder has no cascade from rfqId, so delete POs (and their PoItems
+  // via cascade) before deleting the RFQ (which cascades RfqItems + Quote).
+  await withDbRetry(() =>
+    prisma.$transaction(async (tx) => {
+      await tx.purchaseOrder.deleteMany({ where: { rfqId } });
+      await tx.rfq.delete({ where: { id: rfqId } });
+    }),
+  );
+  revalidateTag("rfqs");
+  revalidateTag("purchase-orders");
+  revalidateTag("quotes");
+  revalidatePath("/rfq");
+  revalidatePath("/quotes");
+  revalidatePath("/");
+}
+
 export async function deleteDraftPo(poId: string): Promise<string> {
   const po = await withDbRetry(() =>
     prisma.purchaseOrder.findUnique({

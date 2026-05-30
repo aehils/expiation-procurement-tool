@@ -14,6 +14,7 @@ const getQuoteRows = unstable_cache(
             quoteNumber: true,
             rfqId: true,
             config: true,
+            createdAt: true,
             rfq: {
               select: {
                 rfqNumber: true,
@@ -40,6 +41,7 @@ const getQuoteRows = unstable_cache(
           requester: q.rfq.requester,
           selectedItemIds,
           hasPo: q.rfq.purchaseOrders.length > 0,
+          createdAt: q.createdAt,
         };
       });
     } catch {
@@ -54,26 +56,14 @@ export default async function QuotesListPage() {
   const rows = await getQuoteRows();
 
   return (
-    <div className="max-w-4xl mx-auto px-8 py-12">
-      <header className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+    <div className="max-w-5xl mx-auto px-6 py-10">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-semibold text-slate-800 tracking-tight">
           Quotes
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Saved quotes across your organisation.
-        </p>
-      </header>
+      </div>
 
-      {rows.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <p>No quotes yet.</p>
-          <p className="text-sm mt-1">
-            Open an RFQ&apos;s quote view, configure it, then save it to see it here.
-          </p>
-        </div>
-      ) : (
-        <QuoteList quotes={rows} />
-      )}
+      <QuoteList quotes={rows} />
     </div>
   );
 }
