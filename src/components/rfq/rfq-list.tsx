@@ -68,7 +68,7 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
   }, [rfqs, query, statusFilter]);
 
   const toolbar = (
-    <div className="flex items-center gap-3 mb-6 pl-8">
+    <div className="flex items-center gap-3 mb-10 pl-8">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60 pointer-events-none" />
         <input
@@ -150,7 +150,7 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
               <span className="text-xs text-muted-foreground/50 w-5 text-right shrink-0 select-none tabular-nums">
                 {i + 1}
               </span>
-              <div className="flex-1 flex items-center bg-card border border-border rounded-md overflow-hidden hover:bg-accent/70 transition-colors">
+              <div className="flex-1 flex items-center bg-card border border-border rounded-md overflow-hidden hover:border-slate-300 hover:shadow-[0_2px_10px_-3px_rgba(15,23,42,0.18)] transition-[border-color,box-shadow]">
                 <Link
                   href={
                     rfq.status === "ordered"
