@@ -4,9 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ChevronDown,
   FileSpreadsheet,
   FileText,
   MoreVertical,
+  Plus,
+  Search,
   ShoppingCart,
   Trash2,
 } from "lucide-react";
@@ -14,6 +17,15 @@ import { toast } from "sonner";
 import { deleteQuote, getQuoteExportData } from "@/lib/actions";
 import { loadExportConfig } from "@/lib/export/format-config";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "requester", label: "Requester A–Z" },
+  { value: "code", label: "Quote code A–Z" },
+] as const;
+
+type SortKey = (typeof SORT_OPTIONS)[number]["value"];
 
 export type QuoteRow = {
   id: string;
@@ -39,6 +51,8 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
   const router = useRouter();
   const [pendingDelete, setPendingDelete] = React.useState<QuoteRow | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  const [sortBy, setSortBy] = React.useState<SortKey>("newest");
 
   async function handleDelete() {
     if (!pendingDelete) return;
@@ -56,13 +70,83 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
     }
   }
 
+  const filtered = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? quotes.filter(
+          (qt) =>
+            qt.requester.toLowerCase().includes(q) ||
+            qt.quoteNumber.toLowerCase().includes(q) ||
+            qt.rfqNumber.toLowerCase().includes(q),
+        )
+      : quotes.slice();
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case "oldest":
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        case "requester":
+          return a.requester.localeCompare(b.requester);
+        case "code":
+          return a.quoteNumber.localeCompare(b.quoteNumber);
+        case "newest":
+        default:
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+      }
+    });
+    return list;
+  }, [quotes, query, sortBy]);
+
+  const toolbar = (
+    <div className="flex items-center gap-3 mb-10 pl-8">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60 pointer-events-none" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search requester or code…"
+          className="h-9 w-96 rounded-md border border-input bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+        />
+      </div>
+      <div className="relative">
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as SortKey)}
+          className="appearance-none h-9 rounded-md border border-input bg-card pl-3 pr-10 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+        >
+          {SORT_OPTIONS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 pointer-events-none" />
+      </div>
+      <div className="flex-1" />
+      <Link
+        href="/rfq"
+        className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md text-sm font-medium bg-[#274579] text-white hover:opacity-90 transition-opacity shrink-0"
+      >
+        <Plus className="w-4 h-4" />
+        New Quote
+      </Link>
+    </div>
+  );
+
   if (quotes.length === 0) {
     return (
-      <div className="text-center py-16 text-muted-foreground">
-        <p>No quotes yet.</p>
-        <p className="text-sm mt-1">
-          Open an RFQ&apos;s quote view, configure it, then save it to see it here.
-        </p>
+      <div>
+        {toolbar}
+        <div className="text-center py-16 text-muted-foreground">
+          <p>No quotes yet.</p>
+          <p className="text-sm mt-1">
+            Open an RFQ&apos;s quote view, configure it, then save it to see it here.
+          </p>
+        </div>
       </div>
     );
   }
@@ -70,6 +154,7 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
   return (
     <>
       <div>
+        {toolbar}
         {/* Column headers — `border-transparent` reserves the same 1px the
             item card border occupies, so header text left-edges line up with
             value text left-edges below. */}
@@ -90,8 +175,13 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
           </div>
         </div>
 
+        {filtered.length === 0 ? (
+          <div className="text-center py-12 text-sm text-muted-foreground">
+            No quotes match your search.
+          </div>
+        ) : (
         <ol className="space-y-1.5">
-          {quotes.map((q, i) => (
+          {filtered.map((q, i) => (
             <li key={q.id} className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground/50 w-5 text-right shrink-0 select-none tabular-nums">
                 {i + 1}
@@ -130,6 +220,7 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
             </li>
           ))}
         </ol>
+        )}
       </div>
 
       <ConfirmDialog
