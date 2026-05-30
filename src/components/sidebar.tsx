@@ -181,7 +181,7 @@ export function Sidebar() {
                       <div className="relative flex items-stretch">
                         <div className="relative w-[14px] shrink-0">
                           <div className="absolute top-0 bottom-1/2 left-[6px] w-[1.5px] -translate-x-1/2 bg-white/[0.12]" />
-                          <div className="absolute top-1/2 left-[6px] w-1.5 h-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#273042] dark:bg-[#0f1219] ring-1 ring-white/25 z-10" />
+                          <div className="absolute top-1/2 left-[6px] w-1.5 h-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#273042] dark:bg-[#0f1219] ring-[1.5px] ring-white/40 z-10" />
                         </div>
                         <p className="py-1.5 pl-2 text-xs text-slate-600">No Recents</p>
                       </div>
@@ -195,7 +195,7 @@ export function Sidebar() {
                               {/* Line: top of item down to bullet center */}
                               <div className="absolute top-0 bottom-1/2 left-[6px] w-[1.5px] -translate-x-1/2 bg-white/[0.28]" />
                               {/* Bullet — solid bg masks the line behind it */}
-                              <div className="absolute top-1/2 left-[6px] w-1.5 h-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#273042] dark:bg-[#0f1219] ring-1 ring-white/60 z-10" />
+                              <div className="absolute top-1/2 left-[6px] w-1.5 h-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#3a4a63] dark:bg-[#1e2535] ring-[1.5px] ring-white/80 z-10" />
                               {/* Line: bullet center down to bottom of item — only for non-last items */}
                               {!isLast && (
                                 <div className="absolute top-1/2 bottom-0 left-[6px] w-[1.5px] -translate-x-1/2 bg-white/[0.28]" />
