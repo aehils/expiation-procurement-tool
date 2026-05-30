@@ -123,16 +123,16 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
       <div className="flex items-center gap-3 mb-1.5">
         <span className="w-5 shrink-0" />
         <div className="flex-1 flex items-center pl-4 pr-0">
-          <span className="flex-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+          <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
             Requester
           </span>
-          <span className="w-32 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+          <span className="w-32 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
             Code
           </span>
-          <span className="w-28 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+          <span className="w-28 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
             Date
           </span>
-          <span className="w-28 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+          <span className="w-28 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
             Status
           </span>
           <span className="w-10 shrink-0" />
@@ -150,7 +150,7 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
               <span className="text-xs text-muted-foreground/50 w-5 text-right shrink-0 select-none tabular-nums">
                 {i + 1}
               </span>
-              <div className="flex-1 flex items-center bg-card border border-border rounded-md overflow-hidden hover:bg-accent/30 transition-colors">
+              <div className="flex-1 flex items-center bg-card border border-border rounded-md overflow-hidden hover:bg-accent/70 transition-colors">
                 <Link
                   href={
                     rfq.status === "ordered"
@@ -162,7 +162,7 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
                   <span className="flex-1 text-sm text-card-foreground truncate pr-4">
                     {rfq.requester}
                   </span>
-                  <span className="w-32 text-sm font-medium text-card-foreground shrink-0">
+                  <span className="w-32 text-sm font-medium text-muted-foreground shrink-0">
                     {rfq.rfqNumber}
                   </span>
                   <span className="w-28 text-sm text-muted-foreground shrink-0">
