@@ -226,7 +226,7 @@ export function QuoteView({
       <div className="flex items-center justify-between gap-2 mb-6">
         <Link
           href={backHref ?? `/rfq/${rfq.id}/details`}
-          className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
+          className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
           {backLabel}
@@ -301,7 +301,7 @@ export function QuoteView({
             style={{ backgroundColor: "#276E79" }}
           >
             <Save className="h-3.5 w-3.5" />
-            {saving ? "Saving…" : saved ? "Update Quote" : "Save Quote"}
+            {saving ? "Saving…" : saved ? "Update" : "Save Quote"}
           </Button>
           <ExportMenu
             data={{

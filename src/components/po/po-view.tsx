@@ -199,7 +199,7 @@ export function PoView({ po }: { po: PoData }) {
       <div className="flex items-center gap-2 mb-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
+          className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Home

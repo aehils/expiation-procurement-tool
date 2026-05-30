@@ -150,7 +150,7 @@ export function Sidebar() {
                     href={section.href}
                     className={`flex items-center flex-1 min-w-0 px-3 py-2.5 transition-colors ${
                       active
-                        ? "text-slate-100 [text-shadow:0.3px_0_0_currentColor,-0.3px_0_0_currentColor]"
+                        ? "text-blue-300 [text-shadow:0.3px_0_0_currentColor,-0.3px_0_0_currentColor]"
                         : "hover:text-blue-300"
                     }`}
                     title={section.label}

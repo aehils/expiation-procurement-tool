@@ -249,7 +249,7 @@ export function DetailsView({
       <div className="flex items-center justify-between gap-2 mb-6">
         <Link
           href="/"
-          className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md hover:bg-[#274579]/10 hover:text-[#274579] transition-colors"
+          className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
