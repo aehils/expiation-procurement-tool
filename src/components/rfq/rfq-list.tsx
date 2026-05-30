@@ -175,7 +175,7 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
                 <button
                   onClick={() => handleDelete(rfq.id)}
                   disabled={deleting === rfq.id}
-                  className="relative flex items-center justify-center w-10 h-full px-0 py-3 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/5 transition-colors shrink-0 disabled:opacity-40 before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-1/2 before:w-px before:bg-border"
+                  className="relative flex items-center justify-center w-10 h-full px-0 py-3 text-muted-foreground/40 hover:text-destructive active:text-destructive transition-colors shrink-0 disabled:opacity-40 before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-1/2 before:w-px before:bg-border"
                   aria-label={`Delete ${rfq.rfqNumber}`}
                 >
                   <Trash2 className="w-3.5 h-3.5" />

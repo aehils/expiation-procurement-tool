@@ -56,12 +56,10 @@ export default async function QuotesListPage() {
   const rows = await getQuoteRows();
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-semibold text-slate-800 tracking-tight">
-          Quotes
-        </h1>
-      </div>
+    <div className="max-w-screen-2xl mx-auto px-6 py-4">
+      <h1 className="text-3xl font-semibold text-slate-800 tracking-tight mb-12 pl-8">
+        Quotes
+      </h1>
 
       <QuoteList quotes={rows} />
     </div>
