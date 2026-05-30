@@ -66,22 +66,19 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
         {/* Column headers */}
         <div className="flex items-center gap-3 mb-1.5">
           <span className="w-5 shrink-0" />
-          <div className="flex-1 flex items-center pl-4 pr-0">
-            <span className="flex-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-              Requester
-            </span>
-            <span className="w-32 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-              Code
-            </span>
-            <span className="w-32 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-              RFQ
-            </span>
-            <span className="w-28 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-              Date
-            </span>
-            <span className="w-28 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-              Status
-            </span>
+          <div className="flex-1 flex items-center">
+            <span className="w-28 shrink-0" />
+            <div className="flex-1 flex items-center pl-4 pr-0">
+              <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Requester
+              </span>
+              <span className="w-32 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Code
+              </span>
+              <span className="w-28 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Date
+              </span>
+            </div>
             <span className="w-10 shrink-0" />
           </div>
         </div>
@@ -92,7 +89,13 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
               <span className="text-xs text-muted-foreground/50 w-5 text-right shrink-0 select-none tabular-nums">
                 {i + 1}
               </span>
-              <div className="flex-1 flex items-center bg-card border border-border rounded-md overflow-hidden hover:bg-accent/30 transition-colors">
+              <div className="flex-1 flex items-center bg-card border border-border rounded-md overflow-hidden hover:border-slate-300 hover:shadow-[0_2px_10px_-3px_rgba(15,23,42,0.18)] transition-[border-color,box-shadow]">
+                <Link
+                  href={`/rfq/${q.rfqId}/details`}
+                  className="relative flex items-center justify-center w-28 py-3 text-xs font-medium uppercase tracking-wider text-[#274579] hover:text-[#1a3258] active:text-[#1a3258] transition-colors shrink-0 after:content-[''] after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2 after:h-1/2 after:w-px after:bg-border"
+                >
+                  View RFQ
+                </Link>
                 <Link
                   href={`/quotes/${q.id}`}
                   className="flex-1 flex items-center pl-4 pr-0 py-3"
@@ -100,22 +103,16 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
                   <span className="flex-1 text-sm text-card-foreground truncate pr-4">
                     {q.requester}
                   </span>
-                  <span className="w-32 text-sm font-medium text-card-foreground shrink-0">
+                  <span className="w-32 text-sm font-medium text-muted-foreground shrink-0">
                     {q.quoteNumber}
-                  </span>
-                  <span className="w-32 text-sm text-muted-foreground shrink-0">
-                    {q.rfqNumber}
                   </span>
                   <span className="w-28 text-sm text-muted-foreground shrink-0">
                     {formatDate(q.createdAt)}
                   </span>
-                  <span className="w-28 text-xs font-medium uppercase text-[#274579] shrink-0">
-                    {q.hasPo ? "PO Created" : "Quoted"}
-                  </span>
                 </Link>
                 <button
                   onClick={() => setPendingDelete(q)}
-                  className="flex items-center justify-center w-10 h-full px-0 py-3 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/5 transition-colors border-l border-border shrink-0"
+                  className="relative flex items-center justify-center w-10 h-full px-0 py-3 text-muted-foreground/40 hover:text-destructive active:text-destructive transition-colors shrink-0 before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-1/2 before:w-px before:bg-border"
                   aria-label={`Delete ${q.quoteNumber}`}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
