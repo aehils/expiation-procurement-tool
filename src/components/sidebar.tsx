@@ -145,17 +145,13 @@ export function Sidebar() {
             const docs = recent[section.key];
             return (
               <div key={section.key}>
-                <div
-                  className={`flex items-center rounded-lg text-sm font-medium ${
-                    active ? "bg-[#497DE2]/20 text-slate-100" : ""
-                  }`}
-                >
+                <div className="flex items-center rounded-lg text-sm font-medium">
                   <Link
                     href={section.href}
                     className={`flex items-center flex-1 min-w-0 px-3 py-2.5 transition-colors ${
                       active
-                        ? ""
-                        : "hover:text-blue-300 hover:[text-shadow:0.3px_0_0_currentColor,-0.3px_0_0_currentColor]"
+                        ? "text-blue-300 [text-shadow:0.3px_0_0_currentColor,-0.3px_0_0_currentColor]"
+                        : "hover:text-blue-300"
                     }`}
                     title={section.label}
                   >
