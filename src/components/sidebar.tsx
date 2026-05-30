@@ -176,18 +176,35 @@ export function Sidebar() {
                 </div>
 
                 {isOpen && (
-                  <div className="mt-0.5 ml-4 pl-2.5 border-l-2 border-white/[0.15] space-y-0.5">
+                  <div className="mt-0.5 ml-[15px]">
                     {docs.length === 0 ? (
-                      <p className="px-2 py-1.5 text-xs text-slate-500">Nothing recent</p>
+                      <p className="pl-6 py-1.5 text-xs text-slate-500">Nothing recent</p>
                     ) : (
-                      docs.map((doc) => (
-                        <DocRow
-                          key={`${doc.type}-${doc.id}`}
-                          doc={doc}
-                          pinned={isPinned(doc.type, doc.id)}
-                          active={pathname.includes(doc.id)}
-                        />
-                      ))
+                      docs.map((doc, idx) => {
+                        const isLast = idx === docs.length - 1;
+                        return (
+                          <div key={`${doc.type}-${doc.id}`} className="relative flex items-stretch">
+                            {/* Timeline connector */}
+                            <div className="relative w-[14px] shrink-0">
+                              {/* Line: top of item down to bullet center */}
+                              <div className="absolute top-0 bottom-1/2 left-[6px] w-px -translate-x-1/2 bg-white/[0.18]" />
+                              {/* Bullet */}
+                              <div className="absolute top-1/2 left-[6px] w-[5px] h-[5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/55 z-10" />
+                              {/* Line: bullet center down to bottom of item — only for non-last items */}
+                              {!isLast && (
+                                <div className="absolute top-1/2 bottom-0 left-[6px] w-px -translate-x-1/2 bg-white/[0.18]" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <DocRow
+                                doc={doc}
+                                pinned={isPinned(doc.type, doc.id)}
+                                active={pathname.includes(doc.id)}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 )}
