@@ -187,12 +187,12 @@ export function Sidebar() {
                             {/* Timeline connector */}
                             <div className="relative w-[14px] shrink-0">
                               {/* Line: top of item down to bullet center */}
-                              <div className="absolute top-0 bottom-1/2 left-[6px] w-px -translate-x-1/2 bg-white/[0.18]" />
-                              {/* Bullet */}
-                              <div className="absolute top-1/2 left-[6px] w-[5px] h-[5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/55 z-10" />
+                              <div className="absolute top-0 bottom-1/2 left-[6px] w-[1.5px] -translate-x-1/2 bg-white/[0.28]" />
+                              {/* Bullet — solid bg masks the line behind it */}
+                              <div className="absolute top-1/2 left-[6px] w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#273042] dark:bg-[#0f1219] ring-[1.5px] ring-white/60 z-10" />
                               {/* Line: bullet center down to bottom of item — only for non-last items */}
                               {!isLast && (
-                                <div className="absolute top-1/2 bottom-0 left-[6px] w-px -translate-x-1/2 bg-white/[0.18]" />
+                                <div className="absolute top-1/2 bottom-0 left-[6px] w-[1.5px] -translate-x-1/2 bg-white/[0.28]" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
