@@ -608,7 +608,7 @@ export async function searchDocuments(query: string): Promise<{
 export async function saveQuote(
   rfqId: string,
   config: QuoteConfig,
-): Promise<{ id: string; quoteNumber: string }> {
+): Promise<{ id: string; quoteNumber: string; updatedAt: string }> {
   const parsed = quoteConfigSchema.parse(config);
 
   const rfq = await withDbRetry(() =>
@@ -633,7 +633,11 @@ export async function saveQuote(
   revalidateTag("quotes");
   revalidatePath("/quotes");
   revalidatePath(`/quotes/${quote.id}`);
-  return { id: quote.id, quoteNumber: quote.quoteNumber };
+  return {
+    id: quote.id,
+    quoteNumber: quote.quoteNumber,
+    updatedAt: quote.updatedAt.toISOString(),
+  };
 }
 
 export async function deleteQuote(quoteId: string): Promise<void> {

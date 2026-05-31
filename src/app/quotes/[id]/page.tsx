@@ -38,6 +38,7 @@ export default async function QuotePage({
       backLabel="Back to Quotes"
       hasSavedQuote
       initialConfig={parseQuoteConfig(quote.config)}
+      initialUpdatedAt={quote.updatedAt.toISOString()}
     />
   );
 }

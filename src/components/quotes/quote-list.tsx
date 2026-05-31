@@ -36,6 +36,7 @@ export type QuoteRow = {
   selectedItemIds: string[];
   hasPo: boolean;
   createdAt: Date | string;
+  total: number;
 };
 
 function formatDate(date: Date | string): string {
@@ -161,17 +162,20 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
         <div className="flex items-center gap-3 mb-1.5">
           <span className="w-5 shrink-0" />
           <div className="flex-1 flex items-center pl-4 pr-0 border border-transparent">
-            <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
               Requester
             </span>
-            <span className="w-28 shrink-0 mr-4" />
-            <span className="w-32 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-              Code
-            </span>
-            <span className="w-28 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-              Date
-            </span>
-            <span className="w-10 shrink-0" />
+            <div className="ml-auto flex items-center gap-5 shrink-0">
+              <span className="w-32 mr-3 shrink-0" />
+              <span className="w-24 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Code
+              </span>
+              <span className="w-28 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Date
+              </span>
+              <span className="w-[4.5rem] shrink-0" />
+              <span className="w-10 shrink-0" />
+            </div>
           </div>
         </div>
 
@@ -186,36 +190,39 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
               <span className="text-xs text-muted-foreground/50 w-5 text-right shrink-0 select-none tabular-nums">
                 {i + 1}
               </span>
-              <div className="flex-1 flex items-center bg-card border border-border rounded-md hover:border-slate-300 hover:shadow-[0_2px_10px_-3px_rgba(15,23,42,0.18)] transition-[border-color,box-shadow]">
+              <div className="relative flex-1 flex items-center bg-card border border-border rounded-md hover:border-slate-300 hover:shadow-[0_2px_10px_-3px_rgba(15,23,42,0.18)] transition-[border-color,box-shadow] pl-4">
                 <Link
                   href={`/quotes/${q.id}`}
-                  className="flex-1 flex items-center pl-4 pr-4 py-3 rounded-l-md"
-                >
-                  <span className="flex-1 text-sm text-card-foreground truncate">
-                    {q.requester}
+                  aria-label={`Open quote ${q.quoteNumber}`}
+                  className="absolute inset-0 rounded-md"
+                />
+                <span className="relative py-3 text-sm text-card-foreground truncate">
+                  {q.requester}
+                </span>
+                <div className="relative ml-auto flex items-center gap-5 shrink-0">
+                  <span className="w-32 mr-3 flex items-center justify-end gap-1 py-3 text-sm tabular-nums text-slate-700">
+                    <span className="text-slate-400">₦</span>
+                    <span>
+                      {q.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                   </span>
-                </Link>
-                <Link
-                  href={`/rfq/${q.rfqId}/details`}
-                  className="flex items-center justify-center w-28 mr-4 py-3 text-xs font-medium uppercase tracking-wider text-[#274579] hover:text-blue-600 active:text-blue-700 transition-colors shrink-0"
-                >
-                  View RFQ
-                </Link>
-                <Link
-                  href={`/quotes/${q.id}`}
-                  className="flex items-center py-3"
-                >
-                  <span className="w-32 text-sm font-medium text-muted-foreground shrink-0">
+                  <span className="w-24 py-3 text-sm font-medium text-muted-foreground">
                     {q.quoteNumber}
                   </span>
-                  <span className="w-28 text-sm text-muted-foreground shrink-0">
+                  <span className="w-28 py-3 text-sm text-muted-foreground">
                     {formatDate(q.createdAt)}
                   </span>
-                </Link>
-                <QuoteRowMenu
-                  quote={q}
-                  onRequestDelete={() => setPendingDelete(q)}
-                />
+                  <Link
+                    href={`/rfq/${q.rfqId}/details`}
+                    className="relative w-[4.5rem] py-3 text-xs font-medium uppercase tracking-wider text-[#274579] hover:text-blue-600 active:text-blue-700 transition-colors shrink-0"
+                  >
+                    View RFQ
+                  </Link>
+                  <QuoteRowMenu
+                    quote={q}
+                    onRequestDelete={() => setPendingDelete(q)}
+                  />
+                </div>
               </div>
             </li>
           ))}

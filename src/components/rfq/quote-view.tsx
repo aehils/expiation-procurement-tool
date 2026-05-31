@@ -17,7 +17,10 @@ import {
   type ColKey,
   formatNaira,
   cellValueRaw,
+  quoteTotalNaira,
 } from "@/lib/export/types";
+
+const NAIRA_COLS = new Set<ColKey>(["nairaUnitPrice", "tax", "shipping", "totalPrice"]);
 
 const COLUMN_KEYS = new Set<string>(COLUMNS.map((c) => c.key));
 
@@ -30,7 +33,7 @@ type Rfq = {
 
 function cellValue(item: DetailsItemPayload, key: ColKey, markupFactor: number): React.ReactNode {
   const raw = cellValueRaw(item, key, markupFactor);
-  if (key === "nairaUnitPrice" || key === "totalPrice") {
+  if (NAIRA_COLS.has(key)) {
     return raw != null ? formatNaira(raw as number) : "—";
   }
   return raw ?? "—";
@@ -92,6 +95,19 @@ function CopyIcon() {
   );
 }
 
+function formatRelativeTime(date: Date, now: number): string {
+  const diff = Math.max(0, now - date.getTime());
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const d = Math.floor(hr / 24);
+  if (d < 7) return `${d}d ago`;
+  return date.toLocaleDateString();
+}
+
 export function QuoteView({
   rfq,
   items,
@@ -99,6 +115,7 @@ export function QuoteView({
   backLabel = "Back to RFQ",
   hasSavedQuote = false,
   initialConfig = null,
+  initialUpdatedAt = null,
 }: {
   rfq: Rfq;
   items: DetailsItemPayload[];
@@ -106,6 +123,7 @@ export function QuoteView({
   backLabel?: string;
   hasSavedQuote?: boolean;
   initialConfig?: QuoteConfig | null;
+  initialUpdatedAt?: string | null;
 }) {
   const quoteNumber = quoteNumberFromRfq(rfq.rfqNumber);
 
@@ -129,6 +147,14 @@ export function QuoteView({
   );
   const [saved, setSaved] = React.useState(hasSavedQuote);
   const [saving, setSaving] = React.useState(false);
+  const [updatedAt, setUpdatedAt] = React.useState<string | null>(initialUpdatedAt);
+  const [nowTick, setNowTick] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    setNowTick(Date.now());
+    const id = setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const [hoveredItemId, setHoveredItemId] = React.useState<string | null>(null);
   const [menuOpenItemId, setMenuOpenItemId] = React.useState<string | null>(null);
 
@@ -196,12 +222,13 @@ export function QuoteView({
   async function handleSaveQuote() {
     setSaving(true);
     try {
-      await saveQuote(rfq.id, {
+      const result = await saveQuote(rfq.id, {
         columns: visibleCols.map((c) => c.key),
         items: [...selectedItems],
         markup: parseFloat(globalMarkup) || 0,
       });
       setSaved(true);
+      setUpdatedAt(result.updatedAt);
       toast.success("Quote saved");
     } catch (err) {
       console.error(err);
@@ -235,6 +262,25 @@ export function QuoteView({
           Quote
         </h2>
         <div className="flex items-center gap-2">
+          {(() => {
+            if (nowTick == null) {
+              return <span className="text-xs text-slate-400">&nbsp;</span>;
+            }
+            if (!updatedAt) {
+              return (
+                <span className="text-xs text-slate-400 italic">Unsaved</span>
+              );
+            }
+            const date = new Date(updatedAt);
+            return (
+              <span
+                className="text-xs text-slate-500"
+                title={date.toLocaleString()}
+              >
+                Updated {formatRelativeTime(date, nowTick)}
+              </span>
+            );
+          })()}
           <button
             type="button"
             onClick={copyQuoteId}
@@ -244,14 +290,22 @@ export function QuoteView({
             <span>#{quoteNumber}</span>
             <CopyIcon />
           </button>
-          <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
-            {saved ? "Saved" : "Draft"}
-          </span>
         </div>
       </div>
 
       {/* Requester + actions row */}
-      <div className="flex items-center justify-end gap-3 mb-6 px-1">
+      <div className="flex items-center justify-end gap-3 mb-10 px-1">
+        <div className="flex items-stretch h-8 rounded-md overflow-hidden border border-[#274579]/30 bg-[#274579]/10">
+          <span className="flex items-center px-3 text-[10px] font-semibold uppercase tracking-wider text-[#274579]">
+            Total
+          </span>
+          <span className="flex items-center w-44 px-3 bg-slate-100 border-l border-[#274579]/20 text-xs tabular-nums text-slate-700">
+            <span className="text-slate-500">₦</span>
+            <span className="ml-auto">
+              {quoteTotalNaira(items, selectedItems, markupFactor).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           <Label
             htmlFor="requester"
@@ -268,59 +322,63 @@ export function QuoteView({
           />
         </div>
         <div className="flex items-center gap-2">
-            <Label
-              htmlFor="globalMarkup"
-              className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
-              style={{ color: "#274579" }}
-            >
-              Global Markup
-            </Label>
-            <div className="relative flex items-center">
-              <Input
-                id="globalMarkup"
-                type="number"
-                min="0"
-                max="999"
-                step="0.1"
-                value={globalMarkup}
-                onChange={(e) => setGlobalMarkup(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-                placeholder="0"
-                className="h-8 w-20 text-xs text-right pr-6 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
-              />
-              <span className="absolute right-2 text-xs text-slate-400 pointer-events-none">
-                %
-              </span>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            onClick={handleSaveQuote}
-            disabled={saving}
-            className="gap-1.5 text-white"
-            style={{ backgroundColor: "#276E79" }}
+          <Label
+            htmlFor="globalMarkup"
+            className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+            style={{ color: "#274579" }}
           >
-            <Save className="h-3.5 w-3.5" />
-            {saving ? "Saving…" : saved ? "Update" : "Save Quote"}
-          </Button>
-          <ExportMenu
-            data={{
-              quoteNumber,
-              rfqNumber: rfq.rfqNumber,
-              requester: rfq.requester,
-              items,
-              selectedItemIds: selectedItems,
-              enabledColumns: visibleCols.map((c) => c.key),
-              markupFactor,
-            }}
-          />
+            Global Markup
+          </Label>
+          <div className="relative flex items-center">
+            <Input
+              id="globalMarkup"
+              type="number"
+              min="0"
+              max="999"
+              step="0.1"
+              value={globalMarkup}
+              onChange={(e) => setGlobalMarkup(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+              placeholder="0"
+              className="h-8 w-20 text-xs text-right pr-6 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+            />
+            <span className="absolute right-2 text-xs text-slate-400 pointer-events-none">
+              %
+            </span>
+          </div>
+        </div>
+        <Button
+          size="sm"
+          onClick={handleSaveQuote}
+          disabled={saving}
+          className="gap-1.5 text-white"
+          style={{ backgroundColor: "#276E79" }}
+        >
+          <Save className="h-3.5 w-3.5" />
+          {saving ? "Saving…" : saved ? "Update" : "Save Quote"}
+        </Button>
+        <ExportMenu
+          data={{
+            quoteNumber,
+            rfqNumber: rfq.rfqNumber,
+            requester: rfq.requester,
+            items,
+            selectedItemIds: selectedItems,
+            enabledColumns: visibleCols.map((c) => c.key),
+            markupFactor,
+          }}
+        />
       </div>
 
       {/* Section header */}
-      <div className="mb-3 pl-1">
+      <div className="flex items-center justify-between gap-3 mb-3 pl-1 pr-1">
         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Quote Lines
         </h3>
+        <span className="text-xs text-slate-400 tabular-nums">
+          {selectedItems.size} of {items.length} item
+          {items.length !== 1 ? "s" : ""} selected
+        </span>
       </div>
 
       {/* Column toggles */}
@@ -343,10 +401,6 @@ export function QuoteView({
             </button>
           );
         })}
-        <span className="ml-auto text-xs text-slate-400 tabular-nums">
-          {selectedItems.size} of {items.length} item
-          {items.length !== 1 ? "s" : ""} selected
-        </span>
       </div>
 
       {/* Items table — outer div is the positioning anchor; overflow lives one level in */}

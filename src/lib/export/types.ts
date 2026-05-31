@@ -5,6 +5,8 @@ export type ColKey =
   | "requestQuantity"
   | "vendor"
   | "nairaUnitPrice"
+  | "tax"
+  | "shipping"
   | "totalPrice"
   | "uom"
   | "brand"
@@ -27,8 +29,39 @@ export const COLUMNS: { key: ColKey; label: string; defaultOn: boolean; wrap?: b
   { key: "itemCategory", label: "Category", defaultOn: false },
   { key: "vendorLocation", label: "Vendor Location", defaultOn: false },
   { key: "nairaUnitPrice", label: "Unit Price", defaultOn: true },
+  { key: "tax", label: "Tax", defaultOn: false },
+  { key: "shipping", label: "Shipping", defaultOn: false },
   { key: "totalPrice", label: "Total Price", defaultOn: true },
 ];
+
+export function lineTaxNaira(item: DetailsItemPayload): number | null {
+  if (item.tax == null) return null;
+  const unit = item.nairaUnitPrice ?? 0;
+  const perUnit =
+    item.taxMode === "percent" ? unit * (item.tax / 100) : item.tax;
+  return perUnit * (item.requestQuantity || 0);
+}
+
+export function lineShippingNaira(item: DetailsItemPayload): number | null {
+  if (item.domesticShippingNaira == null && item.intlShippingNaira == null) {
+    return null;
+  }
+  return (item.domesticShippingNaira ?? 0) + (item.intlShippingNaira ?? 0);
+}
+
+export function quoteTotalNaira(
+  items: DetailsItemPayload[],
+  selectedIds: Set<string>,
+  markupFactor: number,
+): number {
+  let sum = 0;
+  for (const item of items) {
+    if (!selectedIds.has(item.id)) continue;
+    const line = lineTotalNaira(item);
+    if (line != null) sum += line * markupFactor;
+  }
+  return sum;
+}
 
 export function lineTotalNaira(item: DetailsItemPayload): number | null {
   if (item.nairaUnitPrice == null) return null;
@@ -66,6 +99,14 @@ export function cellValueRaw(
       return item.nairaUnitPrice != null
         ? item.nairaUnitPrice * markupFactor
         : null;
+    case "tax": {
+      const tax = lineTaxNaira(item);
+      return tax != null ? tax * markupFactor : null;
+    }
+    case "shipping": {
+      const ship = lineShippingNaira(item);
+      return ship != null ? ship * markupFactor : null;
+    }
     case "totalPrice": {
       const total = lineTotalNaira(item);
       return total != null ? total * markupFactor : null;
