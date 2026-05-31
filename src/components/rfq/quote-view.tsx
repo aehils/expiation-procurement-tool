@@ -294,19 +294,18 @@ export function QuoteView({
       </div>
 
       {/* Requester + actions row */}
-      <div className="flex items-center justify-between gap-3 mb-6 px-1">
-        <div className="flex flex-col">
-          <span
-            className="text-xs font-semibold uppercase tracking-wide"
-            style={{ color: "#274579" }}
-          >
-            Quote Total
+      <div className="flex items-center justify-end gap-3 mb-10 px-1">
+        <div className="flex items-stretch h-8 rounded-md overflow-hidden border border-[#274579]/30 bg-[#274579]/10">
+          <span className="flex items-center px-3 text-[10px] font-semibold uppercase tracking-wider text-[#274579]">
+            Total
           </span>
-          <span className="text-lg font-semibold text-slate-800 tabular-nums leading-tight">
-            {formatNaira(quoteTotalNaira(items, selectedItems, markupFactor))}
+          <span className="flex items-center w-44 px-3 bg-slate-100 border-l border-[#274579]/20 text-xs tabular-nums text-slate-700">
+            <span className="text-slate-500">₦</span>
+            <span className="ml-auto">
+              {quoteTotalNaira(items, selectedItems, markupFactor).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
           </span>
         </div>
-        <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Label
             htmlFor="requester"
@@ -323,60 +322,63 @@ export function QuoteView({
           />
         </div>
         <div className="flex items-center gap-2">
-            <Label
-              htmlFor="globalMarkup"
-              className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
-              style={{ color: "#274579" }}
-            >
-              Global Markup
-            </Label>
-            <div className="relative flex items-center">
-              <Input
-                id="globalMarkup"
-                type="number"
-                min="0"
-                max="999"
-                step="0.1"
-                value={globalMarkup}
-                onChange={(e) => setGlobalMarkup(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-                placeholder="0"
-                className="h-8 w-20 text-xs text-right pr-6 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
-              />
-              <span className="absolute right-2 text-xs text-slate-400 pointer-events-none">
-                %
-              </span>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            onClick={handleSaveQuote}
-            disabled={saving}
-            className="gap-1.5 text-white"
-            style={{ backgroundColor: "#276E79" }}
+          <Label
+            htmlFor="globalMarkup"
+            className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+            style={{ color: "#274579" }}
           >
-            <Save className="h-3.5 w-3.5" />
-            {saving ? "Saving…" : saved ? "Update" : "Save Quote"}
-          </Button>
-          <ExportMenu
-            data={{
-              quoteNumber,
-              rfqNumber: rfq.rfqNumber,
-              requester: rfq.requester,
-              items,
-              selectedItemIds: selectedItems,
-              enabledColumns: visibleCols.map((c) => c.key),
-              markupFactor,
-            }}
-          />
+            Global Markup
+          </Label>
+          <div className="relative flex items-center">
+            <Input
+              id="globalMarkup"
+              type="number"
+              min="0"
+              max="999"
+              step="0.1"
+              value={globalMarkup}
+              onChange={(e) => setGlobalMarkup(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+              placeholder="0"
+              className="h-8 w-20 text-xs text-right pr-6 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+            />
+            <span className="absolute right-2 text-xs text-slate-400 pointer-events-none">
+              %
+            </span>
+          </div>
         </div>
+        <Button
+          size="sm"
+          onClick={handleSaveQuote}
+          disabled={saving}
+          className="gap-1.5 text-white"
+          style={{ backgroundColor: "#276E79" }}
+        >
+          <Save className="h-3.5 w-3.5" />
+          {saving ? "Saving…" : saved ? "Update" : "Save Quote"}
+        </Button>
+        <ExportMenu
+          data={{
+            quoteNumber,
+            rfqNumber: rfq.rfqNumber,
+            requester: rfq.requester,
+            items,
+            selectedItemIds: selectedItems,
+            enabledColumns: visibleCols.map((c) => c.key),
+            markupFactor,
+          }}
+        />
       </div>
 
       {/* Section header */}
-      <div className="mb-3 pl-1">
+      <div className="flex items-center justify-between gap-3 mb-3 pl-1 pr-1">
         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Quote Lines
         </h3>
+        <span className="text-xs text-slate-400 tabular-nums">
+          {selectedItems.size} of {items.length} item
+          {items.length !== 1 ? "s" : ""} selected
+        </span>
       </div>
 
       {/* Column toggles */}
@@ -399,10 +401,6 @@ export function QuoteView({
             </button>
           );
         })}
-        <span className="ml-auto text-xs text-slate-400 tabular-nums">
-          {selectedItems.size} of {items.length} item
-          {items.length !== 1 ? "s" : ""} selected
-        </span>
       </div>
 
       {/* Items table — outer div is the positioning anchor; overflow lives one level in */}

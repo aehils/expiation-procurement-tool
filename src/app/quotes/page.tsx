@@ -2,6 +2,8 @@ import { unstable_cache } from "next/cache";
 import { prisma, withDbRetry } from "@/lib/db";
 import { parseQuoteConfig } from "@/lib/quote-config";
 import { QuoteList, type QuoteRow } from "@/components/quotes/quote-list";
+import { lineTotalNaira } from "@/lib/export/types";
+import type { DetailsItemPayload } from "@/components/rfq/item-detail-form";
 
 const getQuoteRows = unstable_cache(
   async (): Promise<QuoteRow[]> => {
@@ -19,7 +21,18 @@ const getQuoteRows = unstable_cache(
               select: {
                 rfqNumber: true,
                 requester: true,
-                items: { select: { id: true }, orderBy: { createdAt: "asc" } },
+                items: {
+                  select: {
+                    id: true,
+                    requestQuantity: true,
+                    nairaUnitPrice: true,
+                    tax: true,
+                    taxMode: true,
+                    domesticShippingNaira: true,
+                    intlShippingNaira: true,
+                  },
+                  orderBy: { createdAt: "asc" },
+                },
                 purchaseOrders: { select: { id: true } },
               },
             },
@@ -33,6 +46,14 @@ const getQuoteRows = unstable_cache(
         const selectedItemIds = config
           ? config.items.filter((id) => itemIdSet.has(id))
           : itemIds;
+        const markupFactor = 1 + (config?.markup ?? 0) / 100;
+        const selectedSet = new Set(selectedItemIds);
+        let total = 0;
+        for (const item of q.rfq.items) {
+          if (!selectedSet.has(item.id)) continue;
+          const line = lineTotalNaira(item as unknown as DetailsItemPayload);
+          if (line != null) total += line * markupFactor;
+        }
         return {
           id: q.id,
           quoteNumber: q.quoteNumber,
@@ -42,6 +63,7 @@ const getQuoteRows = unstable_cache(
           selectedItemIds,
           hasPo: q.rfq.purchaseOrders.length > 0,
           createdAt: q.createdAt,
+          total,
         };
       });
     } catch {
