@@ -24,12 +24,12 @@ export default async function QuotePage({
   // Read any saved quote separately and tolerate the Quote table not existing
   // yet (migration not applied) — mirrors readPersistedBannerRates' guard so
   // this page keeps working even before the Quotes migration is deployed.
-  let savedQuote: { config: string } | null = null;
+  let savedQuote: { config: string; updatedAt: Date } | null = null;
   try {
     savedQuote = await withDbRetry(() =>
       prisma.quote.findUnique({
         where: { rfqId: rfq.id },
-        select: { config: true },
+        select: { config: true, updatedAt: true },
       }),
     );
   } catch {
@@ -50,6 +50,7 @@ export default async function QuotePage({
       backHref={`/rfq/${rfq.id}/details`}
       hasSavedQuote={savedQuote != null}
       initialConfig={parseQuoteConfig(savedQuote?.config)}
+      initialUpdatedAt={savedQuote?.updatedAt.toISOString() ?? null}
     />
   );
 }

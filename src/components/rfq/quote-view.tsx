@@ -17,7 +17,10 @@ import {
   type ColKey,
   formatNaira,
   cellValueRaw,
+  quoteTotalNaira,
 } from "@/lib/export/types";
+
+const NAIRA_COLS = new Set<ColKey>(["nairaUnitPrice", "tax", "shipping", "totalPrice"]);
 
 const COLUMN_KEYS = new Set<string>(COLUMNS.map((c) => c.key));
 
@@ -30,7 +33,7 @@ type Rfq = {
 
 function cellValue(item: DetailsItemPayload, key: ColKey, markupFactor: number): React.ReactNode {
   const raw = cellValueRaw(item, key, markupFactor);
-  if (key === "nairaUnitPrice" || key === "totalPrice") {
+  if (NAIRA_COLS.has(key)) {
     return raw != null ? formatNaira(raw as number) : "—";
   }
   return raw ?? "—";
@@ -92,6 +95,19 @@ function CopyIcon() {
   );
 }
 
+function formatRelativeTime(date: Date, now: number): string {
+  const diff = Math.max(0, now - date.getTime());
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const d = Math.floor(hr / 24);
+  if (d < 7) return `${d}d ago`;
+  return date.toLocaleDateString();
+}
+
 export function QuoteView({
   rfq,
   items,
@@ -99,6 +115,7 @@ export function QuoteView({
   backLabel = "Back to RFQ",
   hasSavedQuote = false,
   initialConfig = null,
+  initialUpdatedAt = null,
 }: {
   rfq: Rfq;
   items: DetailsItemPayload[];
@@ -106,6 +123,7 @@ export function QuoteView({
   backLabel?: string;
   hasSavedQuote?: boolean;
   initialConfig?: QuoteConfig | null;
+  initialUpdatedAt?: string | null;
 }) {
   const quoteNumber = quoteNumberFromRfq(rfq.rfqNumber);
 
@@ -129,6 +147,14 @@ export function QuoteView({
   );
   const [saved, setSaved] = React.useState(hasSavedQuote);
   const [saving, setSaving] = React.useState(false);
+  const [updatedAt, setUpdatedAt] = React.useState<string | null>(initialUpdatedAt);
+  const [nowTick, setNowTick] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    setNowTick(Date.now());
+    const id = setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const [hoveredItemId, setHoveredItemId] = React.useState<string | null>(null);
   const [menuOpenItemId, setMenuOpenItemId] = React.useState<string | null>(null);
 
@@ -196,12 +222,13 @@ export function QuoteView({
   async function handleSaveQuote() {
     setSaving(true);
     try {
-      await saveQuote(rfq.id, {
+      const result = await saveQuote(rfq.id, {
         columns: visibleCols.map((c) => c.key),
         items: [...selectedItems],
         markup: parseFloat(globalMarkup) || 0,
       });
       setSaved(true);
+      setUpdatedAt(result.updatedAt);
       toast.success("Quote saved");
     } catch (err) {
       console.error(err);
@@ -235,6 +262,25 @@ export function QuoteView({
           Quote
         </h2>
         <div className="flex items-center gap-2">
+          {(() => {
+            if (nowTick == null) {
+              return <span className="text-xs text-slate-400">&nbsp;</span>;
+            }
+            if (!updatedAt) {
+              return (
+                <span className="text-xs text-slate-400 italic">Unsaved</span>
+              );
+            }
+            const date = new Date(updatedAt);
+            return (
+              <span
+                className="text-xs text-slate-500"
+                title={date.toLocaleString()}
+              >
+                Updated {formatRelativeTime(date, nowTick)}
+              </span>
+            );
+          })()}
           <button
             type="button"
             onClick={copyQuoteId}
@@ -244,14 +290,23 @@ export function QuoteView({
             <span>#{quoteNumber}</span>
             <CopyIcon />
           </button>
-          <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
-            {saved ? "Saved" : "Draft"}
-          </span>
         </div>
       </div>
 
       {/* Requester + actions row */}
-      <div className="flex items-center justify-end gap-3 mb-6 px-1">
+      <div className="flex items-center justify-between gap-3 mb-6 px-1">
+        <div className="flex flex-col">
+          <span
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "#274579" }}
+          >
+            Quote Total
+          </span>
+          <span className="text-lg font-semibold text-slate-800 tabular-nums leading-tight">
+            {formatNaira(quoteTotalNaira(items, selectedItems, markupFactor))}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Label
             htmlFor="requester"
@@ -314,6 +369,7 @@ export function QuoteView({
               markupFactor,
             }}
           />
+        </div>
       </div>
 
       {/* Section header */}
