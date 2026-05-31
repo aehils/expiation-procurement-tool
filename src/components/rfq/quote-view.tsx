@@ -108,6 +108,8 @@ export function QuoteView({
   initialConfig?: QuoteConfig | null;
 }) {
   const quoteNumber = quoteNumberFromRfq(rfq.rfqNumber);
+  const rfqDetailsHref = `/rfq/${rfq.id}/details`;
+  const showViewRfq = (backHref ?? rfqDetailsHref) !== rfqDetailsHref;
 
   const [selectedItems, setSelectedItems] = React.useState<Set<string>>(() => {
     const itemIds = new Set(items.map((i) => i.id));
@@ -235,6 +237,14 @@ export function QuoteView({
           Quote
         </h2>
         <div className="flex items-center gap-2">
+          {showViewRfq && (
+            <Link
+              href={rfqDetailsHref}
+              className="inline-flex items-center px-2 py-0.5 text-xs font-medium uppercase tracking-wider text-[#274579] hover:text-blue-600 active:text-blue-700 transition-colors"
+            >
+              View RFQ
+            </Link>
+          )}
           <button
             type="button"
             onClick={copyQuoteId}
