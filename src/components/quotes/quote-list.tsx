@@ -189,7 +189,7 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
               <div className="flex-1 flex items-center bg-card border border-border rounded-md hover:border-slate-300 hover:shadow-[0_2px_10px_-3px_rgba(15,23,42,0.18)] transition-[border-color,box-shadow]">
                 <Link
                   href={`/quotes/${q.id}`}
-                  className="flex-1 flex items-center pl-4 pr-4 py-4 rounded-l-md"
+                  className="flex-1 flex items-center pl-4 pr-4 py-3 rounded-l-md"
                 >
                   <span className="flex-1 text-sm text-card-foreground truncate">
                     {q.requester}
@@ -197,13 +197,13 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
                 </Link>
                 <Link
                   href={`/rfq/${q.rfqId}/details`}
-                  className="flex items-center justify-center w-28 mr-4 py-4 text-xs font-medium uppercase tracking-wider text-[#274579] hover:text-blue-600 active:text-blue-700 transition-colors shrink-0"
+                  className="flex items-center justify-center w-28 mr-4 py-3 text-xs font-medium uppercase tracking-wider text-[#274579] hover:text-blue-600 active:text-blue-700 transition-colors shrink-0"
                 >
                   View RFQ
                 </Link>
                 <Link
                   href={`/quotes/${q.id}`}
-                  className="flex items-center py-4"
+                  className="flex items-center py-3"
                 >
                   <span className="w-32 text-sm font-medium text-muted-foreground shrink-0">
                     {q.quoteNumber}
@@ -300,7 +300,7 @@ function QuoteRowMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`Actions for ${quote.quoteNumber}`}
-        className="relative flex items-center justify-center w-10 h-full px-0 py-4 text-muted-foreground/50 hover:text-foreground active:text-foreground transition-colors"
+        className="relative flex items-center justify-center w-10 h-full px-0 py-3 text-muted-foreground/50 hover:text-foreground active:text-foreground transition-colors"
       >
         <MoreVertical className="w-4 h-4" />
       </button>
