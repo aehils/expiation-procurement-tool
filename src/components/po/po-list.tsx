@@ -81,7 +81,7 @@ export function PoList({ pos: initial }: { pos: PoRow[] }) {
             </span>
             <div className="flex-1 flex items-center bg-card border border-border rounded-md overflow-hidden hover:bg-accent/30 transition-colors">
               <Link
-                href={`/po/${po.id}`}
+                href={`/po/${po.id}?from=list`}
                 className="flex-1 flex items-center pl-4 pr-0 py-3"
               >
                 <span className="flex-1 text-sm text-card-foreground truncate pr-4">

@@ -47,7 +47,15 @@ export default async function QuotePage({
         status: rfq.status,
       }}
       items={items}
-      backHref={`/rfq/${rfq.id}/details`}
+      listBackHref="/rfq"
+      listBackLabel={
+        <>
+          Back to RFQ
+          <span className="font-semibold text-[0.88em] tracking-normal -ml-[2px] relative top-[1px]">
+            s
+          </span>
+        </>
+      }
       hasSavedQuote={savedQuote != null}
       initialConfig={parseQuoteConfig(savedQuote?.config)}
       initialUpdatedAt={savedQuote?.updatedAt.toISOString() ?? null}

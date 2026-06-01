@@ -192,7 +192,7 @@ export function QuoteList({ quotes }: { quotes: QuoteRow[] }) {
               </span>
               <div className="relative flex-1 flex items-center bg-card border border-border rounded-md hover:border-slate-300 hover:shadow-[0_2px_10px_-3px_rgba(15,23,42,0.18)] transition-[border-color,box-shadow] pl-4">
                 <Link
-                  href={`/quotes/${q.id}`}
+                  href={`/quotes/${q.id}?from=list`}
                   aria-label={`Open quote ${q.quoteNumber}`}
                   className="absolute inset-0 rounded-md"
                 />

@@ -34,8 +34,8 @@ export default async function QuotePage({
         status: quote.rfq.status,
       }}
       items={items}
-      backHref="/quotes"
-      backLabel="Back to Quotes"
+      listBackHref="/quotes"
+      listBackLabel="Back to Quotes"
       hasSavedQuote
       initialConfig={parseQuoteConfig(quote.config)}
       initialUpdatedAt={quote.updatedAt.toISOString()}

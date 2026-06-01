@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronLeft, MoreVertical, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -111,20 +112,23 @@ function formatRelativeTime(date: Date, now: number): string {
 export function QuoteView({
   rfq,
   items,
-  backHref,
-  backLabel = "Back to RFQ",
+  listBackHref,
+  listBackLabel,
   hasSavedQuote = false,
   initialConfig = null,
   initialUpdatedAt = null,
 }: {
   rfq: Rfq;
   items: DetailsItemPayload[];
-  backHref?: string;
-  backLabel?: string;
+  listBackHref?: string;
+  listBackLabel?: React.ReactNode;
   hasSavedQuote?: boolean;
   initialConfig?: QuoteConfig | null;
   initialUpdatedAt?: string | null;
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromList = searchParams.get("from") === "list";
   const quoteNumber = quoteNumberFromRfq(rfq.rfqNumber);
 
   const [selectedItems, setSelectedItems] = React.useState<Set<string>>(() => {
@@ -251,13 +255,24 @@ export function QuoteView({
     <div className="max-w-screen-2xl mx-auto px-4 py-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-6">
-        <Link
-          href={backHref ?? `/rfq/${rfq.id}/details`}
-          className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          {backLabel}
-        </Link>
+        {fromList && listBackHref ? (
+          <Link
+            href={listBackHref}
+            className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {listBackLabel}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back
+          </button>
+        )}
         <h2 className="text-3xl font-semibold text-slate-800 tracking-tight">
           Quote
         </h2>

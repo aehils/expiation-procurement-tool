@@ -18,7 +18,7 @@ import {
   UNITS_OF_MEASURE,
 } from "@/lib/constants";
 import { updateRfqItem } from "@/lib/actions";
-import type { RateInfo } from "./details-view";
+import type { RateInfo } from "./currency-banner";
 
 export type DetailsItemPayload = {
   id: string;

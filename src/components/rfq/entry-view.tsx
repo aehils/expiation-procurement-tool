@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +18,8 @@ import {
 import { CATEGORIES, DEPARTMENTS, categoryLabel, departmentLabel } from "@/lib/constants";
 import { createRfq, updateRfqEntryData } from "@/lib/actions";
 import type { EntryItem } from "@/lib/schemas";
+import { RfqStepper } from "./rfq-stepper";
+import { CurrencyBannerSpacer } from "./currency-banner";
 
 // `id` is only present on items already persisted to the DB (edit mode). New
 // items added during this session carry `tempId` only, and get created on save.
@@ -251,13 +252,14 @@ export function EntryView({
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
       <div className="flex items-center justify-between gap-2 mb-6">
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={() => router.back()}
           className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
-        </Link>
+        </button>
         <h2 className="text-3xl font-semibold text-slate-800 tracking-tight">
           Request for Quote
         </h2>
@@ -286,32 +288,45 @@ export function EntryView({
             </svg>
           </button>
           <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
-            Draft
+            In Progress
           </span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left column: Requester + Form */}
-        <div className="lg:col-span-7 space-y-4">
-          {/* Requester input — belongs to the RFQ as a whole, not per-item */}
-          <div className="flex items-center gap-3 px-1 max-w-[70%] ml-auto">
-            <Label
-              htmlFor="requester"
-              className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
-              style={{ color: "#274579" }}
-            >
-              Requester
-            </Label>
-            <Input
-              id="requester"
-              value={requester}
-              onChange={(e) => setRequester(e.target.value)}
-              placeholder="Required Field"
-              className="h-8 text-xs flex-1 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
-            />
+        {/* Stepper/requester row — full width, row 1. Mirrors step 2: stepper pushed rightward via
+            ml-auto, divider with symmetric mx-6 gaps. The invisible currency-banner spacer keeps
+            the right-block width matched to step 2 so positions align across pages. */}
+        <div className="lg:col-span-12 lg:row-start-1">
+          <div className="flex items-center px-1">
+            <div className="ml-auto">
+              <RfqStepper currentStep={1} rfqId={rfqId} />
+            </div>
+            <div aria-hidden="true" className="h-8 w-px bg-slate-300 mx-6" />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Label
+                  htmlFor="requester"
+                  className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+                  style={{ color: "#274579" }}
+                >
+                  Requester
+                </Label>
+                <Input
+                  id="requester"
+                  value={requester}
+                  onChange={(e) => setRequester(e.target.value)}
+                  placeholder="Required Field"
+                  className="h-8 text-xs w-64 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+                />
+              </div>
+              <CurrencyBannerSpacer />
+            </div>
           </div>
+        </div>
 
+        {/* Left column: Form — row 2 */}
+        <div className="lg:col-span-7 lg:col-start-1 lg:row-start-2 space-y-4">
           {/* Form */}
           <div className="bg-white rounded-md shadow-xl p-4 border border-slate-100">
             <form onSubmit={handleAdd} className="space-y-4">
@@ -465,9 +480,11 @@ export function EntryView({
           </div>
         </div>
 
-        {/* Added items panel */}
-        <div className="lg:col-span-5 lg:sticky lg:top-4 lg:self-start">
-          <div className="bg-white rounded-md shadow-xl border border-slate-100 flex flex-col lg:h-[calc(100vh-6rem)]">
+        {/* Added items panel — spans row 1+2 in cols 8-12 so it rides up to the stepper row's
+            top (overlapping the invisible currency spacer) and its bottom auto-aligns with the
+            form via grid row sizing. */}
+        <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 min-h-0">
+          <div className="bg-white rounded-md shadow-xl border border-slate-100 flex flex-col h-full">
             <div className="px-4 pt-4 pb-2 flex items-center justify-between">
               <h3 className="font-semibold text-sm text-slate-800">Added</h3>
               <span className="text-xs text-slate-400">{items.length} Items</span>
