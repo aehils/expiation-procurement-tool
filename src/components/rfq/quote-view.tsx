@@ -311,7 +311,7 @@ export function QuoteView({
       {/* Requester + actions row */}
       <div className="flex items-center justify-end gap-3 mb-10 px-1">
         <div className="flex items-stretch h-8 rounded-md overflow-hidden border border-[#274579]/30 bg-[#274579]/10">
-          <span className="flex items-center px-3 text-[10px] font-semibold uppercase tracking-wider text-[#274579]">
+          <span className="flex items-center px-3 text-[11px] font-semibold uppercase tracking-wide text-[#274579]">
             Total
           </span>
           <span className="flex items-center w-44 px-3 bg-slate-100 border-l border-[#274579]/20 text-xs tabular-nums text-slate-700">
