@@ -25,6 +25,7 @@ type RfqItem = {
   requester: string;
   status: string;
   createdAt: Date | string;
+  itemCount: number;
 };
 
 function formatDate(date: Date | string): string {
@@ -126,6 +127,7 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
           <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
             Requester
           </span>
+          <span className="w-20 shrink-0" />
           <span className="w-32 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
             Code
           </span>
@@ -154,13 +156,16 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
                 <Link
                   href={
                     rfq.status === "ordered"
-                      ? `/rfq/${rfq.id}/quote`
-                      : `/rfq/${rfq.id}/details`
+                      ? `/rfq/${rfq.id}/quote?from=list`
+                      : `/rfq/${rfq.id}/details?from=list`
                   }
                   className="flex-1 flex items-center pl-4 pr-0 py-3"
                 >
                   <span className="flex-1 text-sm text-card-foreground truncate pr-4">
                     {rfq.requester}
+                  </span>
+                  <span className="w-20 text-xs text-muted-foreground/70 shrink-0 tabular-nums">
+                    {rfq.itemCount} item{rfq.itemCount === 1 ? "" : "s"}
                   </span>
                   <span className="w-32 text-sm font-medium text-muted-foreground shrink-0">
                     {rfq.rfqNumber}

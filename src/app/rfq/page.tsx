@@ -17,6 +17,14 @@ const getRfqs = unstable_cache(
 
 export default async function RfqListPage() {
   const rfqs = await getRfqs();
+  const rows = rfqs.map((r) => ({
+    id: r.id,
+    rfqNumber: r.rfqNumber,
+    requester: r.requester,
+    status: r.status,
+    createdAt: r.createdAt,
+    itemCount: r._count.items,
+  }));
 
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
@@ -24,7 +32,7 @@ export default async function RfqListPage() {
         Requests for Quote
       </h1>
 
-      <RfqList rfqs={rfqs} />
+      <RfqList rfqs={rows} />
     </div>
   );
 }

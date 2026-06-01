@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronLeft, RefreshCw } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -27,8 +27,8 @@ import {
   type PersistedRate,
 } from "@/lib/actions";
 import { ItemDetailForm, type DetailsItemPayload } from "./item-detail-form";
-
-export type RateInfo = { rate: number; fetchedAt: string; error?: string };
+import { RfqStepper } from "./rfq-stepper";
+import { CurrencyBanner, type RateInfo } from "./currency-banner";
 
 type Rfq = {
   id: string;
@@ -67,17 +67,6 @@ function countFilled(item: DetailsItemPayload): number {
   }, 0);
 }
 
-function relativeTime(iso: string): string {
-  if (!iso) return "";
-  const then = new Date(iso).getTime();
-  const diffSec = Math.round((Date.now() - then) / 1000);
-  if (diffSec < 5) return "Updated now";
-  if (diffSec < 60) return `Updated ${diffSec}s ago`;
-  if (diffSec < 3600) return `Updated ${Math.round(diffSec / 60)}m ago`;
-  if (diffSec < 86400) return `Updated ${Math.round(diffSec / 3600)}h ago`;
-  return `Updated ${Math.round(diffSec / 86400)}d ago`;
-}
-
 export function DetailsView({
   rfq,
   initialItems,
@@ -88,6 +77,8 @@ export function DetailsView({
   initialBannerRates?: PersistedRate[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromList = searchParams.get("from") === "list";
   // Items live in client state so progress indicators update without a server roundtrip.
   const [items, setItems] = React.useState<DetailsItemPayload[]>(initialItems);
   const [expanded, setExpanded] = React.useState<string | undefined>(initialItems[0]?.id);
@@ -245,15 +236,25 @@ export function DetailsView({
 
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
-      {/* Top area — matches step 1 (entry view) so moving between pages feels static */}
       <div className="flex items-center justify-between gap-2 mb-6">
-        <Link
-          href="/"
-          className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </Link>
+        {fromList ? (
+          <Link
+            href="/rfq"
+            className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to RFQ<span className="font-semibold text-[0.88em] tracking-normal -ml-[2px] relative top-[1px]">s</span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="-ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-1 text-sm font-semibold uppercase tracking-wide text-slate-600 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back
+          </button>
+        )}
         <h2 className="text-3xl font-semibold text-slate-800 tracking-tight">
           Request for Quote
         </h2>
@@ -291,35 +292,42 @@ export function DetailsView({
             </span>
           ) : (
             <span className="px-2 py-0.5 text-xs font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
-              Draft
+              In Progress
             </span>
           )}
         </div>
       </div>
 
-      {/* Requester row (mirrors step 1 exactly) with the currency banner inline beside it */}
-      <div className="flex items-center justify-end gap-4 mb-4 px-1">
-        <div className="flex items-center gap-3">
-          <Label
-            htmlFor="requester"
-            className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
-            style={{ color: "#274579" }}
-          >
-            Requester
-          </Label>
-          <Input
-            id="requester"
-            value={rfq.requester}
-            readOnly
-            className="h-8 text-xs w-64 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+      {/* Stepper pushed rightward via ml-auto (consumes left free space) so it sits next to
+          the divider. Divider has symmetric mx-6 gaps, so the spacing on either side matches. */}
+      <div className="flex items-center mb-4 px-1">
+        <div className="ml-auto">
+          <RfqStepper currentStep={2} rfqId={rfq.id} />
+        </div>
+        <div aria-hidden="true" className="h-8 w-px bg-slate-300 mx-6" />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Label
+              htmlFor="requester"
+              className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+              style={{ color: "#274579" }}
+            >
+              Requester
+            </Label>
+            <Input
+              id="requester"
+              value={rfq.requester}
+              readOnly
+              className="h-8 text-xs w-64 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+            />
+          </div>
+          <CurrencyBanner
+            rates={rates}
+            freshness={bannerFreshness}
+            refreshing={refreshing}
+            onRefresh={refreshBannerRates}
           />
         </div>
-        <CurrencyBanner
-          rates={rates}
-          freshness={bannerFreshness}
-          refreshing={refreshing}
-          onRefresh={refreshBannerRates}
-        />
       </div>
 
       {rfq.purchaseOrders.length > 0 && (
@@ -477,68 +485,3 @@ export function DetailsView({
   );
 }
 
-// Subtle strip of currency → Naira conversions. Shrinks to wrap only its
-// contents; leads with a refresh button that also doubles as the freshness
-// label. Colours are intentionally low-contrast so the strip recedes.
-function CurrencyBanner({
-  rates,
-  freshness,
-  refreshing,
-  onRefresh,
-}: {
-  rates: Record<string, RateInfo>;
-  freshness: string | undefined;
-  refreshing: boolean;
-  onRefresh: () => void;
-}) {
-  // Re-render the freshness label every 30s so "Updated now" ticks to
-  // "Updated 1m ago" without the user having to interact.
-  const [, forceTick] = React.useReducer((n: number) => n + 1, 0);
-  React.useEffect(() => {
-    const id = setInterval(forceTick, 30_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const label = refreshing
-    ? "Updating…"
-    : freshness
-      ? relativeTime(freshness)
-      : "Not yet updated";
-
-  return (
-    <div className="flex h-8 w-fit flex-nowrap items-center gap-x-4 rounded-md bg-slate-50/50 px-2.5 whitespace-nowrap">
-      <button
-        type="button"
-        onClick={onRefresh}
-        disabled={refreshing}
-        className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-600 transition-colors disabled:cursor-wait disabled:opacity-60"
-        aria-label="Refresh currency rates"
-      >
-        <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
-        <span className="tabular-nums">{label}</span>
-      </button>
-      {BANNER_CURRENCIES.map((c) => {
-        const info = rates[c.code];
-        return (
-          <div key={c.code} className="flex items-baseline gap-1 tabular-nums">
-            <span className="text-xs font-medium text-slate-400">
-              {c.symbol}
-            </span>
-            {info?.error ? (
-              <span className="text-[11px] text-amber-600/80">unavailable</span>
-            ) : info ? (
-              <span className="text-xs text-slate-500">
-                ₦
-                {info.rate.toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                })}
-              </span>
-            ) : (
-              <span className="inline-block w-12 h-3 rounded bg-slate-200/60 animate-pulse" />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}

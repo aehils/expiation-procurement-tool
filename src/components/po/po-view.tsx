@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -82,6 +82,8 @@ const STATUS_STYLES: Record<string, string> = {
 
 export function PoView({ po }: { po: PoData }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromList = searchParams.get("from") === "list";
   const isDraft = po.status === "draft";
   const isIssued = po.status === "issued";
   const quoteNumber = quoteNumberFromRfq(po.rfq.rfqNumber);
@@ -197,13 +199,24 @@ export function PoView({ po }: { po: PoData }) {
     <div className="max-w-screen-xl mx-auto px-6 py-4">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Home
-        </Link>
+        {fromList ? (
+          <Link
+            href="/po"
+            className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to POs
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back
+          </button>
+        )}
         <h2 className="text-lg font-semibold text-slate-800 tracking-tight">
           Purchase Order
         </h2>
