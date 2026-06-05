@@ -110,6 +110,7 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
           open={chooserOpen}
           onClose={() => setChooserOpen(false)}
           align="end"
+          className="shadow-2xl"
         />
       </div>
     </div>

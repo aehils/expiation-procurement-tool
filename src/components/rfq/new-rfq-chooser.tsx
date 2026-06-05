@@ -11,6 +11,7 @@ export function NewRfqChooser({
   open,
   onClose,
   align = "end",
+  className,
 }: {
   open: boolean;
   onClose: () => void;
@@ -18,6 +19,9 @@ export function NewRfqChooser({
   // with the trigger. Use "end" for right-side header buttons, "start" when
   // there's plenty of room to the right (e.g. the home action card).
   align?: "start" | "end";
+  // Extra classes merged onto the menu container — e.g. callers can pass
+  // `shadow-2xl` to deepen the elevation against busier content.
+  className?: string;
 }) {
   const router = useRouter();
   const menuRef = React.useRef<HTMLDivElement | null>(null);
@@ -57,9 +61,9 @@ export function NewRfqChooser({
       ref={menuRef}
       role="menu"
       aria-label="Start a new RFQ"
-      className={`absolute z-50 top-full mt-1.5 w-64 bg-white rounded-md shadow-xl border border-slate-200 overflow-hidden ${
+      className={`absolute z-50 top-full mt-1.5 w-full bg-white rounded-md shadow-xl border border-slate-200 overflow-hidden ${
         align === "end" ? "right-0" : "left-0"
-      }`}
+      } ${className ?? ""}`}
     >
       <button
         type="button"
