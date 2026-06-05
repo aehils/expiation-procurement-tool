@@ -81,7 +81,7 @@ export function DetailsView({
   const fromList = searchParams.get("from") === "list";
   // Items live in client state so progress indicators update without a server roundtrip.
   const [items, setItems] = React.useState<DetailsItemPayload[]>(initialItems);
-  const [expanded, setExpanded] = React.useState<string | undefined>(initialItems[0]?.id);
+  const [expanded, setExpanded] = React.useState<string | undefined>(undefined);
   const [rates, setRates] = React.useState<Record<string, RateInfo>>(() => {
     const seed: Record<string, RateInfo> = {};
     for (const r of initialBannerRates) {
@@ -204,7 +204,11 @@ export function DetailsView({
     return countFilled(item) === TOTAL_DETAIL_FIELDS || item.markedComplete;
   }
 
-  const anyComplete = items.some(isComplete);
+  const incompleteCount = items.reduce(
+    (n, it) => (isComplete(it) ? n : n + 1),
+    0,
+  );
+  const allComplete = incompleteCount === 0;
 
   const alreadyQuoted = rfq.status === "quoted" || rfq.status === "ordered";
 
@@ -215,7 +219,7 @@ export function DetailsView({
       router.push(`/rfq/${rfq.id}/quote`);
       return;
     }
-    if (!anyComplete) {
+    if (!allComplete) {
       setShowCompleteWarning(true);
       return;
     }
@@ -466,9 +470,12 @@ export function DetailsView({
       </Accordion>
 
       <div className="mt-6 flex items-center justify-end gap-3">
-        {showCompleteWarning && !anyComplete && (
+        {showCompleteWarning && !allComplete && (
           <p className="text-xs text-orange-600 font-medium">
-            Mark at least one item as complete before proceeding.
+            {incompleteCount === 1
+              ? "1 item still needs to be completed"
+              : `${incompleteCount} items still need to be completed`}
+            {" "}before proceeding.
           </p>
         )}
         <Button
