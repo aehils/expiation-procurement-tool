@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Upload, Download } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,10 @@ import {
 import { CATEGORIES, DEPARTMENTS, categoryLabel, departmentLabel } from "@/lib/constants";
 import { createRfq, updateRfqEntryData } from "@/lib/actions";
 import type { EntryItem } from "@/lib/schemas";
-import { parseRfqWorkbook, downloadRfqTemplate } from "@/lib/rfq-upload";
+import {
+  UPLOADED_ITEMS_STORAGE_KEY,
+  readStoredUploadedItems,
+} from "@/lib/rfq-upload";
 import { RfqStepper } from "./rfq-stepper";
 import { CurrencyBannerSpacer } from "./currency-banner";
 
@@ -108,10 +111,32 @@ export function EntryView({
     return target?.requestQuantity ? String(target.requestQuantity) : "";
   });
   const [submitting, setSubmitting] = React.useState(false);
-  const [uploading, setUploading] = React.useState(false);
-  const [uploadWarnings, setUploadWarnings] = React.useState<string[]>([]);
-  const [warningsOpen, setWarningsOpen] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Hydrate items from a spreadsheet upload handed off via sessionStorage.
+  // The upload page at /rfq/new/upload parses the file, stashes the parsed
+  // rows, and routes here so the user lands in the same Add Items view they'd
+  // see when entering manually — already populated, with each card flagged for
+  // review until they click Edit on it.
+  React.useEffect(() => {
+    if (mode !== "new") return;
+    if (initialItems && initialItems.length > 0) return;
+    const stashed = readStoredUploadedItems();
+    if (!stashed) return;
+    sessionStorage.removeItem(UPLOADED_ITEMS_STORAGE_KEY);
+    if (stashed.items.length === 0) return;
+    setItems((prev) => {
+      if (prev.length > 0) return prev;
+      return stashed.items.map((row) => ({
+        ...row,
+        tempId: crypto.randomUUID(),
+        source: "uploaded" as const,
+        reviewed: false,
+      }));
+    });
+    toast.success(
+      `Imported ${stashed.items.length} item${stashed.items.length === 1 ? "" : "s"} — review each one in the panel on the right.`,
+    );
+  }, [mode, initialItems]);
 
   function patchForm<K extends keyof EntryItem>(key: K, value: EntryItem[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -219,53 +244,6 @@ export function EntryView({
     if (items.length === 0) return;
     if (!confirm("Clear ALL items from this RFQ? This cannot be undone.")) return;
     setItems([]);
-  }
-
-  async function handleSpreadsheetUpload(
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) {
-    const file = e.target.files?.[0];
-    // Reset the input so picking the same file twice re-triggers onChange.
-    e.target.value = "";
-    if (!file) return;
-    setUploading(true);
-    try {
-      const result = await parseRfqWorkbook(file);
-      if (result.items.length === 0) {
-        setUploadWarnings(result.warnings);
-        setWarningsOpen(result.warnings.length > 0);
-        toast.error(
-          result.warnings[0] ?? "No items found in the uploaded sheet.",
-        );
-        return;
-      }
-      const newItems: DraftItem[] = result.items.map((row) => ({
-        ...row,
-        tempId: crypto.randomUUID(),
-        source: "uploaded" as const,
-        reviewed: false,
-      }));
-      setItems((prev) => [...prev, ...newItems]);
-      setUploadWarnings(result.warnings);
-      setWarningsOpen(false);
-      toast.success(
-        `Imported ${newItems.length} item${newItems.length === 1 ? "" : "s"} — review them in the panel on the right.`,
-      );
-    } catch (err) {
-      console.error(err);
-      toast.error("Couldn't read that spreadsheet. Is it a valid .xlsx file?");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function handleDownloadTemplate() {
-    try {
-      await downloadRfqTemplate();
-    } catch (err) {
-      console.error(err);
-      toast.error("Couldn't generate the template file.");
-    }
   }
 
   async function copyRfqId() {
@@ -411,73 +389,6 @@ export function EntryView({
 
         {/* Left column: Form — row 2 */}
         <div className="lg:col-span-7 lg:col-start-1 lg:row-start-2 space-y-4">
-          {/* Upload panel — drop or pick an .xlsx and parse it into items.
-              Anything the sheet doesn't carry stays blank for the user to
-              finish via the form below or the details page. */}
-          {mode === "new" && (
-            <div className="bg-white rounded-md shadow-xl p-3 border border-slate-100">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Upload className="h-4 w-4 text-slate-500 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-semibold text-slate-800">
-                      Upload spreadsheet
-                    </div>
-                    <div className="text-[11px] text-slate-500 truncate">
-                      Parse items from an .xlsx matching the template.
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={handleDownloadTemplate}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
-                  >
-                    <Download className="h-3 w-3" />
-                    Template
-                  </button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={uploading}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="h-7 text-xs px-3"
-                  >
-                    {uploading ? "Parsing…" : "Choose file"}
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".xlsx"
-                    onChange={handleSpreadsheetUpload}
-                    className="hidden"
-                  />
-                </div>
-              </div>
-              {uploadWarnings.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setWarningsOpen((v) => !v)}
-                    className="text-[11px] text-amber-700 hover:text-amber-900"
-                  >
-                    {warningsOpen ? "Hide" : "Show"} {uploadWarnings.length}{" "}
-                    parser{" "}
-                    {uploadWarnings.length === 1 ? "warning" : "warnings"}
-                  </button>
-                  {warningsOpen && (
-                    <ul className="mt-1.5 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
-                      {uploadWarnings.map((w, i) => (
-                        <li key={i}>{w}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
           {/* Form */}
           <div className="bg-white rounded-md shadow-xl p-4 border border-slate-100">
             <form onSubmit={handleAdd} className="space-y-4">

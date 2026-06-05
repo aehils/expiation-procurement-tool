@@ -70,6 +70,35 @@ export type ParseResult = {
   warnings: string[];
 };
 
+// SessionStorage handoff: the upload page parses, stashes the parsed items
+// here, and routes to /rfq/new where EntryView hydrates from this key and
+// clears it. Kept short-lived and client-only — no server round-trip, no
+// orphan DB rows.
+export const UPLOADED_ITEMS_STORAGE_KEY = "rfq:uploaded-items";
+
+export type StashedItems = {
+  items: UploadedItem[];
+  fileName?: string;
+};
+
+export function readStoredUploadedItems(): StashedItems | null {
+  if (typeof window === "undefined") return null;
+  const raw = sessionStorage.getItem(UPLOADED_ITEMS_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as StashedItems;
+    if (!parsed || !Array.isArray(parsed.items)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function writeStoredUploadedItems(payload: StashedItems): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(UPLOADED_ITEMS_STORAGE_KEY, JSON.stringify(payload));
+}
+
 function normalizeHeader(s: string): string {
   return s.replace(/\s+/g, " ").trim().toUpperCase();
 }
