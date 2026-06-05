@@ -96,10 +96,12 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   AED: "د.إ",
 };
 
-export function categoryLabel(value: string): string {
+export function categoryLabel(value: string | null | undefined): string {
+  if (!value) return "—";
   return CATEGORIES.find((c) => c.value === value)?.label ?? value;
 }
 
-export function departmentLabel(value: string): string {
+export function departmentLabel(value: string | null | undefined): string {
+  if (!value) return "—";
   return DEPARTMENTS.find((d) => d.value === value)?.label ?? value;
 }

@@ -5,8 +5,8 @@ import type { DetailsItemPayload } from "@/components/rfq/item-detail-form";
 export function toDetailsPayload(it: RfqItem): DetailsItemPayload {
   return {
     id: it.id,
-    itemCategory: it.itemCategory,
-    department: it.department,
+    itemCategory: it.itemCategory ?? null,
+    department: it.department ?? null,
     itemName: it.itemName,
     requestQuantity: it.requestQuantity,
     mProductCode: it.mProductCode,

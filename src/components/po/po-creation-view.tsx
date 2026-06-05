@@ -16,8 +16,8 @@ import { formatNaira } from "@/lib/export/types";
 type RfqItemForPo = {
   id: string;
   itemName: string;
-  itemCategory: string;
-  department: string;
+  itemCategory: string | null;
+  department: string | null;
   requestQuantity: number;
   vendor: string | null;
   vendorLocation: string | null;

@@ -70,8 +70,8 @@ export async function createRfq(
             status: "details",
             items: {
               create: parsed.items.map((item) => ({
-                itemCategory: item.itemCategory,
-                department: item.department,
+                itemCategory: item.itemCategory || null,
+                department: item.department || null,
                 itemName: item.itemName,
                 itemDescription: item.itemDescription || null,
                 requestQuantity: item.requestQuantity,
@@ -80,6 +80,24 @@ export async function createRfq(
                 brand: item.brand || null,
                 model: item.model || null,
                 additionalNotes: item.additionalNotes || null,
+                // Second-stage fields, populated only when an upload carried them.
+                uom: item.uom ?? null,
+                vendor: item.vendor ?? null,
+                productLink: item.productLink ?? null,
+                ogUnitPrice: item.ogUnitPrice ?? null,
+                nairaUnitPrice: item.nairaUnitPrice ?? null,
+                // If the upload provided an NGN price, lock it from being
+                // overwritten by the live FX recalc on the details page.
+                nairaOverridden:
+                  item.nairaOverridden ??
+                  (item.nairaUnitPrice != null ? true : false),
+                tax: item.tax ?? null,
+                taxMode:
+                  item.taxMode ?? (item.tax != null ? "amount" : null),
+                domesticShippingCost: item.domesticShippingCost ?? null,
+                domesticShippingNaira: item.domesticShippingNaira ?? null,
+                intlShippingCost: item.intlShippingCost ?? null,
+                intlShippingNaira: item.intlShippingNaira ?? null,
               })),
             },
           },
@@ -137,8 +155,8 @@ export async function updateRfqEntryData(
       : []),
     ...parsed.items.map((item) => {
       const entryFields = {
-        itemCategory: item.itemCategory,
-        department: item.department,
+        itemCategory: item.itemCategory || null,
+        department: item.department || null,
         itemName: item.itemName,
         itemDescription: item.itemDescription || null,
         requestQuantity: item.requestQuantity,
@@ -374,8 +392,11 @@ export async function createPurchaseOrder(
                 return {
                   rfqItemId: src.id,
                   itemName: src.itemName,
-                  itemCategory: src.itemCategory,
-                  department: src.department,
+                  // PoItem snapshots the source RfqItem, where category/
+                  // department are now optional. Default to empty string to
+                  // satisfy the still-required PoItem columns.
+                  itemCategory: src.itemCategory ?? "",
+                  department: src.department ?? "",
                   vendor: src.vendor ?? "",
                   vendorLocation: src.vendorLocation,
                   brand: src.brand,

@@ -12,18 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  CURRENCIES,
-  CURRENCY_SYMBOLS,
-  UNITS_OF_MEASURE,
-} from "@/lib/constants";
+import { CURRENCIES, CURRENCY_SYMBOLS } from "@/lib/constants";
 import { updateRfqItem } from "@/lib/actions";
 import type { RateInfo } from "./currency-banner";
 
 export type DetailsItemPayload = {
   id: string;
-  itemCategory: string;
-  department: string;
+  itemCategory: string | null;
+  department: string | null;
   itemName: string;
   requestQuantity: number;
   mProductCode: string | null;
@@ -386,24 +382,14 @@ export function ItemDetailForm({
               />
             </Field>
             <Field label="Unit of Measure" required>
-              <Select
+              <Input
+                type="text"
+                className="h-8 text-xs"
+                placeholder="e.g. 100 per pack"
                 value={draft.uom}
-                onValueChange={(v) => {
-                  setField("uom", v);
-                  void persist({ uom: v });
-                }}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {UNITS_OF_MEASURE.map((u) => (
-                    <SelectItem key={u.value} value={u.value}>
-                      {u.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(e) => setField("uom", e.target.value)}
+                onBlur={(e) => void persist({ uom: e.target.value })}
+              />
             </Field>
           </Section>
         </div>

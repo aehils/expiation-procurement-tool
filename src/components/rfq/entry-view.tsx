@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +18,20 @@ import {
 import { CATEGORIES, DEPARTMENTS, categoryLabel, departmentLabel } from "@/lib/constants";
 import { createRfq, updateRfqEntryData } from "@/lib/actions";
 import type { EntryItem } from "@/lib/schemas";
+import { parseRfqWorkbook, downloadRfqTemplate } from "@/lib/rfq-upload";
 import { RfqStepper } from "./rfq-stepper";
 import { CurrencyBannerSpacer } from "./currency-banner";
 
 // `id` is only present on items already persisted to the DB (edit mode). New
 // items added during this session carry `tempId` only, and get created on save.
-type DraftItem = EntryItem & { tempId: string; id?: string };
+// `source` and `reviewed` are client-only flags driving the "imported, not yet
+// reviewed" dot on the Added panel — stripped before send.
+type DraftItem = EntryItem & {
+  tempId: string;
+  id?: string;
+  source?: "manual" | "uploaded";
+  reviewed?: boolean;
+};
 
 export type InitialEntryItem = EntryItem & { id: string };
 
@@ -100,6 +108,10 @@ export function EntryView({
     return target?.requestQuantity ? String(target.requestQuantity) : "";
   });
   const [submitting, setSubmitting] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const [uploadWarnings, setUploadWarnings] = React.useState<string[]>([]);
+  const [warningsOpen, setWarningsOpen] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   function patchForm<K extends keyof EntryItem>(key: K, value: EntryItem[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -115,14 +127,8 @@ export function EntryView({
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     const qty = parseFloat(quantityRaw);
-    if (
-      !form.itemName ||
-      !form.itemCategory ||
-      !form.department ||
-      !qty ||
-      qty <= 0
-    ) {
-      toast.error("Please fill in Item Name, Category, Department, and Quantity.");
+    if (!form.itemName || !qty || qty <= 0) {
+      toast.error("Please fill in Item Name and Quantity.");
       return;
     }
     const wasEditing = Boolean(editingItemId || editingTempId);
@@ -139,6 +145,8 @@ export function EntryView({
             ...form,
             requestQuantity: qty,
             tempId: it.tempId,
+            source: "manual",
+            reviewed: true,
             ...(it.id ? { id: it.id } : {}),
           };
         }),
@@ -148,6 +156,8 @@ export function EntryView({
         ...form,
         requestQuantity: qty,
         tempId: crypto.randomUUID(),
+        source: "manual",
+        reviewed: true,
       };
       setItems((prev) => [...prev, item]);
     }
@@ -172,14 +182,31 @@ export function EntryView({
   function handleEdit(tempId: string) {
     const target = items.find((it) => it.tempId === tempId);
     if (!target) return;
-    const { tempId: _omit, id: _existingId, ...rest } = target;
+    const {
+      tempId: _omit,
+      id: _existingId,
+      source: _src,
+      reviewed: _rev,
+      ...rest
+    } = target;
     void _omit;
+    void _src;
+    void _rev;
     setEditingItemId(_existingId);
     setEditingTempId(tempId);
     setForm(rest);
     setQuantityRaw(
       target.requestQuantity ? String(target.requestQuantity) : "",
     );
+    // Opening the item is enough of an acknowledgement — drop the "needs
+    // review" dot now, regardless of whether the user actually saves edits.
+    if (target.source === "uploaded" && !target.reviewed) {
+      setItems((prev) =>
+        prev.map((it) =>
+          it.tempId === tempId ? { ...it, reviewed: true } : it,
+        ),
+      );
+    }
     // Item stays in the list — it will be updated in-place when the user
     // clicks "Update Item". If they navigate away without saving, the
     // original data is preserved.
@@ -192,6 +219,53 @@ export function EntryView({
     if (items.length === 0) return;
     if (!confirm("Clear ALL items from this RFQ? This cannot be undone.")) return;
     setItems([]);
+  }
+
+  async function handleSpreadsheetUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
+    // Reset the input so picking the same file twice re-triggers onChange.
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const result = await parseRfqWorkbook(file);
+      if (result.items.length === 0) {
+        setUploadWarnings(result.warnings);
+        setWarningsOpen(result.warnings.length > 0);
+        toast.error(
+          result.warnings[0] ?? "No items found in the uploaded sheet.",
+        );
+        return;
+      }
+      const newItems: DraftItem[] = result.items.map((row) => ({
+        ...row,
+        tempId: crypto.randomUUID(),
+        source: "uploaded" as const,
+        reviewed: false,
+      }));
+      setItems((prev) => [...prev, ...newItems]);
+      setUploadWarnings(result.warnings);
+      setWarningsOpen(false);
+      toast.success(
+        `Imported ${newItems.length} item${newItems.length === 1 ? "" : "s"} — review them in the panel on the right.`,
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't read that spreadsheet. Is it a valid .xlsx file?");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDownloadTemplate() {
+    try {
+      await downloadRfqTemplate();
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't generate the template file.");
+    }
   }
 
   async function copyRfqId() {
@@ -219,8 +293,10 @@ export function EntryView({
         const { id } = await updateRfqEntryData(rfqId, {
           requester: requester.trim(),
           items: items.map((it) => {
-            const { tempId, ...rest } = it;
+            const { tempId, source, reviewed, ...rest } = it;
             void tempId;
+            void source;
+            void reviewed;
             return rest;
           }),
         });
@@ -230,9 +306,17 @@ export function EntryView({
           rfqNumber,
           requester: requester.trim(),
           items: items.map((it) => {
-            const { tempId, id: _existingId, ...rest } = it;
+            const {
+              tempId,
+              id: _existingId,
+              source,
+              reviewed,
+              ...rest
+            } = it;
             void tempId;
             void _existingId;
+            void source;
+            void reviewed;
             return rest;
           }),
         });
@@ -327,17 +411,81 @@ export function EntryView({
 
         {/* Left column: Form — row 2 */}
         <div className="lg:col-span-7 lg:col-start-1 lg:row-start-2 space-y-4">
+          {/* Upload panel — drop or pick an .xlsx and parse it into items.
+              Anything the sheet doesn't carry stays blank for the user to
+              finish via the form below or the details page. */}
+          {mode === "new" && (
+            <div className="bg-white rounded-md shadow-xl p-3 border border-slate-100">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Upload className="h-4 w-4 text-slate-500 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-slate-800">
+                      Upload spreadsheet
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      Parse items from an .xlsx matching the template.
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplate}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
+                  >
+                    <Download className="h-3 w-3" />
+                    Template
+                  </button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-7 text-xs px-3"
+                  >
+                    {uploading ? "Parsing…" : "Choose file"}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx"
+                    onChange={handleSpreadsheetUpload}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+              {uploadWarnings.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setWarningsOpen((v) => !v)}
+                    className="text-[11px] text-amber-700 hover:text-amber-900"
+                  >
+                    {warningsOpen ? "Hide" : "Show"} {uploadWarnings.length}{" "}
+                    parser{" "}
+                    {uploadWarnings.length === 1 ? "warning" : "warnings"}
+                  </button>
+                  {warningsOpen && (
+                    <ul className="mt-1.5 space-y-0.5 text-[11px] text-slate-600 list-disc list-inside">
+                      {uploadWarnings.map((w, i) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {/* Form */}
           <div className="bg-white rounded-md shadow-xl p-4 border border-slate-100">
             <form onSubmit={handleAdd} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <Label className="mb-1 block text-xs">
-                  Item Category{" "}
-                  <span className="text-slate-400 font-normal">(Required)</span>
-                </Label>
+                <Label className="mb-1 block text-xs">Item Category</Label>
                 <Select
-                  value={form.itemCategory}
+                  value={form.itemCategory ?? ""}
                   onValueChange={(v) => patchForm("itemCategory", v)}
                 >
                   <SelectTrigger className="h-8 text-xs">
@@ -353,12 +501,9 @@ export function EntryView({
                 </Select>
               </div>
               <div>
-                <Label className="mb-1 block text-xs">
-                  Department{" "}
-                  <span className="text-slate-400 font-normal">(Required)</span>
-                </Label>
+                <Label className="mb-1 block text-xs">Department</Label>
                 <Select
-                  value={form.department}
+                  value={form.department ?? ""}
                   onValueChange={(v) => patchForm("department", v)}
                 >
                   <SelectTrigger className="h-8 text-xs">
@@ -504,15 +649,24 @@ export function EntryView({
                       : editingItemId
                         ? item.id === editingItemId
                         : false;
+                    const needsReview =
+                      item.source === "uploaded" && !item.reviewed;
                     return (
                     <div
                       key={item.tempId}
-                      className={`rounded p-2.5 transition-shadow ${
+                      className={`relative rounded p-2.5 transition-shadow ${
                         beingEdited
                           ? "bg-blue-50/60 border-2 border-blue-300"
                           : "bg-slate-50 border border-slate-200 hover:shadow-md"
                       }`}
                     >
+                      {needsReview && (
+                        <span
+                          aria-label="Imported — review pending"
+                          title="Imported — review pending"
+                          className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-white"
+                        />
+                      )}
                       <div className="flex items-start gap-2">
                         <span
                           aria-hidden="true"
@@ -530,7 +684,9 @@ export function EntryView({
                             Department
                           </dt>
                           <dd className="text-slate-700 truncate">
-                            {departmentLabel(item.department)}
+                            {item.department
+                              ? departmentLabel(item.department)
+                              : "—"}
                           </dd>
                         </div>
                         <div className="text-center">
@@ -551,9 +707,13 @@ export function EntryView({
                         </div>
                       </dl>
                       <div className="mt-3 pt-1.5 border-t border-slate-200 flex items-center justify-between gap-3">
-                        <span className="inline-block px-1.5 py-px text-[10px] font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
-                          {categoryLabel(item.itemCategory)}
-                        </span>
+                        {item.itemCategory ? (
+                          <span className="inline-block px-1.5 py-px text-[10px] font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
+                            {categoryLabel(item.itemCategory)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400">—</span>
+                        )}
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
