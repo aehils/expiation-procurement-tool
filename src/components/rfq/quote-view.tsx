@@ -437,7 +437,7 @@ export function QuoteView({
           style={{ backgroundColor: "#276E79" }}
         >
           <Save className="h-3.5 w-3.5" />
-          {saving ? "Saving…" : saved ? "Update" : "Save Quote"}
+          {saving ? "Saving…" : "Save"}
         </Button>
         <ExportMenu
           data={{
