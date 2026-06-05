@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { FileText, Package, Plus } from "lucide-react";
 import { QuoteSelectDialog } from "./po/quote-select-dialog";
+import { NewRfqChooser } from "./rfq/new-rfq-chooser";
 
 type QuoteOption = {
   id: string;
@@ -15,19 +15,28 @@ type QuoteOption = {
 
 export function HomeActionCards({ quotes }: { quotes: QuoteOption[] }) {
   const [poDialogOpen, setPoDialogOpen] = React.useState(false);
+  const [rfqChooserOpen, setRfqChooserOpen] = React.useState(false);
 
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Link
-          href="/rfq/new"
-          className="group flex flex-col items-center justify-center gap-3 p-5 rounded-xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 text-center"
-        >
-          <div className="w-10 h-10 rounded-lg bg-slate-300 dark:bg-slate-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-            <FileText size={18} className="text-slate-600 dark:text-slate-200" />
-          </div>
-          <span className="font-medium text-card-foreground text-sm">Start New RFQ</span>
-        </Link>
+        <div className="relative" data-new-rfq-anchor>
+          <button
+            onClick={() => setRfqChooserOpen((v) => !v)}
+            className="group w-full flex flex-col items-center justify-center gap-3 p-5 rounded-xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 text-center"
+          >
+            <div className="w-10 h-10 rounded-lg bg-slate-300 dark:bg-slate-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <FileText size={18} className="text-slate-600 dark:text-slate-200" />
+            </div>
+            <span className="font-medium text-card-foreground text-sm">Start New RFQ</span>
+          </button>
+          <NewRfqChooser
+            open={rfqChooserOpen}
+            onClose={() => setRfqChooserOpen(false)}
+            align="start"
+            width="w-full"
+          />
+        </div>
 
         <button
           onClick={() => setPoDialogOpen(true)}

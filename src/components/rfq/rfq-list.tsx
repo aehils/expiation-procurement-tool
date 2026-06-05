@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Plus, Search, Trash2 } from "lucide-react";
 import { deleteRfq } from "@/lib/actions";
+import { NewRfqChooser } from "./new-rfq-chooser";
 
 const STATUS_LABEL: Record<string, string> = {
   details: "In Progress",
@@ -44,6 +45,7 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [, startTransition] = useTransition();
+  const [chooserOpen, setChooserOpen] = useState(false);
 
   function handleDelete(id: string) {
     if (deleting) return;
@@ -95,13 +97,22 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 pointer-events-none" />
       </div>
       <div className="flex-1" />
-      <Link
-        href="/rfq/new"
-        className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md text-sm font-medium bg-[#274579] text-white hover:opacity-90 transition-opacity shrink-0"
-      >
-        <Plus className="w-4 h-4" />
-        New RFQ
-      </Link>
+      <div className="relative shrink-0" data-new-rfq-anchor>
+        <button
+          type="button"
+          onClick={() => setChooserOpen((v) => !v)}
+          className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md text-sm font-medium bg-[#274579] text-white hover:opacity-90 transition-opacity"
+        >
+          <Plus className="w-4 h-4" />
+          New RFQ
+        </button>
+        <NewRfqChooser
+          open={chooserOpen}
+          onClose={() => setChooserOpen(false)}
+          align="end"
+          className="shadow-2xl"
+        />
+      </div>
     </div>
   );
 

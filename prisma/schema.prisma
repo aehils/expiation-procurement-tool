@@ -48,9 +48,11 @@ model RfqItem {
   rfqId String
   rfq   Rfq    @relation(fields: [rfqId], references: [id], onDelete: Cascade)
 
-  // First-stage fields (captured on the entry view)
-  itemCategory    String
-  department      String
+  // First-stage fields (captured on the entry view). Category/department are
+  // optional so spreadsheet uploads can land them blank; the user still has
+  // the choosers on the manual form to set them when they want to.
+  itemCategory    String?
+  department      String?
   itemName        String
   itemDescription String?
   requestQuantity Float

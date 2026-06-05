@@ -2,9 +2,13 @@ import { z } from "zod";
 import { REQUIRED_DETAIL_FIELDS } from "./constants";
 
 // First-stage item: what the entry view collects before saving anything.
+// Category/department are optional so spreadsheet uploads can land them blank;
+// the manual form leaves the choosers in place but no longer blocks submit on them.
+// Second-stage fields (uom, vendor, pricing, shipping) are optional here too so
+// spreadsheet uploads can carry them straight into createRfq without a second hop.
 export const entryItemSchema = z.object({
-  itemCategory: z.string().min(1, "Category is required"),
-  department: z.string().min(1, "Department is required"),
+  itemCategory: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
   itemName: z.string().min(1, "Item name is required"),
   itemDescription: z.string().optional().nullable(),
   requestQuantity: z.number().positive("Quantity must be > 0"),
@@ -13,6 +17,18 @@ export const entryItemSchema = z.object({
   brand: z.string().optional().nullable(),
   model: z.string().optional().nullable(),
   additionalNotes: z.string().optional().nullable(),
+  uom: z.string().nullish(),
+  vendor: z.string().nullish(),
+  productLink: z.string().nullish(),
+  ogUnitPrice: z.number().nullish(),
+  nairaUnitPrice: z.number().nullish(),
+  nairaOverridden: z.boolean().optional(),
+  tax: z.number().nullish(),
+  taxMode: z.enum(["amount", "percent"]).nullish(),
+  domesticShippingCost: z.number().nullish(),
+  domesticShippingNaira: z.number().nullish(),
+  intlShippingCost: z.number().nullish(),
+  intlShippingNaira: z.number().nullish(),
 });
 export type EntryItem = z.infer<typeof entryItemSchema>;
 

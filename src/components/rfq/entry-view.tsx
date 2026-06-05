@@ -18,12 +18,23 @@ import {
 import { CATEGORIES, DEPARTMENTS, categoryLabel, departmentLabel } from "@/lib/constants";
 import { createRfq, updateRfqEntryData } from "@/lib/actions";
 import type { EntryItem } from "@/lib/schemas";
+import {
+  UPLOADED_ITEMS_STORAGE_KEY,
+  readStoredUploadedItems,
+} from "@/lib/rfq-upload";
 import { RfqStepper } from "./rfq-stepper";
 import { CurrencyBannerSpacer } from "./currency-banner";
 
 // `id` is only present on items already persisted to the DB (edit mode). New
 // items added during this session carry `tempId` only, and get created on save.
-type DraftItem = EntryItem & { tempId: string; id?: string };
+// `source` and `reviewed` are client-only flags driving the "imported, not yet
+// reviewed" dot on the Added panel — stripped before send.
+type DraftItem = EntryItem & {
+  tempId: string;
+  id?: string;
+  source?: "manual" | "uploaded";
+  reviewed?: boolean;
+};
 
 export type InitialEntryItem = EntryItem & { id: string };
 
@@ -101,6 +112,32 @@ export function EntryView({
   });
   const [submitting, setSubmitting] = React.useState(false);
 
+  // Hydrate items from a spreadsheet upload handed off via sessionStorage.
+  // The upload page at /rfq/new/upload parses the file, stashes the parsed
+  // rows, and routes here so the user lands in the same Add Items view they'd
+  // see when entering manually — already populated, with each card flagged for
+  // review until they click Edit on it.
+  React.useEffect(() => {
+    if (mode !== "new") return;
+    if (initialItems && initialItems.length > 0) return;
+    const stashed = readStoredUploadedItems();
+    if (!stashed) return;
+    sessionStorage.removeItem(UPLOADED_ITEMS_STORAGE_KEY);
+    if (stashed.items.length === 0) return;
+    setItems((prev) => {
+      if (prev.length > 0) return prev;
+      return stashed.items.map((row) => ({
+        ...row,
+        tempId: crypto.randomUUID(),
+        source: "uploaded" as const,
+        reviewed: false,
+      }));
+    });
+    toast.success(
+      `Imported ${stashed.items.length} item${stashed.items.length === 1 ? "" : "s"} — review each one in the panel on the right.`,
+    );
+  }, [mode, initialItems]);
+
   function patchForm<K extends keyof EntryItem>(key: K, value: EntryItem[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
@@ -115,14 +152,8 @@ export function EntryView({
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     const qty = parseFloat(quantityRaw);
-    if (
-      !form.itemName ||
-      !form.itemCategory ||
-      !form.department ||
-      !qty ||
-      qty <= 0
-    ) {
-      toast.error("Please fill in Item Name, Category, Department, and Quantity.");
+    if (!form.itemName || !qty || qty <= 0) {
+      toast.error("Please fill in Item Name and Quantity.");
       return;
     }
     const wasEditing = Boolean(editingItemId || editingTempId);
@@ -139,6 +170,8 @@ export function EntryView({
             ...form,
             requestQuantity: qty,
             tempId: it.tempId,
+            source: "manual",
+            reviewed: true,
             ...(it.id ? { id: it.id } : {}),
           };
         }),
@@ -148,6 +181,8 @@ export function EntryView({
         ...form,
         requestQuantity: qty,
         tempId: crypto.randomUUID(),
+        source: "manual",
+        reviewed: true,
       };
       setItems((prev) => [...prev, item]);
     }
@@ -172,14 +207,31 @@ export function EntryView({
   function handleEdit(tempId: string) {
     const target = items.find((it) => it.tempId === tempId);
     if (!target) return;
-    const { tempId: _omit, id: _existingId, ...rest } = target;
+    const {
+      tempId: _omit,
+      id: _existingId,
+      source: _src,
+      reviewed: _rev,
+      ...rest
+    } = target;
     void _omit;
+    void _src;
+    void _rev;
     setEditingItemId(_existingId);
     setEditingTempId(tempId);
     setForm(rest);
     setQuantityRaw(
       target.requestQuantity ? String(target.requestQuantity) : "",
     );
+    // Opening the item is enough of an acknowledgement — drop the "needs
+    // review" dot now, regardless of whether the user actually saves edits.
+    if (target.source === "uploaded" && !target.reviewed) {
+      setItems((prev) =>
+        prev.map((it) =>
+          it.tempId === tempId ? { ...it, reviewed: true } : it,
+        ),
+      );
+    }
     // Item stays in the list — it will be updated in-place when the user
     // clicks "Update Item". If they navigate away without saving, the
     // original data is preserved.
@@ -219,8 +271,10 @@ export function EntryView({
         const { id } = await updateRfqEntryData(rfqId, {
           requester: requester.trim(),
           items: items.map((it) => {
-            const { tempId, ...rest } = it;
+            const { tempId, source, reviewed, ...rest } = it;
             void tempId;
+            void source;
+            void reviewed;
             return rest;
           }),
         });
@@ -230,9 +284,17 @@ export function EntryView({
           rfqNumber,
           requester: requester.trim(),
           items: items.map((it) => {
-            const { tempId, id: _existingId, ...rest } = it;
+            const {
+              tempId,
+              id: _existingId,
+              source,
+              reviewed,
+              ...rest
+            } = it;
             void tempId;
             void _existingId;
+            void source;
+            void reviewed;
             return rest;
           }),
         });
@@ -332,12 +394,9 @@ export function EntryView({
             <form onSubmit={handleAdd} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <Label className="mb-1 block text-xs">
-                  Item Category{" "}
-                  <span className="text-slate-400 font-normal">(Required)</span>
-                </Label>
+                <Label className="mb-1 block text-xs">Item Category</Label>
                 <Select
-                  value={form.itemCategory}
+                  value={form.itemCategory ?? ""}
                   onValueChange={(v) => patchForm("itemCategory", v)}
                 >
                   <SelectTrigger className="h-8 text-xs">
@@ -353,12 +412,9 @@ export function EntryView({
                 </Select>
               </div>
               <div>
-                <Label className="mb-1 block text-xs">
-                  Department{" "}
-                  <span className="text-slate-400 font-normal">(Required)</span>
-                </Label>
+                <Label className="mb-1 block text-xs">Department</Label>
                 <Select
-                  value={form.department}
+                  value={form.department ?? ""}
                   onValueChange={(v) => patchForm("department", v)}
                 >
                   <SelectTrigger className="h-8 text-xs">
@@ -504,15 +560,24 @@ export function EntryView({
                       : editingItemId
                         ? item.id === editingItemId
                         : false;
+                    const needsReview =
+                      item.source === "uploaded" && !item.reviewed;
                     return (
                     <div
                       key={item.tempId}
-                      className={`rounded p-2.5 transition-shadow ${
+                      className={`relative rounded p-2.5 transition-shadow ${
                         beingEdited
                           ? "bg-blue-50/60 border-2 border-blue-300"
                           : "bg-slate-50 border border-slate-200 hover:shadow-md"
                       }`}
                     >
+                      {needsReview && (
+                        <span
+                          aria-label="Imported — review pending"
+                          title="Imported — review pending"
+                          className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-white"
+                        />
+                      )}
                       <div className="flex items-start gap-2">
                         <span
                           aria-hidden="true"
@@ -530,7 +595,9 @@ export function EntryView({
                             Department
                           </dt>
                           <dd className="text-slate-700 truncate">
-                            {departmentLabel(item.department)}
+                            {item.department
+                              ? departmentLabel(item.department)
+                              : "—"}
                           </dd>
                         </div>
                         <div className="text-center">
@@ -551,9 +618,13 @@ export function EntryView({
                         </div>
                       </dl>
                       <div className="mt-3 pt-1.5 border-t border-slate-200 flex items-center justify-between gap-3">
-                        <span className="inline-block px-1.5 py-px text-[10px] font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
-                          {categoryLabel(item.itemCategory)}
-                        </span>
+                        {item.itemCategory ? (
+                          <span className="inline-block px-1.5 py-px text-[10px] font-medium bg-[#274579]/10 text-[#274579] rounded uppercase tracking-wide">
+                            {categoryLabel(item.itemCategory)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400">—</span>
+                        )}
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
