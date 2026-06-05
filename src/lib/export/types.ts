@@ -1,5 +1,5 @@
 import type { DetailsItemPayload } from "@/components/rfq/item-detail-form";
-import { categoryLabel } from "@/lib/constants";
+import { categoryLabel, uomLabel } from "@/lib/constants";
 
 export type ColKey =
   | "requestQuantity"
@@ -119,8 +119,13 @@ export function cellValueRaw(
       return item.brand ?? null;
     case "vendor":
       return item.vendor ?? null;
-    case "uom":
-      return item.uom ?? null;
+    case "uom": {
+      if (!item.uom) return null;
+      const label = uomLabel(item.uom);
+      return item.unitQuantity != null
+        ? `${item.unitQuantity} per ${label}`
+        : `per ${label}`;
+    }
     case "mProductCode":
       return item.mProductCode ?? null;
     case "manufacturerName":
@@ -150,4 +155,5 @@ export type ExportQuoteData = {
   selectedItemIds: Set<string>;
   enabledColumns: ColKey[];
   markupFactor: number;
+  notes?: Record<string, string>;
 };

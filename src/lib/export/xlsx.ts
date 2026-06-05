@@ -142,6 +142,21 @@ export async function generateQuoteXlsx(
       });
     }
 
+    const note = data.notes?.[item.id]?.trim();
+    if (note) {
+      const noteRow = ws.addRow(["", `Note: ${note}`]);
+      ws.mergeCells(rowIdx, 2, rowIdx, totalDataCols);
+      const cell = noteRow.getCell(2);
+      cell.font = { italic: true, size: 9, color: { argb: "FF64748B" } };
+      cell.alignment = { wrapText: true, vertical: "top" };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFF8FAFC" },
+      };
+      rowIdx++;
+    }
+
     const lineTotal = lineTotalNaira(item);
     if (lineTotal != null) grandTotal += lineTotal * data.markupFactor;
   }

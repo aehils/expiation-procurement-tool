@@ -4,10 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronLeft, MoreVertical, Save } from "lucide-react";
+import { ChevronLeft, MessageSquareText, MoreVertical, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { DetailsItemPayload } from "./item-detail-form";
 import { ExportMenu } from "./export-menu";
 import { saveQuote } from "@/lib/actions";
@@ -149,6 +150,11 @@ export function QuoteView({
   const [globalMarkup, setGlobalMarkup] = React.useState(
     initialConfig && initialConfig.markup > 0 ? String(initialConfig.markup) : "",
   );
+  const [notes, setNotes] = React.useState<Record<string, string>>(
+    () => initialConfig?.notes ?? {},
+  );
+  const [noteEditorItemId, setNoteEditorItemId] = React.useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = React.useState("");
   const [saved, setSaved] = React.useState(hasSavedQuote);
   const [saving, setSaving] = React.useState(false);
   const [updatedAt, setUpdatedAt] = React.useState<string | null>(initialUpdatedAt);
@@ -226,10 +232,16 @@ export function QuoteView({
   async function handleSaveQuote() {
     setSaving(true);
     try {
+      const trimmedNotes: Record<string, string> = {};
+      for (const [id, body] of Object.entries(notes)) {
+        const trimmed = body.trim();
+        if (trimmed) trimmedNotes[id] = trimmed;
+      }
       const result = await saveQuote(rfq.id, {
         columns: visibleCols.map((c) => c.key),
         items: [...selectedItems],
         markup: parseFloat(globalMarkup) || 0,
+        notes: trimmedNotes,
       });
       setSaved(true);
       setUpdatedAt(result.updatedAt);
@@ -240,6 +252,24 @@ export function QuoteView({
     } finally {
       setSaving(false);
     }
+  }
+
+  function openNoteEditor(itemId: string) {
+    setNoteDraft(notes[itemId] ?? "");
+    setNoteEditorItemId(itemId);
+    setMenuOpenItemId(null);
+  }
+
+  function saveNoteDraft() {
+    if (!noteEditorItemId) return;
+    setNotes((prev) => {
+      const next = { ...prev };
+      const trimmed = noteDraft.trim();
+      if (trimmed) next[noteEditorItemId] = trimmed;
+      else delete next[noteEditorItemId];
+      return next;
+    });
+    setNoteEditorItemId(null);
   }
 
   async function copyQuoteId() {
@@ -381,6 +411,7 @@ export function QuoteView({
             selectedItemIds: selectedItems,
             enabledColumns: visibleCols.map((c) => c.key),
             markupFactor,
+            notes,
           }}
         />
       </div>
@@ -512,6 +543,7 @@ export function QuoteView({
           const pos = rowPositions.get(item.id);
           if (!pos) return null;
           const isActive = hoveredItemId === item.id || menuOpenItemId === item.id;
+          const hasNote = Boolean(notes[item.id]?.trim());
           return (
             <div
               key={item.id}
@@ -520,7 +552,7 @@ export function QuoteView({
               onMouseEnter={() => { cancelHoverClear(); setHoveredItemId(item.id); }}
               onMouseLeave={scheduleHoverClear}
             >
-              {isActive && (
+              {isActive ? (
                 <div className="relative">
                   <button
                     type="button"
@@ -536,6 +568,19 @@ export function QuoteView({
                     <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-md shadow-md py-1 min-w-[140px]">
                       <button
                         type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openNoteEditor(item.id);
+                        }}
+                        className="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
+                      >
+                        <span>{hasNote ? "Edit Note" : "Add Note"}</span>
+                        {hasNote && (
+                          <MessageSquareText className="h-3 w-3 text-[#274579]/70" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
                         onClick={(e) => e.stopPropagation()}
                         className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
                       >
@@ -544,11 +589,93 @@ export function QuoteView({
                     </div>
                   )}
                 </div>
-              )}
+              ) : hasNote ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openNoteEditor(item.id);
+                  }}
+                  title={notes[item.id]}
+                  className="w-6 h-6 flex items-center justify-center rounded text-[#274579]/70 hover:text-[#274579] hover:bg-slate-200 transition-colors"
+                >
+                  <MessageSquareText className="h-3.5 w-3.5" />
+                </button>
+              ) : null}
             </div>
           );
         })}
       </div>
+
+      {/* Note editor modal */}
+      {noteEditorItemId && (() => {
+        const item = items.find((i) => i.id === noteEditorItemId);
+        if (!item) return null;
+        const hadNote = Boolean(notes[noteEditorItemId]?.trim());
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setNoteEditorItemId(null)}
+            />
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+              <div className="px-5 py-4">
+                <h3 className="text-sm font-semibold text-slate-800">
+                  {hadNote ? "Edit note" : "Add note"}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5 truncate">
+                  {item.itemName}
+                </p>
+                <Textarea
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.target.value)}
+                  autoFocus
+                  className="mt-3 text-xs min-h-[110px]"
+                />
+                <p className="text-[11px] text-slate-400 mt-1.5">
+                  Notes don&apos;t appear in this table — they appear under the item on the exported quote.
+                </p>
+              </div>
+              <div className="px-5 py-3 border-t border-slate-200 flex justify-between gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setNotes((prev) => {
+                      const next = { ...prev };
+                      delete next[noteEditorItemId];
+                      return next;
+                    });
+                    setNoteEditorItemId(null);
+                  }}
+                  disabled={!hadNote}
+                  className="text-xs text-slate-600"
+                >
+                  Remove
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNoteEditorItemId(null)}
+                    className="text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={saveNoteDraft}
+                    className="text-xs text-white"
+                    style={{ backgroundColor: "#274579" }}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

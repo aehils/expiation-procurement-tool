@@ -86,10 +86,12 @@ export async function generateQuotePdf(
   );
 
   let grandTotal = 0;
-  const body: string[][] = [];
+  type AutoTableCell = string | { content: string; colSpan?: number; styles?: Record<string, unknown> };
+  const body: AutoTableCell[][] = [];
+  const totalColCount = 2 + visibleCols.length;
 
   selectedItems.forEach((item, idx) => {
-    const row: string[] = [String(idx + 1), item.itemName];
+    const row: AutoTableCell[] = [String(idx + 1), item.itemName];
     for (const col of visibleCols) {
       const raw = cellValueRaw(item, col.key, data.markupFactor);
       if (col.key === "nairaUnitPrice" || col.key === "totalPrice") {
@@ -99,13 +101,31 @@ export async function generateQuotePdf(
       }
     }
     body.push(row);
+
+    const note = data.notes?.[item.id]?.trim();
+    if (note) {
+      body.push([
+        "",
+        {
+          content: `Note: ${note}`,
+          colSpan: totalColCount - 1,
+          styles: {
+            fontStyle: "italic",
+            textColor: [100, 116, 139],
+            fontSize: 7,
+            fillColor: [248, 250, 252],
+          },
+        },
+      ]);
+    }
+
     const lineTotal = lineTotalNaira(item);
     if (lineTotal != null) grandTotal += lineTotal * data.markupFactor;
   });
 
   // Grand total row
   if (config.showGrandTotal && selectedItems.length > 0) {
-    const totalRow: string[] = new Array(2 + visibleCols.length).fill("");
+    const totalRow: AutoTableCell[] = new Array(2 + visibleCols.length).fill("");
     totalRow[1] = "GRAND TOTAL";
     const totalPriceIdx = visibleCols.findIndex((c) => c.key === "totalPrice");
     if (totalPriceIdx >= 0) {

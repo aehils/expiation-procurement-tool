@@ -678,6 +678,7 @@ export async function getQuoteExportData(quoteId: string): Promise<ExportQuoteDa
     selectedItemIds,
     enabledColumns: (config?.columns ?? []) as ColKey[],
     markupFactor: 1 + (config?.markup ?? 0) / 100,
+    notes: config?.notes ?? {},
   };
 }
 
