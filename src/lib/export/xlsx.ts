@@ -1,5 +1,5 @@
 import type { ExportConfig, ExportQuoteData } from "./types";
-import { COLUMNS, cellValueRaw, formatNaira, lineTotalNaira } from "./types";
+import { COLUMNS, cellValueRaw, formatNaira, lineTotalNaira, markupFactorForItem } from "./types";
 import { loadLogo } from "./logo";
 
 export async function generateQuoteXlsx(
@@ -105,9 +105,10 @@ export async function generateQuoteXlsx(
 
   for (const item of selectedItems) {
     itemNum++;
+    const factor = markupFactorForItem(item.id, data.markupFactor, data.customMarkups);
     const rowValues: (string | number)[] = [itemNum, item.itemName];
     for (const col of visibleCols) {
-      const raw = cellValueRaw(item, col.key, data.markupFactor);
+      const raw = cellValueRaw(item, col.key, factor);
       if (col.key === "nairaUnitPrice" || col.key === "totalPrice" || col.key === "requestQuantity") {
         rowValues.push(typeof raw === "number" ? raw : 0);
       } else {
@@ -158,7 +159,7 @@ export async function generateQuoteXlsx(
     }
 
     const lineTotal = lineTotalNaira(item);
-    if (lineTotal != null) grandTotal += lineTotal * data.markupFactor;
+    if (lineTotal != null) grandTotal += lineTotal * factor;
   }
 
   // Grand total row

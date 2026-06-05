@@ -670,6 +670,12 @@ export async function getQuoteExportData(quoteId: string): Promise<ExportQuoteDa
   const selectedItemIds = config
     ? new Set(config.items.filter((id) => itemIdSet.has(id)))
     : itemIdSet;
+  const customMarkups: Record<string, number> = {};
+  if (config?.customMarkups) {
+    for (const [id, pct] of Object.entries(config.customMarkups)) {
+      if (itemIdSet.has(id)) customMarkups[id] = pct;
+    }
+  }
   return {
     quoteNumber: quote.quoteNumber,
     rfqNumber: quote.rfq.rfqNumber,
@@ -679,6 +685,7 @@ export async function getQuoteExportData(quoteId: string): Promise<ExportQuoteDa
     enabledColumns: (config?.columns ?? []) as ColKey[],
     markupFactor: 1 + (config?.markup ?? 0) / 100,
     notes: config?.notes ?? {},
+    customMarkups,
   };
 }
 

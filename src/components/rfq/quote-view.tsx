@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronLeft, MessageSquareText, MoreVertical, Save } from "lucide-react";
+import { ChevronLeft, MessageSquareText, MoreVertical, Percent, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ import {
   type ColKey,
   formatNaira,
   cellValueRaw,
+  markupFactorForItem,
   quoteTotalNaira,
 } from "@/lib/export/types";
 
@@ -155,6 +156,11 @@ export function QuoteView({
   );
   const [noteEditorItemId, setNoteEditorItemId] = React.useState<string | null>(null);
   const [noteDraft, setNoteDraft] = React.useState("");
+  const [customMarkups, setCustomMarkups] = React.useState<Record<string, number>>(
+    () => initialConfig?.customMarkups ?? {},
+  );
+  const [markupEditorItemId, setMarkupEditorItemId] = React.useState<string | null>(null);
+  const [markupDraft, setMarkupDraft] = React.useState("");
   const [saved, setSaved] = React.useState(hasSavedQuote);
   const [saving, setSaving] = React.useState(false);
   const [updatedAt, setUpdatedAt] = React.useState<string | null>(initialUpdatedAt);
@@ -237,11 +243,17 @@ export function QuoteView({
         const trimmed = body.trim();
         if (trimmed) trimmedNotes[id] = trimmed;
       }
+      const itemIds = new Set(items.map((i) => i.id));
+      const trimmedCustomMarkups: Record<string, number> = {};
+      for (const [id, pct] of Object.entries(customMarkups)) {
+        if (itemIds.has(id)) trimmedCustomMarkups[id] = pct;
+      }
       const result = await saveQuote(rfq.id, {
         columns: visibleCols.map((c) => c.key),
         items: [...selectedItems],
         markup: parseFloat(globalMarkup) || 0,
         notes: trimmedNotes,
+        customMarkups: trimmedCustomMarkups,
       });
       setSaved(true);
       setUpdatedAt(result.updatedAt);
@@ -270,6 +282,31 @@ export function QuoteView({
       return next;
     });
     setNoteEditorItemId(null);
+  }
+
+  function openMarkupEditor(itemId: string) {
+    const existing = customMarkups[itemId];
+    setMarkupDraft(existing != null ? String(existing) : "");
+    setMarkupEditorItemId(itemId);
+    setMenuOpenItemId(null);
+  }
+
+  function saveMarkupDraft() {
+    if (!markupEditorItemId) return;
+    setCustomMarkups((prev) => {
+      const next = { ...prev };
+      const trimmed = markupDraft.trim();
+      if (trimmed === "") {
+        delete next[markupEditorItemId];
+      } else {
+        const parsed = parseFloat(trimmed);
+        if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 999) {
+          next[markupEditorItemId] = parsed;
+        }
+      }
+      return next;
+    });
+    setMarkupEditorItemId(null);
   }
 
   async function copyQuoteId() {
@@ -347,7 +384,7 @@ export function QuoteView({
           <span className="flex items-center w-44 px-3 bg-slate-100 border-l border-[#274579]/20 text-xs tabular-nums text-slate-700">
             <span className="text-slate-500">₦</span>
             <span className="ml-auto">
-              {quoteTotalNaira(items, selectedItems, markupFactor).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {quoteTotalNaira(items, selectedItems, markupFactor, customMarkups).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </span>
         </div>
@@ -412,6 +449,7 @@ export function QuoteView({
             enabledColumns: visibleCols.map((c) => c.key),
             markupFactor,
             notes,
+            customMarkups,
           }}
         />
       </div>
@@ -525,11 +563,14 @@ export function QuoteView({
                       <td className="px-3 py-2.5 font-medium text-slate-800">
                         {item.itemName}
                       </td>
-                      {visibleCols.map((col) => (
-                        <td key={col.key} className={`px-3 py-2.5 text-slate-600 ${col.wrap ? "max-w-[280px] whitespace-normal break-words" : ""}`}>
-                          {cellValue(item, col.key, markupFactor)}
-                        </td>
-                      ))}
+                      {(() => {
+                        const factor = markupFactorForItem(item.id, markupFactor, customMarkups);
+                        return visibleCols.map((col) => (
+                          <td key={col.key} className={`px-3 py-2.5 text-slate-600 ${col.wrap ? "max-w-[280px] whitespace-normal break-words" : ""}`}>
+                            {cellValue(item, col.key, factor)}
+                          </td>
+                        ));
+                      })()}
                     </tr>
                   );
                 })}
@@ -544,6 +585,7 @@ export function QuoteView({
           if (!pos) return null;
           const isActive = hoveredItemId === item.id || menuOpenItemId === item.id;
           const hasNote = Boolean(notes[item.id]?.trim());
+          const hasCustomMarkup = customMarkups[item.id] != null;
           return (
             <div
               key={item.id}
@@ -565,7 +607,7 @@ export function QuoteView({
                     <MoreVertical className="h-3.5 w-3.5" />
                   </button>
                   {menuOpenItemId === item.id && (
-                    <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-md shadow-md py-1 min-w-[140px]">
+                    <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-md shadow-md py-1 min-w-[160px]">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -581,10 +623,16 @@ export function QuoteView({
                       </button>
                       <button
                         type="button"
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openMarkupEditor(item.id);
+                        }}
+                        className="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
                       >
-                        Custom Markup
+                        <span>{hasCustomMarkup ? "Edit Custom Markup" : "Custom Markup"}</span>
+                        {hasCustomMarkup && (
+                          <Percent className="h-3 w-3 text-[#274579]/70" />
+                        )}
                       </button>
                     </div>
                   )}
@@ -605,7 +653,133 @@ export function QuoteView({
             </div>
           );
         })}
+
+        {/* Custom-markup edge badges — pinned to the table's right inner edge,
+            sitting over the rightmost cell content. Always visible (not hover-
+            gated) so the per-line override stays discoverable. */}
+        {items.map((item) => {
+          const pos = rowPositions.get(item.id);
+          if (!pos) return null;
+          const pct = customMarkups[item.id];
+          if (pct == null) return null;
+          return (
+            <button
+              key={`mk-${item.id}`}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openMarkupEditor(item.id);
+              }}
+              onMouseEnter={() => { cancelHoverClear(); setHoveredItemId(item.id); }}
+              onMouseLeave={scheduleHoverClear}
+              title={`Custom markup: ${pct}% (overrides global)`}
+              className="absolute z-10 inline-flex items-center justify-center w-[18px] h-[18px] rounded-md bg-[#274579] text-white text-[10px] font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.15)] ring-1 ring-white/40 hover:bg-[#1f3963] transition-colors"
+              style={{
+                top: pos.top + (pos.height - 18) / 2,
+                right: 6,
+              }}
+            >
+              %
+            </button>
+          );
+        })}
       </div>
+
+      {/* Custom markup editor modal */}
+      {markupEditorItemId && (() => {
+        const item = items.find((i) => i.id === markupEditorItemId);
+        if (!item) return null;
+        const hadMarkup = customMarkups[markupEditorItemId] != null;
+        const globalPct = parseFloat(globalMarkup) || 0;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setMarkupEditorItemId(null)}
+            />
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+              <div className="px-5 py-4">
+                <h3 className="text-sm font-semibold text-slate-800">
+                  {hadMarkup ? "Edit custom markup" : "Set custom markup"}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5 truncate">
+                  {item.itemName}
+                </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <Label
+                    htmlFor="customMarkupInput"
+                    className="text-xs font-semibold uppercase tracking-wide text-[#274579] whitespace-nowrap"
+                  >
+                    Markup
+                  </Label>
+                  <div className="relative flex items-center">
+                    <Input
+                      id="customMarkupInput"
+                      type="number"
+                      min="0"
+                      max="999"
+                      step="0.1"
+                      value={markupDraft}
+                      onChange={(e) => setMarkupDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          saveMarkupDraft();
+                        }
+                      }}
+                      autoFocus
+                      placeholder="0"
+                      className="h-8 w-24 text-xs text-right pr-6 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+                    />
+                    <span className="absolute right-2 text-xs text-slate-400 pointer-events-none">
+                      %
+                    </span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-2">
+                  Overrides the global markup ({globalPct}%) for this line only.
+                </p>
+              </div>
+              <div className="px-5 py-3 border-t border-slate-200 flex justify-between gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCustomMarkups((prev) => {
+                      const next = { ...prev };
+                      delete next[markupEditorItemId];
+                      return next;
+                    });
+                    setMarkupEditorItemId(null);
+                  }}
+                  disabled={!hadMarkup}
+                  className="text-xs text-slate-600"
+                >
+                  Remove
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMarkupEditorItemId(null)}
+                    className="text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={saveMarkupDraft}
+                    className="text-xs text-white"
+                    style={{ backgroundColor: "#274579" }}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Note editor modal */}
       {noteEditorItemId && (() => {

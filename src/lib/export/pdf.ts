@@ -1,5 +1,5 @@
 import type { ExportConfig, ExportQuoteData } from "./types";
-import { COLUMNS, cellValueRaw, lineTotalNaira } from "./types";
+import { COLUMNS, cellValueRaw, lineTotalNaira, markupFactorForItem } from "./types";
 import { loadLogo } from "./logo";
 
 function formatNairaPdf(v: number | null | undefined, withPrefix = false): string {
@@ -91,9 +91,10 @@ export async function generateQuotePdf(
   const totalColCount = 2 + visibleCols.length;
 
   selectedItems.forEach((item, idx) => {
+    const factor = markupFactorForItem(item.id, data.markupFactor, data.customMarkups);
     const row: AutoTableCell[] = [String(idx + 1), item.itemName];
     for (const col of visibleCols) {
-      const raw = cellValueRaw(item, col.key, data.markupFactor);
+      const raw = cellValueRaw(item, col.key, factor);
       if (col.key === "nairaUnitPrice" || col.key === "totalPrice") {
         row.push(raw != null ? formatNairaPdf(raw as number) : "—");
       } else {
@@ -120,7 +121,7 @@ export async function generateQuotePdf(
     }
 
     const lineTotal = lineTotalNaira(item);
-    if (lineTotal != null) grandTotal += lineTotal * data.markupFactor;
+    if (lineTotal != null) grandTotal += lineTotal * factor;
   });
 
   // Grand total row

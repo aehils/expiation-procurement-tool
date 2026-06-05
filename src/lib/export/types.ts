@@ -49,16 +49,30 @@ export function lineShippingNaira(item: DetailsItemPayload): number | null {
   return (item.domesticShippingNaira ?? 0) + (item.intlShippingNaira ?? 0);
 }
 
+// Per-item markup overrides the quote's global markup when set. A 0 entry is
+// meaningful — it forces "no markup" on that line, distinct from "not set".
+export function markupFactorForItem(
+  itemId: string,
+  defaultFactor: number,
+  customMarkups?: Record<string, number>,
+): number {
+  const c = customMarkups?.[itemId];
+  return c != null ? 1 + c / 100 : defaultFactor;
+}
+
 export function quoteTotalNaira(
   items: DetailsItemPayload[],
   selectedIds: Set<string>,
   markupFactor: number,
+  customMarkups?: Record<string, number>,
 ): number {
   let sum = 0;
   for (const item of items) {
     if (!selectedIds.has(item.id)) continue;
     const line = lineTotalNaira(item);
-    if (line != null) sum += line * markupFactor;
+    if (line == null) continue;
+    const factor = markupFactorForItem(item.id, markupFactor, customMarkups);
+    sum += line * factor;
   }
   return sum;
 }
@@ -156,4 +170,5 @@ export type ExportQuoteData = {
   enabledColumns: ColKey[];
   markupFactor: number;
   notes?: Record<string, string>;
+  customMarkups?: Record<string, number>;
 };
