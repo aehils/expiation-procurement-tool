@@ -11,6 +11,7 @@ export function NewRfqChooser({
   open,
   onClose,
   align = "end",
+  width = "w-64",
   className,
 }: {
   open: boolean;
@@ -19,6 +20,11 @@ export function NewRfqChooser({
   // with the trigger. Use "end" for right-side header buttons, "start" when
   // there's plenty of room to the right (e.g. the home action card).
   align?: "start" | "end";
+  // Tailwind width class for the menu. Default is a fixed width so the
+  // dropdown is consistent across triggers of different sizes (e.g. the
+  // narrow header button on /rfq inherits the same width as the chunky
+  // action card on /new). Pass "w-full" to match a chunky trigger directly.
+  width?: string;
   // Extra classes merged onto the menu container — e.g. callers can pass
   // `shadow-2xl` to deepen the elevation against busier content.
   className?: string;
@@ -61,7 +67,7 @@ export function NewRfqChooser({
       ref={menuRef}
       role="menu"
       aria-label="Start a new RFQ"
-      className={`absolute z-50 top-full mt-1.5 w-full bg-white rounded-md shadow-xl border border-slate-200 overflow-hidden ${
+      className={`absolute z-50 top-full mt-1.5 ${width} bg-white rounded-md shadow-xl border border-slate-200 overflow-hidden ${
         align === "end" ? "right-0" : "left-0"
       } ${className ?? ""}`}
     >

@@ -34,6 +34,7 @@ export function HomeActionCards({ quotes }: { quotes: QuoteOption[] }) {
             open={rfqChooserOpen}
             onClose={() => setRfqChooserOpen(false)}
             align="start"
+            width="w-full"
           />
         </div>
 
