@@ -97,18 +97,21 @@ export function RfqList({ rfqs: initial }: { rfqs: RfqItem[] }) {
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 pointer-events-none" />
       </div>
       <div className="flex-1" />
-      <button
-        type="button"
-        onClick={() => setChooserOpen(true)}
-        className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md text-sm font-medium bg-[#274579] text-white hover:opacity-90 transition-opacity shrink-0"
-      >
-        <Plus className="w-4 h-4" />
-        New RFQ
-      </button>
-      <NewRfqChooser
-        open={chooserOpen}
-        onClose={() => setChooserOpen(false)}
-      />
+      <div className="relative shrink-0" data-new-rfq-anchor>
+        <button
+          type="button"
+          onClick={() => setChooserOpen((v) => !v)}
+          className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md text-sm font-medium bg-[#274579] text-white hover:opacity-90 transition-opacity"
+        >
+          <Plus className="w-4 h-4" />
+          New RFQ
+        </button>
+        <NewRfqChooser
+          open={chooserOpen}
+          onClose={() => setChooserOpen(false)}
+          align="end"
+        />
+      </div>
     </div>
   );
 

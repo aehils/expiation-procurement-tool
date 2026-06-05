@@ -4,24 +4,45 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Upload } from "lucide-react";
 
-// Two-option chooser shown from the "New RFQ" entry points. Picking a path
-// here keeps the entry view and upload page focused on one task each.
+// Anchored dropdown shown beneath a "New RFQ" trigger. The parent wraps the
+// trigger and this chooser in a `relative` container; the chooser positions
+// itself absolutely against it. Outside-click and Escape both close.
 export function NewRfqChooser({
   open,
   onClose,
+  align = "end",
 }: {
   open: boolean;
   onClose: () => void;
+  // Whether to align the dropdown's right edge ("end") or left edge ("start")
+  // with the trigger. Use "end" for right-side header buttons, "start" when
+  // there's plenty of room to the right (e.g. the home action card).
+  align?: "start" | "end";
 }) {
   const router = useRouter();
+  const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
+    function onClick(e: MouseEvent) {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (menuRef.current?.contains(target)) return;
+      // Treat the wrapping trigger element as "inside" so clicking the same
+      // button that opened the menu lets its onClick toggle it closed instead
+      // of fighting the outside-click handler.
+      if (target.closest("[data-new-rfq-anchor]")) return;
+      onClose();
+    }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onClick);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onClick);
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -32,54 +53,47 @@ export function NewRfqChooser({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div
-        role="dialog"
-        aria-label="Start a new RFQ"
-        className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4"
+    <div
+      ref={menuRef}
+      role="menu"
+      aria-label="Start a new RFQ"
+      className={`absolute z-50 top-full mt-1.5 w-64 bg-white rounded-md shadow-xl border border-slate-200 overflow-hidden ${
+        align === "end" ? "right-0" : "left-0"
+      }`}
+    >
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => go("/rfq/new")}
+        className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50 transition-colors"
       >
-        <div className="px-6 pt-5 pb-3">
-          <h3 className="text-base font-semibold text-slate-800">
-            Start a new RFQ
-          </h3>
-          <p className="text-xs text-slate-500 mt-1">
-            How do you want to add the items?
-          </p>
+        <FileText className="h-4 w-4 text-[#274579] mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <div className="text-xs font-semibold text-slate-800">
+            Enter details
+          </div>
+          <div className="text-[11px] text-slate-500 leading-snug">
+            Fill out an item form for each line.
+          </div>
         </div>
-        <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => go("/rfq/new")}
-            className="group flex flex-col items-start gap-2 p-3.5 rounded-md border border-slate-200 bg-white hover:border-[#274579] hover:shadow-md transition-all text-left"
-          >
-            <div className="w-9 h-9 rounded-md bg-[#274579]/10 flex items-center justify-center group-hover:bg-[#274579]/15 transition-colors">
-              <FileText size={18} className="text-[#274579]" />
-            </div>
-            <div className="text-sm font-semibold text-slate-800">
-              Enter details
-            </div>
-            <div className="text-[11px] text-slate-500 leading-snug">
-              Fill out an item form for each line in the RFQ.
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => go("/rfq/new/upload")}
-            className="group flex flex-col items-start gap-2 p-3.5 rounded-md border border-slate-200 bg-white hover:border-[#274579] hover:shadow-md transition-all text-left"
-          >
-            <div className="w-9 h-9 rounded-md bg-[#274579]/10 flex items-center justify-center group-hover:bg-[#274579]/15 transition-colors">
-              <Upload size={18} className="text-[#274579]" />
-            </div>
-            <div className="text-sm font-semibold text-slate-800">
-              Upload spreadsheet
-            </div>
-            <div className="text-[11px] text-slate-500 leading-snug">
-              Parse items from an .xlsx matching the RFQ template.
-            </div>
-          </button>
+      </button>
+      <div className="h-px bg-slate-100" />
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => go("/rfq/new/upload")}
+        className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50 transition-colors"
+      >
+        <Upload className="h-4 w-4 text-[#274579] mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <div className="text-xs font-semibold text-slate-800">
+            Upload spreadsheet
+          </div>
+          <div className="text-[11px] text-slate-500 leading-snug">
+            Parse items from an .xlsx matching the template.
+          </div>
         </div>
-      </div>
+      </button>
     </div>
   );
 }
