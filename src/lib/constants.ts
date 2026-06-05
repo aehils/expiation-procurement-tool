@@ -44,6 +44,10 @@ export const UNITS_OF_MEASURE: Option[] = [
   { value: "pair", label: "Pair" },
 ];
 
+export function uomLabel(value: string): string {
+  return UNITS_OF_MEASURE.find((u) => u.value === value)?.label ?? value;
+}
+
 export const CURRENCIES: Option[] = [
   { value: "NGN", label: "NGN — Nigerian Naira" },
   { value: "USD", label: "USD — US Dollar" },

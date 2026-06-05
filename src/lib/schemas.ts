@@ -63,6 +63,7 @@ export const quoteConfigSchema = z.object({
   columns: z.array(z.string().min(1)),
   items: z.array(z.string().min(1)),
   markup: z.number().min(0).max(999),
+  notes: z.record(z.string(), z.string()).optional(),
 });
 export type QuoteConfig = z.infer<typeof quoteConfigSchema>;
 
