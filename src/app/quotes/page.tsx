@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 import { prisma, withDbRetry } from "@/lib/db";
 import { parseQuoteConfig } from "@/lib/quote-config";
 import { QuoteList, type QuoteRow } from "@/components/quotes/quote-list";
-import { lineTotalNaira } from "@/lib/export/types";
+import { lineTotalNaira, markupFactorForItem } from "@/lib/export/types";
 import type { DetailsItemPayload } from "@/components/rfq/item-detail-form";
 
 const getQuoteRows = unstable_cache(
@@ -52,7 +52,9 @@ const getQuoteRows = unstable_cache(
         for (const item of q.rfq.items) {
           if (!selectedSet.has(item.id)) continue;
           const line = lineTotalNaira(item as unknown as DetailsItemPayload);
-          if (line != null) total += line * markupFactor;
+          if (line == null) continue;
+          const factor = markupFactorForItem(item.id, markupFactor, config?.customMarkups);
+          total += line * factor;
         }
         return {
           id: q.id,
