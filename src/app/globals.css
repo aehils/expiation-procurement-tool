@@ -69,7 +69,15 @@
 
 @layer base {
   html {
-    font-size: 95%;
+    /* Fluid root size. Nearly the entire UI is rem-based (sidebar width, inputs,
+       paddings, gaps, type), so scaling this one value scales the whole
+       composition proportionally. That keeps the layout intact across a wide
+       range of viewport widths / zoom levels instead of only holding up in a
+       narrow band. The clamp anchors to ~15.2px at the design target (~1440px
+       viewport) — identical to the previous static 95% — and gently scales
+       within bounds outside it.
+         floor 13px  (≤ ~870px)   ceiling 17px (≥ ~1900px) */
+    font-size: clamp(0.8125rem, 0.6rem + 0.39vw, 1.0625rem);
   }
   * {
     @apply border-border;

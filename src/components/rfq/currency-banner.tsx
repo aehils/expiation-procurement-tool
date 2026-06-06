@@ -76,29 +76,3 @@ export function CurrencyBanner({ rates, freshness, refreshing, onRefresh }: Prop
     </div>
   );
 }
-
-// Invisible placeholder that occupies the exact same width as CurrencyBanner.
-// Used by views (e.g. entry view) that don't show the banner but need their
-// header row to align with views that do — keeps the stepper/divider/requester
-// at matching x-positions across pages.
-export function CurrencyBannerSpacer() {
-  // Render with representative rate values so the spacer width matches a fully
-  // loaded banner, not the narrower loading-skeleton state.
-  const dummyRates: Record<string, RateInfo> = React.useMemo(() => {
-    const out: Record<string, RateInfo> = {};
-    for (const c of BANNER_CURRENCIES) {
-      out[c.code] = { rate: 1234.56, fetchedAt: new Date().toISOString() };
-    }
-    return out;
-  }, []);
-  return (
-    <div className="invisible" aria-hidden="true">
-      <CurrencyBanner
-        rates={dummyRates}
-        freshness={new Date().toISOString()}
-        refreshing={false}
-        onRefresh={() => {}}
-      />
-    </div>
-  );
-}

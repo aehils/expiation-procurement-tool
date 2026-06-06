@@ -240,7 +240,7 @@ export function DetailsView({
 
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
-      <div className="flex items-center justify-between gap-2 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-6">
         {fromList ? (
           <Link
             href="/rfq"
@@ -304,7 +304,7 @@ export function DetailsView({
 
       {/* Stepper pushed rightward via ml-auto (consumes left free space) so it sits next to
           the divider. Divider has symmetric mx-6 gaps, so the spacing on either side matches. */}
-      <div className="flex items-center mb-4 px-1">
+      <div className="flex flex-wrap items-center gap-y-3 mb-4 px-1">
         <div className="ml-auto">
           <RfqStepper currentStep={2} rfqId={rfq.id} />
         </div>

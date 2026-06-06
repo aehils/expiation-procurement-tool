@@ -321,7 +321,7 @@ export function QuoteView({
   return (
     <div className="max-w-screen-2xl mx-auto px-4 py-4">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-6">
         {fromList && listBackHref ? (
           <Link
             href={listBackHref}
@@ -376,7 +376,7 @@ export function QuoteView({
       </div>
 
       {/* Requester + actions row */}
-      <div className="flex items-center justify-end gap-3 mb-10 px-1">
+      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-3 mb-10 px-1">
         <div className="flex items-stretch h-8 rounded-md overflow-hidden border border-[#274579]/30 bg-[#274579]/10">
           <span className="flex items-center px-3 text-[11px] font-semibold uppercase tracking-wide text-[#274579]">
             Total
