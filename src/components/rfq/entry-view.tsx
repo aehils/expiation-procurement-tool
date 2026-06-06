@@ -23,7 +23,6 @@ import {
   readStoredUploadedItems,
 } from "@/lib/rfq-upload";
 import { RfqStepper } from "./rfq-stepper";
-import { CurrencyBannerSpacer } from "./currency-banner";
 
 // `id` is only present on items already persisted to the DB (edit mode). New
 // items added during this session carry `tempId` only, and get created on save.
@@ -320,34 +319,31 @@ export function EntryView({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Stepper/requester row — full width, row 1. Mirrors step 2: stepper pushed rightward via
-            ml-auto, divider with symmetric mx-6 gaps. The invisible currency-banner spacer keeps
-            the right-block width matched to step 2 so positions align across pages. */}
-        <div className="lg:col-start-1 lg:col-span-12 lg:row-start-1">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        {/* Stepper/requester row — scoped to cols 1-7 (above the form). The Added panel spans
+            rows 1-2 in cols 8-12 so its top aligns with this row's top, exceeding the form's
+            top by exactly this row's height — regardless of how the row wraps at off-zoom.
+            Items are left-aligned so that when the row wraps, the stepper on line 1 sits at
+            the same left edge as the requester block on line 2 (stacked directly above it). */}
+        <div className="lg:col-span-7 lg:col-start-1 lg:row-start-1">
           <div className="flex flex-wrap items-center gap-y-3 px-1">
-            <div className="ml-auto">
-              <RfqStepper currentStep={1} rfqId={rfqId} />
-            </div>
+            <RfqStepper currentStep={1} rfqId={rfqId} />
             <div aria-hidden="true" className="h-8 w-px bg-slate-300 mx-6" />
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <Label
-                  htmlFor="requester"
-                  className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
-                  style={{ color: "#274579" }}
-                >
-                  Requester
-                </Label>
-                <Input
-                  id="requester"
-                  value={requester}
-                  onChange={(e) => setRequester(e.target.value)}
-                  placeholder="Required Field"
-                  className="h-8 text-xs w-64 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
-                />
-              </div>
-              <CurrencyBannerSpacer />
+            <div className="flex items-center gap-3">
+              <Label
+                htmlFor="requester"
+                className="text-xs font-semibold uppercase tracking-wide whitespace-nowrap"
+                style={{ color: "#274579" }}
+              >
+                Requester
+              </Label>
+              <Input
+                id="requester"
+                value={requester}
+                onChange={(e) => setRequester(e.target.value)}
+                placeholder="Required Field"
+                className="h-8 text-xs w-64 bg-slate-100 border border-slate-300 focus-visible:bg-slate-50 focus-visible:border-slate-400"
+              />
             </div>
           </div>
         </div>
@@ -507,9 +503,8 @@ export function EntryView({
           </div>
         </div>
 
-        {/* Added items panel — spans row 1+2 in cols 8-12 so it rides up to the stepper row's
-            top (overlapping the invisible currency spacer) and its bottom auto-aligns with the
-            form via grid row sizing. */}
+        {/* Added items panel — spans rows 1-2 so it starts above the form's top, riding into
+            the empty row 1 area. Its bottom auto-aligns with the form via grid row sizing. */}
         <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 min-h-0">
           <div className="bg-white rounded-md shadow-xl border border-slate-100 flex flex-col h-full">
             <div className="px-4 pt-4 pb-2 flex items-center justify-between">
