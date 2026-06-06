@@ -24,6 +24,31 @@ export async function generateQuoteXlsx(
     size: 10,
   };
 
+  // Table gridlines: clearly-visible vertical separators between fields, with a
+  // lighter horizontal rule between rows so the columns read as the dividers.
+  const colBorder = { style: "thin" as const, color: { argb: "FF94A3B8" } }; // slate-400
+  const rowBorder = { style: "thin" as const, color: { argb: "FFE2E8F0" } }; // slate-200
+  const totalTopBorder = { style: "double" as const, color: { argb: "FF274579" } };
+
+  // Draws vertical column separators across the full table width, preserving any
+  // existing top/bottom borders unless explicitly overridden.
+  type RowLike = { getCell(col: number): { border?: object } };
+  const applyColumnBorders = (
+    row: RowLike,
+    opts?: { top?: object; bottom?: object },
+  ) => {
+    for (let c = 1; c <= totalDataCols; c++) {
+      const cell = row.getCell(c);
+      const prev = (cell.border ?? {}) as { top?: object; bottom?: object };
+      cell.border = {
+        top: opts?.top ?? prev.top,
+        bottom: opts?.bottom ?? prev.bottom,
+        left: colBorder,
+        right: colBorder,
+      };
+    }
+  };
+
   let rowIdx = 1;
 
   // Logo — fixed height, width calculated from aspect ratio to avoid distortion
@@ -95,6 +120,8 @@ export async function generateQuoteXlsx(
       bottom: { style: "thin", color: { argb: "FF274579" } },
     };
   });
+  // Vertical separators across the header (keeps the brand bottom rule).
+  applyColumnBorders(headerRow);
 
   // Data rows
   const selectedItems = data.items.filter((item) =>
@@ -143,6 +170,9 @@ export async function generateQuoteXlsx(
       });
     }
 
+    // Column separators + a light rule under each data row.
+    applyColumnBorders(dataRow, { bottom: rowBorder });
+
     const note = data.notes?.[item.id]?.trim();
     if (note) {
       const noteRow = ws.addRow(["", `Note: ${note}`]);
@@ -155,6 +185,10 @@ export async function generateQuoteXlsx(
         pattern: "solid",
         fgColor: { argb: "FFF8FAFC" },
       };
+      // Keep the # column's separators and the table's right edge through the
+      // note row, but no internal verticals (the note is one merged field).
+      noteRow.getCell(1).border = { left: colBorder, right: colBorder };
+      cell.border = { right: colBorder };
       rowIdx++;
     }
 
@@ -185,11 +219,8 @@ export async function generateQuoteXlsx(
       totalRow.getCell(3).font = { bold: true, size: 11 };
     }
 
-    totalRow.eachCell((cell) => {
-      cell.border = {
-        top: { style: "double", color: { argb: "FF274579" } },
-      };
-    });
+    // Double rule above the total, with the column separators continued across.
+    applyColumnBorders(totalRow, { top: totalTopBorder });
   }
 
   // Terms & conditions

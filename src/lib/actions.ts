@@ -67,6 +67,9 @@ export async function createRfq(
           data: {
             rfqNumber,
             title: parsed.title || null,
+            // Backdate from an upload when supplied; otherwise let the schema
+            // default stamp the current time.
+            ...(parsed.createdAt ? { createdAt: parsed.createdAt } : {}),
             requester: parsed.requester,
             status: "details",
             items: {

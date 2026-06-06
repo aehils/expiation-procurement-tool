@@ -72,13 +72,37 @@ const FOOTER_PREFIXES = [
 const TITLE_PLACEHOLDER = "RFQ TITLE";
 const DATE_PLACEHOLDER = "DD.MM.YYYY";
 
-// Recognises the date line so it isn't mistaken for the title when the title is
-// left blank. Covers dd.mm.yyyy / dd/mm/yyyy / yyyy-mm-dd and the placeholder.
+// Parses the template's date line into a Date (UTC midday, to keep the calendar
+// day stable across timezones). Accepts a real Excel date cell, dd.mm.yyyy /
+// dd/mm/yyyy (day-first, the house format), and yyyy-mm-dd. Returns undefined
+// for the untouched placeholder or anything unrecognised.
+function parseTemplateDate(value: unknown, text: string): Date | undefined {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? undefined : value;
+  }
+  const t = text.trim();
+  if (t === "" || t.toUpperCase() === DATE_PLACEHOLDER) return undefined;
+
+  const mk = (y: number, mo: number, d: number): Date | undefined => {
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return undefined;
+    const dt = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+    return Number.isNaN(dt.getTime()) ? undefined : dt;
+  };
+
+  // yyyy-mm-dd (ISO-ish, year first)
+  let m = /^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/.exec(t);
+  if (m) return mk(Number(m[1]), Number(m[2]), Number(m[3]));
+  // dd.mm.yyyy / dd/mm/yyyy (day first)
+  m = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(t);
+  if (m) return mk(Number(m[3]), Number(m[2]), Number(m[1]));
+  return undefined;
+}
+
+// Whether a cell reads as the date line (so it isn't mistaken for the title when
+// the title is left blank). The placeholder counts too.
 function looksLikeDate(value: unknown, text: string): boolean {
-  if (value instanceof Date) return true;
-  const t = text.trim().toUpperCase();
-  if (t === DATE_PLACEHOLDER) return true;
-  return /^\d{1,4}[./-]\d{1,2}[./-]\d{1,4}$/.test(t);
+  if (text.trim().toUpperCase() === DATE_PLACEHOLDER) return true;
+  return parseTemplateDate(value, text) !== undefined;
 }
 
 export type UploadedItem = EntryItem;
@@ -88,6 +112,9 @@ export type ParseResult = {
   warnings: string[];
   // The title banner that sits just above the column header row, if filled.
   title?: string;
+  // The date line above the title, as an ISO string, if filled. Used to backdate
+  // the RFQ's createdAt; absent means "use the normal creation time".
+  date?: string;
 };
 
 // SessionStorage handoff: the upload page parses, stashes the parsed items
@@ -100,6 +127,7 @@ export type StashedItems = {
   items: UploadedItem[];
   fileName?: string;
   title?: string;
+  date?: string;
 };
 
 export function readStoredUploadedItems(): StashedItems | null {
@@ -202,6 +230,26 @@ function extractTitle(
   return undefined;
 }
 
+// Pulls the date line out of the rows above the item table — the first cell
+// there that parses as a date. Returns an ISO string, or undefined if none.
+function extractDate(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ws: any,
+  headerRowIdx: number,
+): string | undefined {
+  for (let r = 1; r < headerRowIdx; r++) {
+    const row = ws.getRow(r);
+    for (let c = 1; c <= Math.max(ws.columnCount, 1); c++) {
+      const raw = row.getCell(c).value;
+      const text = cellText(raw);
+      if (!nonEmpty(text)) continue;
+      const date = parseTemplateDate(raw, text);
+      if (date) return date.toISOString();
+    }
+  }
+  return undefined;
+}
+
 // Reads the workbook's first sheet, locates the header row, and maps each
 // subsequent non-footer row to an EntryItem. Returns parser warnings keyed
 // to the source row for surfacing in the UI.
@@ -260,8 +308,10 @@ export async function parseRfqWorkbook(file: File): Promise<ParseResult> {
     warnings.push(`Headers not found, skipped: ${missing.join(", ")}.`);
   }
 
-  // The title banner sits just above the item table's header row.
+  // The title banner sits just above the item table's header row; the date
+  // line sits above the title.
   const title = extractTitle(ws, headerRowIdx);
+  const date = extractDate(ws, headerRowIdx);
 
   // Build a reverse lookup: ColumnKey → spreadsheet column index.
   const colIdx = new Map<ColumnKey, number>();
@@ -359,7 +409,7 @@ export async function parseRfqWorkbook(file: File): Promise<ParseResult> {
     warnings.push("No item rows found below the header.");
   }
 
-  return { items, warnings, title };
+  return { items, warnings, title, date };
 }
 
 // Generates a stub template workbook and triggers a browser download. Lays out

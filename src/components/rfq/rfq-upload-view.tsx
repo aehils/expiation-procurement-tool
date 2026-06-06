@@ -85,6 +85,7 @@ export function RfqUploadView() {
       items: parseState.result.items,
       fileName: parseState.fileName,
       title: parseState.result.title,
+      date: parseState.result.date,
     });
     router.push("/rfq/new");
   }

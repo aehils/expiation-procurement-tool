@@ -34,6 +34,9 @@ export type EntryItem = z.infer<typeof entryItemSchema>;
 
 export const createRfqSchema = z.object({
   title: z.string().nullish(),
+  // Optional backdate (from a spreadsheet upload). When present, overrides the
+  // default createdAt timestamp. Accepts an ISO string or Date.
+  createdAt: z.coerce.date().nullish(),
   requester: z.string().min(1, "Requester name is required"),
   items: z.array(entryItemSchema).min(1, "At least one item is required"),
 });

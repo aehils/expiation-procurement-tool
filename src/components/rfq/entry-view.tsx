@@ -76,6 +76,12 @@ export function EntryView({
   // No visible field yet — see `initialTitle` above. Held so the value survives
   // a save once an upload (or edit) supplies it.
   const [title, setTitle] = React.useState(initialTitle ?? "");
+  // Optional backdate carried from a spreadsheet upload (ISO string). When set,
+  // createRfq stamps the RFQ's createdAt with it instead of the current time.
+  // No input yet — new-mode/upload only.
+  const [createdAt, setCreatedAt] = React.useState<string | undefined>(
+    undefined,
+  );
   const [items, setItems] = React.useState<DraftItem[]>(() => {
     return (initialItems ?? []).map((it) => ({
       ...it,
@@ -123,6 +129,7 @@ export function EntryView({
     if (!stashed) return;
     sessionStorage.removeItem(UPLOADED_ITEMS_STORAGE_KEY);
     if (stashed.title) setTitle((prev) => prev || stashed.title!);
+    if (stashed.date) setCreatedAt((prev) => prev || stashed.date);
     if (stashed.items.length === 0) return;
     setItems((prev) => {
       if (prev.length > 0) return prev;
@@ -265,6 +272,7 @@ export function EntryView({
         const { id } = await createRfq({
           rfqNumber,
           title: title.trim() || null,
+          createdAt: createdAt ? new Date(createdAt) : null,
           requester: requester.trim(),
           items: items.map((it) => {
             const { tempId, id: _existingId, ...rest } = it;
