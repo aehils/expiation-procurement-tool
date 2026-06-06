@@ -278,7 +278,7 @@ export function EntryView({
 
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-4">
-      <div className="flex items-center justify-between gap-2 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-6">
         <button
           type="button"
           onClick={() => router.back()}
@@ -325,7 +325,7 @@ export function EntryView({
             ml-auto, divider with symmetric mx-6 gaps. The invisible currency-banner spacer keeps
             the right-block width matched to step 2 so positions align across pages. */}
         <div className="lg:col-start-1 lg:col-span-12 lg:row-start-1">
-          <div className="flex items-center px-1">
+          <div className="flex flex-wrap items-center gap-y-3 px-1">
             <div className="ml-auto">
               <RfqStepper currentStep={1} rfqId={rfqId} />
             </div>

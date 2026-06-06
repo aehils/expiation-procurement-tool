@@ -166,7 +166,7 @@ export function PoCreationView({
   return (
     <div className="max-w-screen-xl mx-auto px-6 py-4">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mb-4">
         <Link
           href="/"
           className="inline-flex items-center gap-1 h-8 px-3 text-sm font-medium text-slate-700 rounded-md active:bg-slate-200 active:text-slate-900 transition-colors"
@@ -181,7 +181,7 @@ export function PoCreationView({
 
       {/* Source quote info */}
       <div className="bg-slate-50 border border-slate-200 rounded-md px-5 py-3 mb-6">
-        <div className="flex items-center gap-6 text-sm">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
               Based on Quote
@@ -204,7 +204,7 @@ export function PoCreationView({
       </div>
 
       {/* Markup + selection count */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 mb-4">
         <div className="flex items-center gap-2">
           <Label
             htmlFor="poMarkup"
@@ -364,7 +364,7 @@ export function PoCreationView({
       </div>
 
       {/* Footer: grand total + create button */}
-      <div className="flex items-center justify-between border-t border-slate-200 pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-y-3 border-t border-slate-200 pt-4">
         <div>
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
             Grand Total
