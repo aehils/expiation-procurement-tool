@@ -63,20 +63,30 @@ const FOOTER_PREFIXES = [
   "QUOTED PR",
 ];
 
-// Labels for the metadata rows the template places above the item table. The
-// requester fills the cell to the right of each; the parser reads them back.
-// Matched case-insensitively and whitespace-collapsed, with the "RFQ " prefix
-// optional so a bare "TITLE" label still resolves. (The "RFQ DATE" row is on
-// the template for the requester's reference; the persisted RFQ date is the
-// createdAt timestamp, so it isn't parsed back here.)
-const TITLE_LABELS = ["RFQ TITLE", "TITLE"];
+// The template lays an RFQ date and a title above the item table, matching the
+// house format: a small italic date line, then a bold merged title banner, then
+// the column headers. Neither carries a label — they're read back positionally
+// (the title is the row just above the header). These placeholder strings seed
+// the blank template and are treated as "unfilled" by the parser so an
+// untouched template doesn't import its own hint text as the title.
+const TITLE_PLACEHOLDER = "RFQ TITLE";
+const DATE_PLACEHOLDER = "DD.MM.YYYY";
+
+// Recognises the date line so it isn't mistaken for the title when the title is
+// left blank. Covers dd.mm.yyyy / dd/mm/yyyy / yyyy-mm-dd and the placeholder.
+function looksLikeDate(value: unknown, text: string): boolean {
+  if (value instanceof Date) return true;
+  const t = text.trim().toUpperCase();
+  if (t === DATE_PLACEHOLDER) return true;
+  return /^\d{1,4}[./-]\d{1,2}[./-]\d{1,4}$/.test(t);
+}
 
 export type UploadedItem = EntryItem;
 
 export type ParseResult = {
   items: UploadedItem[];
   warnings: string[];
-  // Pulled from the "RFQ TITLE" row at the top of the template, if present.
+  // The title banner that sits just above the column header row, if filled.
   title?: string;
 };
 
@@ -163,26 +173,31 @@ function nonEmpty(s: string | undefined): string | undefined {
   return t === "" ? undefined : t;
 }
 
-// Finds a metadata value laid out as "<LABEL> | <value>" in the rows above the
-// item table. Scans for a cell whose text matches one of `labels`, then returns
-// the first non-empty cell to its right on the same row. Used for the RFQ title
-// row the template seeds at the top.
-function findLabeledValue(
+// Pulls the title banner out of the rows above the item table. The title is the
+// nearest non-empty row above the header (matching the template's layout). If
+// that row is the date line or the untouched placeholder, there's no title.
+function extractTitle(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ws: any,
-  labels: string[],
-  maxRow: number,
+  headerRowIdx: number,
 ): string | undefined {
-  for (let r = 1; r <= maxRow; r++) {
+  for (let r = headerRowIdx - 1; r >= 1; r--) {
     const row = ws.getRow(r);
-    for (let c = 1; c <= Math.max(ws.columnCount, 2); c++) {
-      const label = normalizeHeader(cellText(row.getCell(c).value));
-      if (!labels.includes(label)) continue;
-      for (let nc = c + 1; nc <= Math.max(ws.columnCount, c + 4); nc++) {
-        const value = nonEmpty(cellText(row.getCell(nc).value));
-        if (value) return value;
+    let value: unknown;
+    let text: string | undefined;
+    for (let c = 1; c <= Math.max(ws.columnCount, 1); c++) {
+      const raw = row.getCell(c).value;
+      const t = nonEmpty(cellText(raw));
+      if (t) {
+        value = raw;
+        text = t;
+        break;
       }
     }
+    if (!text) continue; // blank row — keep walking up toward the title
+    if (text.toUpperCase() === TITLE_PLACEHOLDER) return undefined;
+    if (looksLikeDate(value, text)) return undefined; // title left blank, hit the date line
+    return text;
   }
   return undefined;
 }
@@ -245,8 +260,8 @@ export async function parseRfqWorkbook(file: File): Promise<ParseResult> {
     warnings.push(`Headers not found, skipped: ${missing.join(", ")}.`);
   }
 
-  // The title row lives above the item table — scan the rows preceding the header.
-  const title = findLabeledValue(ws, TITLE_LABELS, Math.max(1, headerRowIdx - 1));
+  // The title banner sits just above the item table's header row.
+  const title = extractTitle(ws, headerRowIdx);
 
   // Build a reverse lookup: ColumnKey → spreadsheet column index.
   const colIdx = new Map<ColumnKey, number>();
@@ -347,9 +362,11 @@ export async function parseRfqWorkbook(file: File): Promise<ParseResult> {
   return { items, warnings, title };
 }
 
-// Generates a stub template workbook and triggers a browser download. The top
-// two rows are metadata the requester fills in — an RFQ title and date — sitting
-// above a spacer and the column header row. Mirrors the dynamic-import pattern in
+// Generates a stub template workbook and triggers a browser download. Lays out
+// the house RFQ format above the item table: an italic date line, a spacer, a
+// bold merged title banner, then the blue column-header row. Both metadata cells
+// carry placeholder hint text the requester overwrites; the parser treats those
+// placeholders as unfilled. Mirrors the dynamic-import pattern in
 // `src/lib/export/xlsx.ts` to keep exceljs out of the initial bundle.
 export async function downloadRfqTemplate(): Promise<void> {
   const ExcelJS = await import("exceljs");
@@ -364,27 +381,21 @@ export async function downloadRfqTemplate(): Promise<void> {
   }));
 
   const brand = "FF274579";
-  const labelCell = (text: string, row: number) => {
-    const cell = ws.getCell(`A${row}`);
-    cell.value = text;
-    cell.font = { bold: true, color: { argb: brand } };
-    // A light fill on the adjacent cell hints where to type.
-    const valueCell = ws.getCell(`B${row}`);
-    valueCell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFF1F5F9" },
-    };
-    valueCell.border = {
-      bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
-    };
-  };
+  const placeholderColor = "FF94A3B8"; // slate-400, so the hint reads as fill-me
 
-  // Row 1: title, Row 2: date — both blank for the requester to fill.
-  labelCell("RFQ TITLE", 1);
-  labelCell("RFQ DATE", 2);
-  // Row 3: spacer. Row 4: the column header row.
-  const headerRowIdx = 4;
+  // Row 2: the date line — small and italic, no label.
+  const dateCell = ws.getCell("A2");
+  dateCell.value = DATE_PLACEHOLDER;
+  dateCell.font = { italic: true, size: 11, color: { argb: placeholderColor } };
+
+  // Row 4: the title banner — bold, large, merged across the table width.
+  const headerRowIdx = 5;
+  ws.mergeCells(4, 1, 4, TEMPLATE_COLUMNS.length);
+  const titleCell = ws.getCell("A4");
+  titleCell.value = TITLE_PLACEHOLDER;
+  titleCell.font = { bold: true, size: 20, color: { argb: placeholderColor } };
+
+  // Row 5: the column header row.
   const headerRow = ws.getRow(headerRowIdx);
   headerRow.values = [...TEMPLATE_COLUMNS];
   headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
