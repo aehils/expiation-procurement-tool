@@ -33,6 +33,7 @@ export const entryItemSchema = z.object({
 export type EntryItem = z.infer<typeof entryItemSchema>;
 
 export const createRfqSchema = z.object({
+  title: z.string().nullish(),
   requester: z.string().min(1, "Requester name is required"),
   items: z.array(entryItemSchema).min(1, "At least one item is required"),
 });
@@ -45,6 +46,7 @@ export const editEntryItemSchema = entryItemSchema.extend({
   id: z.string().optional(),
 });
 export const updateRfqEntryDataSchema = z.object({
+  title: z.string().nullish(),
   requester: z.string().min(1, "Requester name is required"),
   items: z.array(editEntryItemSchema).min(1, "At least one item is required"),
 });

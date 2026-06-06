@@ -84,6 +84,7 @@ export function RfqUploadView() {
     writeStoredUploadedItems({
       items: parseState.result.items,
       fileName: parseState.fileName,
+      title: parseState.result.title,
     });
     router.push("/rfq/new");
   }

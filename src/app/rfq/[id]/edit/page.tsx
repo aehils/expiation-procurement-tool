@@ -52,6 +52,7 @@ export default async function EditRfqPage({
       rfqId={rfq.id}
       rfqNumber={rfq.rfqNumber}
       initialRequester={rfq.requester}
+      initialTitle={rfq.title}
       initialItems={initialItems}
       mode="edit"
       initialEditItemId={initialEditItemId}

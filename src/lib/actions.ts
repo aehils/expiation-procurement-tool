@@ -66,6 +66,7 @@ export async function createRfq(
         return await prisma.rfq.create({
           data: {
             rfqNumber,
+            title: parsed.title || null,
             requester: parsed.requester,
             status: "details",
             items: {
@@ -144,7 +145,7 @@ export async function updateRfqEntryData(
     prisma.$transaction([
     prisma.rfq.update({
       where: { id: rfqId },
-      data: { requester: parsed.requester },
+      data: { title: parsed.title || null, requester: parsed.requester },
     }),
     ...(toDelete.length > 0
       ? [

@@ -51,6 +51,10 @@ type EntryViewProps = {
   // When present, the view operates in edit mode: it pre-fills requester and
   // items, and "Proceed" updates the existing RFQ instead of creating one.
   initialRequester?: string;
+  // Optional RFQ title. There's no input for it in the form yet — it rides
+  // through from a spreadsheet upload (or an existing RFQ in edit mode) so the
+  // value is preserved on save. Wire a field to `title`/`setTitle` to expose it.
+  initialTitle?: string | null;
   initialItems?: InitialEntryItem[];
   mode?: "new" | "edit";
   // When set, the matching item is pulled out of the list and loaded into the
@@ -62,12 +66,16 @@ export function EntryView({
   rfqNumber,
   rfqId,
   initialRequester,
+  initialTitle,
   initialItems,
   mode = "new",
   initialEditItemId,
 }: EntryViewProps) {
   const router = useRouter();
   const [requester, setRequester] = React.useState(initialRequester ?? "");
+  // No visible field yet — see `initialTitle` above. Held so the value survives
+  // a save once an upload (or edit) supplies it.
+  const [title, setTitle] = React.useState(initialTitle ?? "");
   const [items, setItems] = React.useState<DraftItem[]>(() => {
     return (initialItems ?? []).map((it) => ({
       ...it,
@@ -114,6 +122,7 @@ export function EntryView({
     const stashed = readStoredUploadedItems();
     if (!stashed) return;
     sessionStorage.removeItem(UPLOADED_ITEMS_STORAGE_KEY);
+    if (stashed.title) setTitle((prev) => prev || stashed.title!);
     if (stashed.items.length === 0) return;
     setItems((prev) => {
       if (prev.length > 0) return prev;
@@ -243,6 +252,7 @@ export function EntryView({
       if (mode === "edit") {
         if (!rfqId) throw new Error("rfqId is required in edit mode");
         const { id } = await updateRfqEntryData(rfqId, {
+          title: title.trim() || null,
           requester: requester.trim(),
           items: items.map((it) => {
             const { tempId, ...rest } = it;
@@ -254,6 +264,7 @@ export function EntryView({
       } else {
         const { id } = await createRfq({
           rfqNumber,
+          title: title.trim() || null,
           requester: requester.trim(),
           items: items.map((it) => {
             const { tempId, id: _existingId, ...rest } = it;

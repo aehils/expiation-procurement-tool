@@ -63,11 +63,21 @@ const FOOTER_PREFIXES = [
   "QUOTED PR",
 ];
 
+// Labels for the metadata rows the template places above the item table. The
+// requester fills the cell to the right of each; the parser reads them back.
+// Matched case-insensitively and whitespace-collapsed, with the "RFQ " prefix
+// optional so a bare "TITLE" label still resolves. (The "RFQ DATE" row is on
+// the template for the requester's reference; the persisted RFQ date is the
+// createdAt timestamp, so it isn't parsed back here.)
+const TITLE_LABELS = ["RFQ TITLE", "TITLE"];
+
 export type UploadedItem = EntryItem;
 
 export type ParseResult = {
   items: UploadedItem[];
   warnings: string[];
+  // Pulled from the "RFQ TITLE" row at the top of the template, if present.
+  title?: string;
 };
 
 // SessionStorage handoff: the upload page parses, stashes the parsed items
@@ -79,6 +89,7 @@ export const UPLOADED_ITEMS_STORAGE_KEY = "rfq:uploaded-items";
 export type StashedItems = {
   items: UploadedItem[];
   fileName?: string;
+  title?: string;
 };
 
 export function readStoredUploadedItems(): StashedItems | null {
@@ -152,6 +163,30 @@ function nonEmpty(s: string | undefined): string | undefined {
   return t === "" ? undefined : t;
 }
 
+// Finds a metadata value laid out as "<LABEL> | <value>" in the rows above the
+// item table. Scans for a cell whose text matches one of `labels`, then returns
+// the first non-empty cell to its right on the same row. Used for the RFQ title
+// row the template seeds at the top.
+function findLabeledValue(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ws: any,
+  labels: string[],
+  maxRow: number,
+): string | undefined {
+  for (let r = 1; r <= maxRow; r++) {
+    const row = ws.getRow(r);
+    for (let c = 1; c <= Math.max(ws.columnCount, 2); c++) {
+      const label = normalizeHeader(cellText(row.getCell(c).value));
+      if (!labels.includes(label)) continue;
+      for (let nc = c + 1; nc <= Math.max(ws.columnCount, c + 4); nc++) {
+        const value = nonEmpty(cellText(row.getCell(nc).value));
+        if (value) return value;
+      }
+    }
+  }
+  return undefined;
+}
+
 // Reads the workbook's first sheet, locates the header row, and maps each
 // subsequent non-footer row to an EntryItem. Returns parser warnings keyed
 // to the source row for surfacing in the UI.
@@ -209,6 +244,9 @@ export async function parseRfqWorkbook(file: File): Promise<ParseResult> {
   if (missing.length > 0) {
     warnings.push(`Headers not found, skipped: ${missing.join(", ")}.`);
   }
+
+  // The title row lives above the item table — scan the rows preceding the header.
+  const title = findLabeledValue(ws, TITLE_LABELS, Math.max(1, headerRowIdx - 1));
 
   // Build a reverse lookup: ColumnKey → spreadsheet column index.
   const colIdx = new Map<ColumnKey, number>();
@@ -306,29 +344,56 @@ export async function parseRfqWorkbook(file: File): Promise<ParseResult> {
     warnings.push("No item rows found below the header.");
   }
 
-  return { items, warnings };
+  return { items, warnings, title };
 }
 
-// Generates a stub template workbook containing only the header row and
-// triggers a browser download. Mirrors the dynamic-import pattern in
+// Generates a stub template workbook and triggers a browser download. The top
+// two rows are metadata the requester fills in — an RFQ title and date — sitting
+// above a spacer and the column header row. Mirrors the dynamic-import pattern in
 // `src/lib/export/xlsx.ts` to keep exceljs out of the initial bundle.
 export async function downloadRfqTemplate(): Promise<void> {
   const ExcelJS = await import("exceljs");
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("RFQ Template");
-  ws.addRow([...TEMPLATE_COLUMNS]);
-  const headerRow = ws.getRow(1);
+
+  // Widths only — we lay the rows out by hand so the metadata rows can sit
+  // above the column header (setting `header` here would force it into row 1).
+  ws.columns = TEMPLATE_COLUMNS.map((c) => ({
+    key: c,
+    width: Math.max(14, c.length + 2),
+  }));
+
+  const brand = "FF274579";
+  const labelCell = (text: string, row: number) => {
+    const cell = ws.getCell(`A${row}`);
+    cell.value = text;
+    cell.font = { bold: true, color: { argb: brand } };
+    // A light fill on the adjacent cell hints where to type.
+    const valueCell = ws.getCell(`B${row}`);
+    valueCell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFF1F5F9" },
+    };
+    valueCell.border = {
+      bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+    };
+  };
+
+  // Row 1: title, Row 2: date — both blank for the requester to fill.
+  labelCell("RFQ TITLE", 1);
+  labelCell("RFQ DATE", 2);
+  // Row 3: spacer. Row 4: the column header row.
+  const headerRowIdx = 4;
+  const headerRow = ws.getRow(headerRowIdx);
+  headerRow.values = [...TEMPLATE_COLUMNS];
   headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
   headerRow.fill = {
     type: "pattern",
     pattern: "solid",
-    fgColor: { argb: "FF274579" },
+    fgColor: { argb: brand },
   };
-  ws.columns = TEMPLATE_COLUMNS.map((c) => ({
-    header: c,
-    key: c,
-    width: Math.max(14, c.length + 2),
-  }));
+  headerRow.commit?.();
 
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], {

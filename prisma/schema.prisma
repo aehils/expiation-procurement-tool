@@ -19,6 +19,7 @@ datasource db {
 model Rfq {
   id        String   @id @default(cuid())
   rfqNumber String   @unique
+  title     String? // Optional human-given name for the RFQ, shown on the template/printouts
   requester String
   status    String   @default("draft") // draft | details | quoted | ordered
   createdAt DateTime @default(now())
